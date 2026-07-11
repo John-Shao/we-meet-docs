@@ -19,11 +19,11 @@ msgstr ""
 
 #: core/admin.py:33
 msgid "Personal info"
-msgstr "個人資訊"
+msgstr "个人信息"
 
 #: core/admin.py:46 core/admin.py:190
 msgid "Permissions"
-msgstr "權限"
+msgstr "权限"
 
 #: core/admin.py:58
 msgid "Important dates"
@@ -43,11 +43,11 @@ msgstr ""
 
 #: core/admin.py:200
 msgid "Tree structure"
-msgstr "樹狀結構"
+msgstr "树状结构"
 
 #: core/api/filters.py:48
 msgid "Title"
-msgstr "標題"
+msgstr "标题"
 
 #: core/api/filters.py:51
 msgid "Search"
@@ -55,28 +55,28 @@ msgstr ""
 
 #: core/api/filters.py:65
 msgid "Creator is me"
-msgstr "建立者是我"
+msgstr "创建者是我"
 
 #: core/api/filters.py:68
 msgid "Favorite"
-msgstr "我的最愛"
+msgstr "我的最爱"
 
 #: core/api/serializers.py:529
 msgid "A new document was created on your behalf!"
-msgstr "已代表您建立新文件！"
+msgstr "已代表您创建新文档！"
 
 #: core/api/serializers.py:533
 msgid "You have been granted ownership of a new document:"
-msgstr "您已獲得新文件的所有權："
+msgstr "您已获得新文档的所有权："
 
 #: core/api/serializers.py:569
 msgid "This field is required."
-msgstr "此欄位為必填。"
+msgstr "此字段为必填。"
 
 #: core/api/serializers.py:580
 #, python-format
 msgid "Link reach '%(link_reach)s' is not allowed based on parent document configuration."
-msgstr "根據父文件設定，不允許連結範圍「%(link_reach)s」。"
+msgstr "根据父文档设置，不允许链接范围「%(link_reach)s」。"
 
 #: core/api/viewsets.py:1386
 #, python-brace-format
@@ -90,27 +90,27 @@ msgstr ""
 
 #: core/apps.py:12
 msgid "Impress core application"
-msgstr "Impress 核心應用程式"
+msgstr "Impress 内核应用程序"
 
 #: core/choices.py:35 core/choices.py:43
 msgid "Reader"
-msgstr "檢視者"
+msgstr "查看者"
 
 #: core/choices.py:36 core/choices.py:44
 msgid "Commenter"
-msgstr "評論者"
+msgstr "评论者"
 
 #: core/choices.py:37 core/choices.py:45
 msgid "Editor"
-msgstr "編輯者"
+msgstr "编辑者"
 
 #: core/choices.py:46
 msgid "Administrator"
-msgstr "管理員"
+msgstr "管理员"
 
 #: core/choices.py:47
 msgid "Owner"
-msgstr "擁有者"
+msgstr "拥有者"
 
 #: core/choices.py:58
 msgid "Restricted"
@@ -118,27 +118,27 @@ msgstr "受限"
 
 #: core/choices.py:62
 msgid "Authenticated"
-msgstr "已驗證"
+msgstr "已验证"
 
 #: core/choices.py:64
 msgid "Public"
-msgstr "公開"
+msgstr "公开"
 
 #: core/enums.py:36
 msgid "First child"
-msgstr "第一個子項目"
+msgstr "第一个子项目"
 
 #: core/enums.py:37
 msgid "Last child"
-msgstr "最後一個子項目"
+msgstr "最后一个子项目"
 
 #: core/enums.py:38
 msgid "First sibling"
-msgstr "第一個同級項目"
+msgstr "第一个同级项目"
 
 #: core/enums.py:39
 msgid "Last sibling"
-msgstr "最後一個同級項目"
+msgstr "最后一个同级项目"
 
 #: core/enums.py:40
 msgid "Left"
@@ -154,27 +154,27 @@ msgstr "ID"
 
 #: core/models.py:83
 msgid "primary key for the record as UUID"
-msgstr "記錄的主鍵（UUID）"
+msgstr "记录的主键（UUID）"
 
 #: core/models.py:89
 msgid "created on"
-msgstr "建立於"
+msgstr "创建于"
 
 #: core/models.py:90
 msgid "date and time at which a record was created"
-msgstr "記錄建立的日期與時間"
+msgstr "记录创建的日期与时间"
 
 #: core/models.py:95
 msgid "updated on"
-msgstr "更新於"
+msgstr "更新于"
 
 #: core/models.py:96
 msgid "date and time at which a record was last updated"
-msgstr "記錄最後更新的日期與時間"
+msgstr "记录最后更新的日期与时间"
 
 #: core/models.py:132
 msgid "We couldn't find a user with this sub but the email is already associated with a registered user."
-msgstr "我們找不到具有此 sub 的使用者，但此電子郵件地址已與已註冊使用者關聯。"
+msgstr "我们找不到具有此 sub 的用户，但此电子邮件地址已与已注册用户关联。"
 
 #: core/models.py:143
 msgid "sub"
@@ -182,7 +182,7 @@ msgstr "sub"
 
 #: core/models.py:144
 msgid "Required. 255 characters or fewer. ASCII characters only."
-msgstr "必填。255 個字元（含）以下。僅限 ASCII 字元。"
+msgstr "必填。255 个字符（含）以下。仅限 ASCII 字符。"
 
 #: core/models.py:152
 msgid "full name"
@@ -190,51 +190,51 @@ msgstr "全名"
 
 #: core/models.py:154
 msgid "short name"
-msgstr "簡稱"
+msgstr "简称"
 
 #: core/models.py:157
 msgid "identity email address"
-msgstr "身份驗證電子郵件地址"
+msgstr "身份验证电子邮件地址"
 
 #: core/models.py:162
 msgid "admin email address"
-msgstr "管理員電子郵件地址"
+msgstr "管理员电子邮件地址"
 
 #: core/models.py:169
 msgid "language"
-msgstr "語言"
+msgstr "语言"
 
 #: core/models.py:170
 msgid "The language in which the user wants to see the interface."
-msgstr "使用者希望介面顯示的語言。"
+msgstr "用户希望接口显示的语言。"
 
 #: core/models.py:178
 msgid "The timezone in which the user wants to see times."
-msgstr "使用者希望時間顯示的時區。"
+msgstr "用户希望时间显示的时区。"
 
 #: core/models.py:181
 msgid "device"
-msgstr "裝置"
+msgstr "设备"
 
 #: core/models.py:183
 msgid "Whether the user is a device or a real user."
-msgstr "使用者是裝置還是真實使用者。"
+msgstr "用户是设备还是真实用户。"
 
 #: core/models.py:186
 msgid "staff status"
-msgstr "工作人員狀態"
+msgstr "工作人员状态"
 
 #: core/models.py:188
 msgid "Whether the user can log into this admin site."
-msgstr "使用者是否可以登入此管理後台。"
+msgstr "用户是否可以登录此管理后台。"
 
 #: core/models.py:191
 msgid "active"
-msgstr "啟用"
+msgstr "激活"
 
 #: core/models.py:194
 msgid "Whether this user should be treated as active. Unselect this instead of deleting accounts."
-msgstr "此使用者是否應被視為處於啟用狀態。請取消勾選此項而非刪除帳號。"
+msgstr "此用户是否应被视为处于激活状态。请取消勾选此项而非删除帐号。"
 
 #: core/models.py:199
 msgid "first connection status"
@@ -246,11 +246,11 @@ msgstr ""
 
 #: core/models.py:211
 msgid "user"
-msgstr "使用者"
+msgstr "用户"
 
 #: core/models.py:212
 msgid "users"
-msgstr "使用者"
+msgstr "用户"
 
 #: core/models.py:420
 msgid "Active email address"
@@ -358,7 +358,7 @@ msgstr ""
 
 #: core/models.py:937
 msgid "title"
-msgstr "標題"
+msgstr "标题"
 
 #: core/models.py:938
 msgid "excerpt"
@@ -366,113 +366,113 @@ msgstr "摘要"
 
 #: core/models.py:987
 msgid "Document"
-msgstr "文件"
+msgstr "文档"
 
 #: core/models.py:988
 msgid "Documents"
-msgstr "文件"
+msgstr "文档"
 
 #: core/models.py:1000 core/models.py:1430
 msgid "Untitled Document"
-msgstr "未命名文件"
+msgstr "未命名文档"
 
 #: core/models.py:1431
 msgid "Open"
-msgstr "開啟"
+msgstr "打开"
 
 #: core/models.py:1466
 #, python-brace-format
 msgid "{name} shared a document with you!"
-msgstr "{name} 與您分享了一份文件！"
+msgstr "{name} 与您分享了一份文档！"
 
 #: core/models.py:1470
 #, python-brace-format
 msgid "{name} invited you with the role \"{role}\" on the following document:"
-msgstr "{name} 邀請您以「{role}」角色參與以下文件："
+msgstr "{name} 邀请您以「{role}」角色参与以下文档："
 
 #: core/models.py:1476
 #, python-brace-format
 msgid "{name} shared a document with you: {title}"
-msgstr "{name} 與您分享了一份文件：{title}"
+msgstr "{name} 与您分享了一份文档：{title}"
 
 #: core/models.py:1576
 msgid "Document/user link trace"
-msgstr "文件/使用者連結追蹤"
+msgstr "文档/用户链接追踪"
 
 #: core/models.py:1577
 msgid "Document/user link traces"
-msgstr "文件/使用者連結追蹤"
+msgstr "文档/用户链接追踪"
 
 #: core/models.py:1583
 msgid "A link trace already exists for this document/user."
-msgstr "此文件/使用者已存在連結追蹤。"
+msgstr "此文档/用户已存在链接追踪。"
 
 #: core/models.py:1606
 msgid "Document favorite"
-msgstr "文件收藏"
+msgstr "文档收藏"
 
 #: core/models.py:1607
 msgid "Document favorites"
-msgstr "文件收藏"
+msgstr "文档收藏"
 
 #: core/models.py:1613
 msgid "This document is already targeted by a favorite relation instance for the same user."
-msgstr "此使用者已將此文件加入收藏。"
+msgstr "此用户已将此文档加入收藏。"
 
 #: core/models.py:1635
 msgid "Document/user relation"
-msgstr "文件/使用者關聯"
+msgstr "文档/用户关联"
 
 #: core/models.py:1636
 msgid "Document/user relations"
-msgstr "文件/使用者關聯"
+msgstr "文档/用户关联"
 
 #: core/models.py:1642
 msgid "This user is already in this document."
-msgstr "此使用者已在此文件中。"
+msgstr "此用户已在此文档中。"
 
 #: core/models.py:1648
 msgid "This team is already in this document."
-msgstr "此團隊已在此文件中。"
+msgstr "此团队已在此文档中。"
 
 #: core/models.py:1654
 msgid "Either user or team must be set, not both."
-msgstr "必須設定使用者或團隊其中之一，不能同時設定兩者。"
+msgstr "必须设置用户或团队其中之一，不能同时设置两者。"
 
 #: core/models.py:1805
 msgid "Document ask for access"
-msgstr "要求文件存取權"
+msgstr "要求文档访问权"
 
 #: core/models.py:1806
 msgid "Document ask for accesses"
-msgstr "要求文件存取權"
+msgstr "要求文档访问权"
 
 #: core/models.py:1812
 msgid "This user has already asked for access to this document."
-msgstr "此使用者已要求過存取此文件的權限。"
+msgstr "此用户已要求过访问此文档的权限。"
 
 #: core/models.py:1869
 #, python-brace-format
 msgid "{name} would like access to a document!"
-msgstr "{name} 想要存取文件！"
+msgstr "{name} 想要访问文档！"
 
 #: core/models.py:1873
 #, python-brace-format
 msgid "{name} would like access to the following document:"
-msgstr "{name} 想要存取以下文件："
+msgstr "{name} 想要访问以下文档："
 
 #: core/models.py:1879
 #, python-brace-format
 msgid "{name} is asking for access to the document: {title}"
-msgstr "{name} 正要求存取文件：{title}"
+msgstr "{name} 正要求访问文档：{title}"
 
 #: core/models.py:1921
 msgid "Thread"
-msgstr "對話串"
+msgstr "对话串"
 
 #: core/models.py:1922
 msgid "Threads"
-msgstr "對話串"
+msgstr "对话串"
 
 #: core/models.py:1925 core/models.py:1978
 msgid "Anonymous"
@@ -480,49 +480,49 @@ msgstr "匿名"
 
 #: core/models.py:1973
 msgid "Comment"
-msgstr "評論"
+msgstr "评论"
 
 #: core/models.py:1974
 msgid "Comments"
-msgstr "評論"
+msgstr "评论"
 
 #: core/models.py:2024
 msgid "This emoji has already been reacted to this comment."
-msgstr "此評論已標記過此表情符號。"
+msgstr "此评论已标记过此表情符号。"
 
 #: core/models.py:2028
 msgid "Reaction"
-msgstr "回應"
+msgstr "回应"
 
 #: core/models.py:2029
 msgid "Reactions"
-msgstr "回應"
+msgstr "回应"
 
 #: core/models.py:2039
 msgid "email address"
-msgstr "電子郵件地址"
+msgstr "电子邮件地址"
 
 #: core/models.py:2058
 msgid "Document invitation"
-msgstr "文件邀請"
+msgstr "文档邀请"
 
 #: core/models.py:2059
 msgid "Document invitations"
-msgstr "文件邀請"
+msgstr "文档邀请"
 
 #: core/models.py:2079
 msgid "This email is already associated to a registered user."
-msgstr "此電子郵件地址已與已註冊使用者關聯。"
+msgstr "此电子邮件地址已与已注册用户关联。"
 
 #: core/templates/mail/html/template.html:160
 #: core/templates/mail/text/template.txt:4
 msgid "Logo email"
-msgstr "電子郵件標誌"
+msgstr "电子邮件标志"
 
 #: core/templates/mail/html/template.html:258
 #: core/templates/mail/text/template.txt:15
 msgid " Docs, your new essential tool for organizing, sharing and collaborating on your documents as a team. "
-msgstr " Docs，您團隊組織、分享及協作文件的全新必備工具。 "
+msgstr " Docs，您团队组织、分享及协作文档的全新必备工具。 "
 
 #: core/templates/mail/html/template.html:265
 #: core/templates/mail/text/template.txt:17
