@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# deploy.sh — 用 secrets.env 注入密钥并 helm 部署/升级 Docs（P3 协作文档）。
+# deploy-impress.sh — 用 secrets.env 注入密钥并 helm 部署/升级 Docs（impress；P3 协作文档）。
 #
 # 用法：
 #   cp deploy/aliyun-docs/secrets.env.example deploy/aliyun-docs/secrets.env   # 填真实密钥
-#   bash deploy/aliyun-docs/deploy.sh [额外 helm 参数，如 --dry-run]
+#   bash deploy/aliyun-docs/deploy-impress.sh [额外 helm 参数，如 --dry-run]
 #
 # 机制：source secrets.env → envsubst 只渲染白名单里的 ${VAR}（避免吞掉 values 里的 /$1 等）
 #       → 进程替换喂给 helm。密钥明文不落盘、不入库；docs.values.yaml 里保留 ${VAR} 占位。
@@ -33,6 +33,13 @@ for v in DOCS_CLIENT_SECRET DOCS_S2S_TOKEN DJANGO_SECRET_KEY DOCS_DB_PASSWORD \
   [ -n "${!v:-}" ] || missing+=("$v")
 done
 [ ${#missing[@]} -eq 0 ] || { echo "✗ secrets.env 未填：${missing[*]}"; exit 1; }
+
+# 前置：确认 Docs 专属 PG/Redis 已就位（由 deploy-datastores.sh 部署），否则 migrate 会连不上库
+command -v kubectl >/dev/null || { echo "✗ 缺 kubectl"; exit 1; }
+for d in postgres-docs redis-docs; do
+  kubectl -n docs get deploy "$d" >/dev/null 2>&1 \
+    || { echo "✗ ns docs 缺 deploy/$d：请先跑 bash deploy/aliyun-docs/deploy-datastores.sh"; exit 1; }
+done
 
 echo "→ helm upgrade --install impress（ns docs；密钥经 envsubst 注入，明文不落盘）"
 helm upgrade --install impress "$CHART" -n docs --create-namespace \
