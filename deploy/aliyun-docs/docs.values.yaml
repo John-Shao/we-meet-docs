@@ -201,8 +201,10 @@ ingressMedia:
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
     nginx.ingress.kubernetes.io/upstream-vhost: we-meet-docs.oss-cn-shenzhen.aliyuncs.com
     nginx.ingress.kubernetes.io/rewrite-target: /$1
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      add_header Content-Security-Policy "default-src 'none'" always;
+    # ⚠️ 原有 configuration-snippet（给媒体响应加 CSP 头）已移除：新版 ingress-nginx 默认
+    #   allow-snippet-annotations=false，带 className 后 admission webhook 会拒绝该注解。
+    #   如需恢复媒体 CSP：把 ingress-nginx 的 configmap allow-snippet-annotations 设 true
+    #   （单租户集群风险可控），再加回：add_header Content-Security-Policy "default-src 'none'" always;
 
 # posthog 分析：关闭
 posthog:
