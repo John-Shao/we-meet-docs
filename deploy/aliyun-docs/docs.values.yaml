@@ -40,8 +40,8 @@ backend:
 
     # ---- 简体中文优先（Bucket R，运行时启用；译文内容已烘焙进镜像）----
     DJANGO_LANGUAGE_CODE: zh-cn
-    # SingleNestedTupleValue：code:Label 逗号分隔，首项=默认优先
-    DJANGO_LANGUAGES: "zh-cn:简体中文,en-us:English,fr-fr:Français,de-de:Deutsch,nl-nl:Nederlands"
+    # SingleNestedTupleValue：内层 code,Label 用逗号；外层各语言用分号分隔（首项=默认优先）
+    DJANGO_LANGUAGES: "zh-cn,简体中文;en-us,English;fr-fr,Français;de-de,Deutsch;nl-nl,Nederlands"
 
     # ---- OIDC → 同一个 Keycloak realm `meet`（与 meet 共 SSO，新标签免登）----
     OIDC_OP_JWKS_ENDPOINT: https://id.we-meet.online/realms/meet/protocol/openid-connect/certs

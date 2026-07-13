@@ -51,7 +51,8 @@
 6. **helm 部署 impress**：`deploy-impress.sh` 经 `envsubst` 注入 `secrets.env` 后部署：
    ```bash
    bash deploy/aliyun-docs/deploy-impress.sh   # = helm upgrade --install，密钥明文不落盘
-   kubectl -n docs exec deploy/impress-backend -- python manage.py migrate
+   # 迁移由 chart 的 impress-docs-backend-migrate Job 自动执行（Chart.yaml name=docs → 前缀 impress-docs）
+   # 如需手动补跑： kubectl -n docs exec deploy/impress-docs-backend -- python manage.py migrate
    ```
    > 非密钥项（域名 / 桶名 / 镜像 tag 等）仍直接改 `docs.values.yaml`；密钥只在 `secrets.env`。
 7. **接通 meet**（在 we-meet 那台）：`values.meet.yaml` 已含 `DOCS_API_URL`；把 `values.secrets.yaml`

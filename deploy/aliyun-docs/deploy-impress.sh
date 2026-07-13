@@ -45,4 +45,5 @@ echo "→ helm upgrade --install impress（ns docs；密钥经 envsubst 注入�
 helm upgrade --install impress "$CHART" -n docs --create-namespace \
   -f <(envsubst "$VARS" < "$VALUES") "$@"
 
-echo "✓ 完成。迁移： kubectl -n docs exec deploy/impress-backend -- python manage.py migrate"
+echo "✓ 完成。迁移由 chart 的 impress-docs-backend-migrate Job 自动执行（Chart.yaml name=docs → 资源名前缀 impress-docs）。"
+echo "  如需手动补跑： kubectl -n docs exec deploy/impress-docs-backend -- python manage.py migrate"
