@@ -139,10 +139,12 @@ yProvider:
     Y_PROVIDER_API_KEY: "${Y_PROVIDER_API_KEY}"             # 与 backend 同值
     COLLABORATION_LOGGING: "true"
 
-# ============ Ingress（k3s traefik/ingress-nginx + cert-manager LE）============
+# ============ Ingress（ingress-nginx + cert-manager LE）============
 # 主站 + 协同 ws/api + admin 都挂 docs.we-meet.online；TLS 走 cert-manager letsencrypt
+# ⚠️ className 必填：nginx IngressClass 非 default，不设则 ingress-nginx 不接管 → 退回假证书 + 404
 ingress:
   enabled: true
+  className: nginx
   host: docs.we-meet.online
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
@@ -153,6 +155,7 @@ ingress:
 
 ingressCollaborationWS:
   enabled: true
+  className: nginx
   host: docs.we-meet.online
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
@@ -162,6 +165,7 @@ ingressCollaborationWS:
 
 ingressCollaborationApi:
   enabled: true
+  className: nginx
   host: docs.we-meet.online
   tls:
     enabled: true
@@ -169,6 +173,7 @@ ingressCollaborationApi:
 
 ingressAdmin:
   enabled: true
+  className: nginx
   host: docs.we-meet.online
   tls:
     enabled: true
@@ -184,6 +189,7 @@ serviceMedia:
 
 ingressMedia:
   enabled: true
+  className: nginx
   host: docs.we-meet.online
   path: /media/(.*)
   tls:
