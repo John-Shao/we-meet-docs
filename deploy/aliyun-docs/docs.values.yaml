@@ -16,7 +16,7 @@
 # ============ 顶层：OIDC client（chart 会注入到 backend）============
 oidc:
   clientId: docs
-  clientSecret: "__DOCS_CLIENT_SECRET__"        # bootstrap-docs-client.sh 生成的 docs client secret
+  clientSecret: "${DOCS_CLIENT_SECRET}"        # bootstrap-docs-client.sh 生成的 docs client secret
 
 # ============ backend 镜像 → 火山 CR we-meet 命名空间（自建，含简体中文）============
 image:
@@ -30,13 +30,13 @@ backend:
     # ---- Django 核心 ----
     DJANGO_CONFIGURATION: Production
     DJANGO_SETTINGS_MODULE: impress.settings
-    DJANGO_SECRET_KEY: "__DJANGO_SECRET_KEY__"   # openssl rand -hex 32
+    DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY}"   # openssl rand -hex 32
     DJANGO_ALLOWED_HOSTS: docs.we-meet.online
     DJANGO_CSRF_TRUSTED_ORIGINS: https://docs.we-meet.online
 
     # ---- 妙记落 Doc 的服务端 token（关键对接点：与 meet 后端 DOCS_SERVER_TO_SERVER_TOKEN 同值）----
     # ListValue：多个用逗号分隔。高权限，绝不外泄/进前端。
-    DJANGO_SERVER_TO_SERVER_API_TOKENS: "__DOCS_S2S_TOKEN__"
+    DJANGO_SERVER_TO_SERVER_API_TOKENS: "${DOCS_S2S_TOKEN}"
 
     # ---- 简体中文优先（Bucket R，运行时启用；译文内容已烘焙进镜像）----
     DJANGO_LANGUAGE_CODE: zh-cn
@@ -50,7 +50,7 @@ backend:
     OIDC_OP_USER_ENDPOINT: https://id.we-meet.online/realms/meet/protocol/openid-connect/userinfo
     OIDC_OP_LOGOUT_ENDPOINT: https://id.we-meet.online/realms/meet/protocol/openid-connect/logout
     OIDC_RP_CLIENT_ID: docs
-    OIDC_RP_CLIENT_SECRET: "__DOCS_CLIENT_SECRET__"
+    OIDC_RP_CLIENT_SECRET: "${DOCS_CLIENT_SECRET}"
     OIDC_RP_SIGN_ALGO: RS256
     OIDC_RP_SCOPES: "openid email"
     # ListValue（逗号分隔），不是 JSON 数组
@@ -67,17 +67,17 @@ backend:
     DB_HOST: postgres-docs-postgresql.docs.svc.cluster.local
     DB_NAME: impress
     DB_USER: dinum
-    DB_PASSWORD: "__DOCS_DB_PASSWORD__"
+    DB_PASSWORD: "${DOCS_DB_PASSWORD}"
     DB_PORT: 5432
 
     # ---- Redis：Docs 专属 ----
-    REDIS_URL: redis://:__DOCS_REDIS_PASSWORD__@redis-docs-master.docs.svc.cluster.local:6379/1
-    DJANGO_CELERY_BROKER_URL: redis://:__DOCS_REDIS_PASSWORD__@redis-docs-master.docs.svc.cluster.local:6379/0
+    REDIS_URL: redis://:${DOCS_REDIS_PASSWORD}@redis-docs-master.docs.svc.cluster.local:6379/1
+    DJANGO_CELERY_BROKER_URL: redis://:${DOCS_REDIS_PASSWORD}@redis-docs-master.docs.svc.cluster.local:6379/0
 
     # ---- 对象存储 → 阿里云 OSS 深圳（S3 兼容，与本机同区；不用 minio）----
     AWS_S3_ENDPOINT_URL: https://oss-cn-shenzhen.aliyuncs.com
-    AWS_S3_ACCESS_KEY_ID: "__OSS_AK__"
-    AWS_S3_SECRET_ACCESS_KEY: "__OSS_SK__"
+    AWS_S3_ACCESS_KEY_ID: "${OSS_AK}"
+    AWS_S3_SECRET_ACCESS_KEY: "${OSS_SK}"
     AWS_STORAGE_BUCKET_NAME: we-meet-docs
     AWS_S3_REGION_NAME: oss-cn-shenzhen        # ⚠️ SigV4 签名区，OSS S3 兼容需实测；错了报 403 SignatureDoesNotMatch（备选纯 cn-shenzhen）
     AWS_S3_ADDRESSING_STYLE: virtual           # OSS 走 vhost 风格（<bucket>.oss-cn-shenzhen.aliyuncs.com）
@@ -85,17 +85,17 @@ backend:
 
     # ---- 协同 ws（y-provider）后端对接 ----
     Y_PROVIDER_API_BASE_URL: http://impress-y-provider:443/api/
-    Y_PROVIDER_API_KEY: "__Y_PROVIDER_API_KEY__"           # openssl rand -hex 32
-    COLLABORATION_SERVER_SECRET: "__COLLAB_SERVER_SECRET__" # openssl rand -hex 32
+    Y_PROVIDER_API_KEY: "${Y_PROVIDER_API_KEY}"           # openssl rand -hex 32
+    COLLABORATION_SERVER_SECRET: "${COLLAB_SERVER_SECRET}" # openssl rand -hex 32
 
     # ---- 邮件（品牌暂不改；如需中文署名后续设 DJANGO_EMAIL_BRAND_NAME）----
     # DJANGO_EMAIL_BRAND_NAME: "we-meet"
-    DJANGO_EMAIL_HOST: "__SMTP_HOST__"
+    DJANGO_EMAIL_HOST: "${SMTP_HOST}"
     DJANGO_EMAIL_PORT: 465
-    DJANGO_EMAIL_HOST_USER: "__SMTP_USER__"
-    DJANGO_EMAIL_HOST_PASSWORD: "__SMTP_PASSWORD__"
+    DJANGO_EMAIL_HOST_USER: "${SMTP_USER}"
+    DJANGO_EMAIL_HOST_PASSWORD: "${SMTP_PASSWORD}"
     DJANGO_EMAIL_USE_SSL: True
-    DJANGO_EMAIL_FROM: "__SMTP_FROM__"
+    DJANGO_EMAIL_FROM: "${SMTP_FROM}"
     DJANGO_EMAIL_URL_APP: https://docs.we-meet.online
 
     LOGGING_LEVEL_LOGGERS_ROOT: INFO
@@ -135,8 +135,8 @@ yProvider:
   envVars:
     COLLABORATION_BACKEND_BASE_URL: https://docs.we-meet.online
     COLLABORATION_SERVER_ORIGIN: https://docs.we-meet.online
-    COLLABORATION_SERVER_SECRET: "__COLLAB_SERVER_SECRET__"  # 与 backend 同值
-    Y_PROVIDER_API_KEY: "__Y_PROVIDER_API_KEY__"             # 与 backend 同值
+    COLLABORATION_SERVER_SECRET: "${COLLAB_SERVER_SECRET}"  # 与 backend 同值
+    Y_PROVIDER_API_KEY: "${Y_PROVIDER_API_KEY}"             # 与 backend 同值
     COLLABORATION_LOGGING: "true"
 
 # ============ Ingress（k3s traefik/ingress-nginx + cert-manager LE）============

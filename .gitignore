@@ -82,3 +82,7 @@ db.sqlite3
 
 # Cursor rules
 .cursorrules
+
+# Deploy secrets（真实密钥，绝不入库；模板见 deploy/aliyun-docs/secrets.env.example）
+deploy/aliyun-docs/secrets.env
+secrets.env

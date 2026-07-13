@@ -18,7 +18,9 @@
 | 文件 | 作用 |
 |---|---|
 | `build-and-push.sh` | 从 `docs-dev` 构建三镜像（backend/frontend/y-provider）推火山 CR。前端 `API_ORIGIN` build 期烘焙、镜像自带简体中文。默认从脚本所在仓库根构建 |
-| `docs.values.yaml` | helm values：自有火山 CR 镜像 + OIDC(realm `meet`, client `docs`) + 阿里云 OSS 深圳(S3 兼容) + server token + 简体中文语言 + ingress。所有 `__占位__` 部署前替换 |
+| `docs.values.yaml` | helm values：自有火山 CR 镜像 + OIDC(realm `meet`, client `docs`) + 阿里云 OSS 深圳(S3 兼容) + server token + 简体中文语言 + ingress。密钥为 `${VAR}` 占位，由 `secrets.env` 经 `deploy.sh` 注入 |
+| `secrets.env.example` | 密钥模板（入库）。`cp secrets.env.example secrets.env` 填真实值；`secrets.env` 已 gitignore、绝不入库 |
+| `deploy.sh` | 读 `secrets.env` → `envsubst` 渲染 `docs.values.yaml` 的 `${VAR}` → `helm upgrade --install`（明文不落盘、不入库） |
 | `bootstrap-docs-client.sh` | 在 Keycloak realm `meet` 加 `docs` confidential client（独立版,凭据走 env） |
 
 ## 部署顺序
@@ -37,18 +39,20 @@
      API_ORIGIN=https://docs.<域名> bash deploy/aliyun-docs/build-and-push.sh
    ```
 4. **装 k3s + cert-manager + ingress**（参照 we-meet 仓库 `deploy/aliyun/install-k3s.sh` 同款装法）。
-5. **helm 部署**：填好 `docs.values.yaml` 全部占位，
+5. **helm 部署**：密钥填进 `secrets.env`（不入库），`deploy.sh` 经 `envsubst` 注入后部署：
    ```bash
-   helm install impress ./src/helm/impress -n docs --create-namespace \
-     -f deploy/aliyun-docs/docs.values.yaml
+   cp deploy/aliyun-docs/secrets.env.example deploy/aliyun-docs/secrets.env
+   # 编辑 secrets.env 填真实密钥（client secret / DOCS_S2S_TOKEN / OSS AK-SK / DB·Redis 密码 / 各随机 secret）
+   bash deploy/aliyun-docs/deploy.sh        # = helm upgrade --install，密钥明文不落盘
    kubectl -n docs exec deploy/impress-backend -- python manage.py migrate
    ```
+   > 非密钥项（域名 / 桶名 / 镜像 tag 等）仍直接改 `docs.values.yaml`；密钥只在 `secrets.env`。
 6. **接通 meet**（在 we-meet 那台）：`values.meet.yaml` 已含 `DOCS_API_URL`；把 `values.secrets.yaml`
    的 `DOCS_SERVER_TO_SERVER_TOKEN` 填成与本套件 `DOCS_S2S_TOKEN` 同一个值，`helm upgrade meet`。
 
 ## 部署时须核对（占位 + ⚠️）
 
-- 全部 `__占位__`：client secret、`DOCS_S2S_TOKEN`、OSS AK/SK、DB/Redis 密码、`DJANGO_SECRET_KEY`、`Y_PROVIDER_API_KEY`、`COLLABORATION_SERVER_SECRET`、SMTP。
+- 全部密钥填 `secrets.env`（对应 `docs.values.yaml` 的 `${VAR}` 占位）：`DOCS_CLIENT_SECRET`、`DOCS_S2S_TOKEN`、`OSS_AK`/`OSS_SK`、`DOCS_DB_PASSWORD`/`DOCS_REDIS_PASSWORD`、`DJANGO_SECRET_KEY`、`Y_PROVIDER_API_KEY`、`COLLAB_SERVER_SECRET`、SMTP。
 - 域名：默认 `we-meet.online`；换 `jusiai.com` 全局替换。
 - 镜像 `image.tag` 与 `build-and-push.sh` 的 `TAG` 对齐。
 - ⚠️ **OSS media ingress**：`ingressMedia`/`serviceMedia` 的 vhost/path-style + TLS SNI 需实测（见 `docs.values.yaml` 注释）；`AWS_S3_REGION_NAME` 用 `oss-cn-shenzhen`，403 SignatureDoesNotMatch 时试 `cn-shenzhen`。
