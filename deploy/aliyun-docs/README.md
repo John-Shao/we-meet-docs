@@ -18,12 +18,12 @@
 | 文件 | 作用 |
 |---|---|
 | `build-and-push.sh` | 从 `docs-dev` 构建三镜像（backend/frontend/y-provider）推火山 CR。前端 `API_ORIGIN` build 期烘焙、镜像自带简体中文。默认从脚本所在仓库根构建 |
-| `docs.values.yaml` | helm values：自有火山 CR 镜像 + OIDC(realm `meet`, client `docs`) + 火山 TOS + server token + 简体中文语言 + ingress。所有 `__占位__` 部署前替换 |
+| `docs.values.yaml` | helm values：自有火山 CR 镜像 + OIDC(realm `meet`, client `docs`) + 阿里云 OSS 深圳(S3 兼容) + server token + 简体中文语言 + ingress。所有 `__占位__` 部署前替换 |
 | `bootstrap-docs-client.sh` | 在 Keycloak realm `meet` 加 `docs` confidential client（独立版,凭据走 env） |
 
 ## 部署顺序
 
-1. **前置**：火山 TOS 桶 `we-meet-docs`；`openssl rand -hex 32` 生成共享 `DOCS_S2S_TOKEN`；DNS `docs.<域名>` → 本机公网 IP。
+1. **前置**：阿里云 OSS 深圳桶 `we-meet-docs`；`openssl rand -hex 32` 生成共享 `DOCS_S2S_TOKEN`；DNS `docs.<域名>` → 本机公网 IP。
 2. **Keycloak**（realm `meet` 须已由 we-meet 的 `bootstrap-realm.sh` 建好）：
    ```bash
    KC_URL=https://id.<域名> KC_ADMIN_USER=admin KC_ADMIN_PASSWORD=<pass> \
@@ -48,8 +48,8 @@
 
 ## 部署时须核对（占位 + ⚠️）
 
-- 全部 `__占位__`：client secret、`DOCS_S2S_TOKEN`、TOS AK/SK、DB/Redis 密码、`DJANGO_SECRET_KEY`、`Y_PROVIDER_API_KEY`、`COLLABORATION_SERVER_SECRET`、SMTP。
+- 全部 `__占位__`：client secret、`DOCS_S2S_TOKEN`、OSS AK/SK、DB/Redis 密码、`DJANGO_SECRET_KEY`、`Y_PROVIDER_API_KEY`、`COLLABORATION_SERVER_SECRET`、SMTP。
 - 域名：默认 `we-meet.online`；换 `jusiai.com` 全局替换。
 - 镜像 `image.tag` 与 `build-and-push.sh` 的 `TAG` 对齐。
-- ⚠️ **TOS media ingress**：`ingressMedia`/`serviceMedia` 的 vhost/path-style + TLS SNI 需实测（见 `docs.values.yaml` 注释）。
+- ⚠️ **OSS media ingress**：`ingressMedia`/`serviceMedia` 的 vhost/path-style + TLS SNI 需实测（见 `docs.values.yaml` 注释）；`AWS_S3_REGION_NAME` 用 `oss-cn-shenzhen`，403 SignatureDoesNotMatch 时试 `cn-shenzhen`。
 - `DJANGO_SERVER_TO_SERVER_API_TOKENS`（docs 侧）== `DOCS_SERVER_TO_SERVER_TOKEN`（meet 侧），逐字符一致。
