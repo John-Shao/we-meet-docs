@@ -2,6 +2,12 @@ ARG FRONTEND_IMAGE=frontend-build-output
 
 FROM node:24-alpine AS frontend-deps
 
+# 国内构建换源（build-arg 网关，不传则走官方）：ALPINE_MIRROR 换 apk 源；NPM_MIRROR 换 npm 源（含子阶段 yarn build）
+ARG ALPINE_MIRROR=""
+RUN if [ -n "$ALPINE_MIRROR" ]; then sed -i "s|dl-cdn.alpinelinux.org|$ALPINE_MIRROR|g" /etc/apk/repositories; fi
+ARG NPM_MIRROR=https://registry.npmjs.org/
+ENV npm_config_registry=${NPM_MIRROR}
+
 # Upgrade system packages to install security updates
 RUN apk update && \
   apk upgrade && \
@@ -64,6 +70,9 @@ FROM nginxinc/nginx-unprivileged:alpine3.23 AS frontend-production
 
 # Upgrade system packages to install security updates
 USER root
+# 国内构建可换 Alpine 源（build-arg ALPINE_MIRROR）；不传则走官方源
+ARG ALPINE_MIRROR=""
+RUN if [ -n "$ALPINE_MIRROR" ]; then sed -i "s|dl-cdn.alpinelinux.org|$ALPINE_MIRROR|g" /etc/apk/repositories; fi
 RUN apk update && \
   apk upgrade && \
   rm -rf /var/cache/apk/*

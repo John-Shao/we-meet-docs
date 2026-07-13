@@ -28,6 +28,15 @@ API_ORIGIN="${API_ORIGIN:-https://docs.we-meet.online}" # 前端烘焙的后端�
 PLATFORM="${PLATFORM:-linux/amd64}"                    # 单节点 amd64 k3s；如需 arm 加 linux/arm64
 DOCKER_USER_ARG="1001:127"                             # 与官方 CI 一致
 
+# 国内构建换源（默认阿里云/npmmirror；想走官方源就把对应变量设成官方值，如 ALPINE_MIRROR= 空即用官方 apk 源）。
+# 经 --build-arg 注入 Dockerfile 的网关：apk→阿里云、PyPI(uv/pip)→阿里云、npm(yarn)→npmmirror。
+ALPINE_MIRROR="${ALPINE_MIRROR:-mirrors.aliyun.com}"
+NPM_MIRROR="${NPM_MIRROR:-https://registry.npmmirror.com}"
+# 注：PyPI 不换源（uv.lock --locked 锁定 pypi.org，换 index 会失败）；pip/uv 走 VPN 代理即可。
+# uv 的 ghcr 镜像：默认官方 ghcr.io（经 VPN/代理可拉）；无代理的国内环境再设 ghcr 代理，
+# 如 UV_IMAGE=ghcr.nju.edu.cn/astral-sh/uv:0.11.10（daocloud 对该镜像偶发 401，慎用）
+UV_IMAGE="${UV_IMAGE:-ghcr.io/astral-sh/uv:0.11.10}"
+
 cd "$DOCS_REPO"
 
 # 分支校验：不在 docs-dev 上则简体中文可能没进镜像
@@ -49,6 +58,9 @@ echo "==> building 3 images -> $B/*:$TAG  (platform=$PLATFORM, API_ORIGIN=$API_O
 docker buildx build --platform "$PLATFORM" \
   -f Dockerfile --target backend-production \
   --build-arg DOCKER_USER="$DOCKER_USER_ARG" \
+  --build-arg ALPINE_MIRROR="$ALPINE_MIRROR" \
+  --build-arg NPM_MIRROR="$NPM_MIRROR" \
+  --build-arg UV_IMAGE="$UV_IMAGE" \
   -t "$B/impress-backend:$TAG" --push .
 
 # 2) frontend（含简体 translations.json；API_ORIGIN 烘焙进 NEXT_PUBLIC_API_ORIGIN）
@@ -57,12 +69,16 @@ docker buildx build --platform "$PLATFORM" \
   --build-arg API_ORIGIN="$API_ORIGIN" \
   --build-arg PUBLISH_AS_MIT=false \
   --build-arg DOCKER_USER="$DOCKER_USER_ARG" \
+  --build-arg ALPINE_MIRROR="$ALPINE_MIRROR" \
+  --build-arg NPM_MIRROR="$NPM_MIRROR" \
   -t "$B/impress-frontend:$TAG" --push .
 
 # 3) y-provider（协同 ws）
 docker buildx build --platform "$PLATFORM" \
   -f src/frontend/servers/y-provider/Dockerfile --target y-provider \
   --build-arg DOCKER_USER="$DOCKER_USER_ARG" \
+  --build-arg ALPINE_MIRROR="$ALPINE_MIRROR" \
+  --build-arg NPM_MIRROR="$NPM_MIRROR" \
   -t "$B/impress-y-provider:$TAG" --push .
 
 echo "==> DONE. 推送完成："

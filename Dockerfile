@@ -1,13 +1,24 @@
 # Django impress
 
+# uv 二进制来源镜像（全局 ARG；国内拉不到 ghcr 时用 build-arg UV_IMAGE 换代理，如 ghcr.m.daocloud.io/astral-sh/uv:0.11.10）
+ARG UV_IMAGE=ghcr.io/astral-sh/uv:0.11.10
+
 # ---- base image to inherit from ----
 FROM python:3.13.13-alpine AS base
+
+# 国内构建可换 Alpine 源（build-arg ALPINE_MIRROR，如 mirrors.aliyun.com）；不传则走官方源。
+# ⚠️ PyPI 不换源：uv.lock 用 --locked 锁定 pypi.org，改 index 会令 lock 视为过期而构建失败；pip/uv 走代理即可。
+ARG ALPINE_MIRROR=""
+RUN if [ -n "$ALPINE_MIRROR" ]; then sed -i "s|dl-cdn.alpinelinux.org|$ALPINE_MIRROR|g" /etc/apk/repositories; fi
 
 # Upgrade system packages to install security updates
 RUN apk update && apk upgrade --no-cache
 
 # We must do that to avoid having an outdated pip version with security issues
 RUN python -m pip install --upgrade pip
+
+# ---- uv 二进制来源阶段（镜像见顶部全局 ARG UV_IMAGE）----
+FROM ${UV_IMAGE} AS uv
 
 # ---- Back-end builder image ----
 FROM base AS back-builder
@@ -20,8 +31,8 @@ ENV UV_LINK_MODE=copy
 # copied from the build image into the final image;
 ENV UV_PYTHON_DOWNLOADS=0
 
-# install uv
-COPY --from=ghcr.io/astral-sh/uv:0.11.10 /uv /uvx /bin/
+# install uv（来自上面的 uv 阶段）
+COPY --from=uv /uv /uvx /bin/
 
 WORKDIR /app
 
@@ -36,6 +47,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # ---- mails ----
 FROM node:24 AS mail-builder
+
+# 国内构建可换 npm 源（build-arg NPM_MIRROR，如 https://registry.npmmirror.com）；默认官方
+ARG NPM_MIRROR=https://registry.npmjs.org/
+ENV npm_config_registry=${NPM_MIRROR}
 
 COPY ./src/mail /mail/app
 
