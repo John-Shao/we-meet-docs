@@ -1,7 +1,7 @@
 # Plan：Docs 接入 we-meet 统一 SSO（Keycloak 手机验证码登录 + meet 静默桥接）
 
 > 本文档是 Docs 接入 we-meet 产品统一身份（SSO）的实施方案，归属 `deploy/aliyun-docs` 部署套件。
-> 涉及多仓库：本仓库（Docs）、`we-meet/we-meet`（meet 前后端 + 线上 Keycloak 部署）、`Meeting/keycloak-phone-auth`（KC 手机验证码认证器插件）。
+> 涉及多仓库：本仓库（Docs）、`we-meet/we-meet`（meet 前后端 + 线上 Keycloak 部署）、`we-meet/keycloak-phone-auth`（KC 手机验证码认证器插件——为不影响 jusi，是 `Meeting/keycloak-phone-auth` 的独立副本，改动只在此副本，原仓库保持不动）。
 
 ## Context（为什么做这件事）
 
@@ -14,7 +14,7 @@ Docs（La Suite impress fork）已部署到 `aliyun-sjy` 的 k3s，站点 `https
 
 **已确认的关键事实**（来自代码探查）：
 - 线上 IdP 是 `we-meet/we-meet/deploy/aliyun/keycloak/compose.yaml` 里的**独立 Docker `quay.io/keycloak/keycloak:25.0`**（在 `aliyun-zlm`，Caddy 反代，`KC_FEATURES=token-exchange,admin-fine-grained-authz`，`KC_PROXY_HEADERS=xforwarded`，**无 providers/themes 卷 → 插件未装**）。
-- 手机验证码浏览器认证器**已存在**：`Meeting/keycloak-phone-auth`（provider id `phone-authenticator`，显示名「Phone OTP Authentication」，自带 `phone` 登录主题，发码经 `/keycloak-sms/send/` 网关 → 火山短信）。仅用**稳定 SPI**，把 Dockerfile 基础镜像 `26.0.0→25.0` 即可跑在 KC 25，**代码不改**。
+- 手机验证码浏览器认证器**已存在**：`we-meet/keycloak-phone-auth`（`Meeting/keycloak-phone-auth` 的独立副本；provider id `phone-authenticator`，显示名「Phone OTP Authentication」，自带 `phone` 登录主题，发码经 `/keycloak-sms/send/` 网关 → 火山短信）。仅用**稳定 SPI**，副本 Dockerfile 已用官方镜像、默认 KC25，**代码不改**。
 - Docs OIDC 以 `sub` 为键，**email 可空**（默认 `USER_OIDC_ESSENTIAL_CLAIMS=[]` 不强制），phone-only 用户可直接登录（测试用例已证实）。
 - meet 前端（权威仓库 `we-meet/we-meet/src/frontend`）登录纯自定义、无 KC 会话，但**已有** `/authenticate/` OIDC 重定向端点（现仅用于 silent login）可复用。meet 后端是标准 OIDC RP（`lasuite.oidc_login`，client `meet`，回调 `/api/v1.0/callback/`），目前**只签 HS256**（`APPLICATION_JWT_*`），无 RS256/JWKS。
 
@@ -40,7 +40,7 @@ Docs（La Suite impress fork）已部署到 `aliyun-sjy` 的 k3s，站点 `https
 
 ### A. 把 phone-auth 插件编译并部署到线上 KC 25（在 aliyun-zlm）
 
-1. 改 `Meeting/keycloak-phone-auth/Dockerfile`：两处基础镜像 `keycloak:26.0.0` → `keycloak:25.0`（已参数化为 build-arg `KC_REPO`/`KC_VERSION`，默认仍 26；we-meet.online 用 `--build-arg KC_VERSION=25.0 --build-arg KC_REPO=quay.io/keycloak/keycloak` 构建）。Java **代码不动**（只用 `Authenticator`/`AuthenticationFlowContext`/`UserModel`/`jakarta.ws.rs`，25/26 一致）。
+1. 构建源用**独立副本** `we-meet/keycloak-phone-auth`（原 `Meeting/keycloak-phone-auth` 保持 KC26 供 jusi，互不影响）。副本 `Dockerfile` 已用官方镜像（`quay.io/keycloak/keycloak` + `eclipse-temurin`）、默认 `KC_VERSION=25.0`；Java **代码不动**（只用稳定 SPI，25/26 一致）。
 2. 在 aliyun-zlm 本机构建镜像（如本地 tag `we-meet/keycloak:25.0-phone`）。镜像内已 `kc.sh build`，jar 进 `/opt/keycloak/providers/`、主题进 `/opt/keycloak/themes/phone`。
 3. **先备份 KC 库**：`docker exec keycloak-db pg_dump -U keycloak keycloak > kc-25-backup.sql`；**保留旧 `quay.io/keycloak/keycloak:25.0`** 以便秒回滚。
 4. 改 `we-meet/we-meet/deploy/aliyun/keycloak/compose.yaml` 的 `keycloak.image` → 该 phone 镜像（其余 env/db/caddy 不动），`docker compose up -d keycloak`（≈1 分钟认证中断）。
@@ -73,7 +73,7 @@ Docs（La Suite impress fork）已部署到 `aliyun-sjy` 的 k3s，站点 `https
 **机制**：meet 网页**保留自建弹窗（手机+扫码）**；登录成功后，后端签发**短时、一次性**的登录断言，浏览器**静默**走一趟 Keycloak，一个新的「信任断言」认证器校验断言 → `setUser + success` → **建立 KC 浏览器会话**。meet 用户全程看不到 Keycloak 页面，扫码/验证码照旧在 meet UI。
 
 ### D1. Keycloak 侧：新增 `meet-assertion` 认证器（扩展现有插件仓库）
-- 在 `Meeting/keycloak-phone-auth/src/com/jusiai/keycloak/` 新增 `MeetAssertionAuthenticator.java` + `MeetAssertionAuthenticatorFactory.java`（provider id 如 `meet-assertion`），并在 `META-INF/services/org.keycloak.authentication.AuthenticatorFactory` 追加该工厂类。
+- 在 `we-meet/keycloak-phone-auth/src/com/jusiai/keycloak/`（we-meet 副本）新增 `MeetAssertionAuthenticator.java` + `MeetAssertionAuthenticatorFactory.java`（provider id 如 `meet-assertion`），并在 `META-INF/services/org.keycloak.authentication.AuthenticatorFactory` 追加该工厂类。
 - 逻辑：从请求读断言（见 D2 的投递方式）→ 用**共享密钥 HS256 验签** + 校验 `exp`（≤60s）与 `jti`（单次）→ 取 `sub` → `ctx.getSession().users().getUserById(realm, sub)` → `ctx.setUser(user); ctx.success()`；无/无效断言则 `ctx.attempted()`（交给后续/回退）。配置项：`shared_secret`、`max_age_seconds`。
 - 与 phone-auth 同镜像打包（阶段一已在 phone 镜像里，追加类即可重编）。
 
@@ -93,7 +93,7 @@ Docs（La Suite impress fork）已部署到 `aliyun-sjy` 的 k3s，站点 `https
 
 ## 关键文件
 
-- 插件：`Meeting/keycloak-phone-auth/Dockerfile`（KC 版本参数化）；阶段二新增 `src/com/jusiai/keycloak/MeetAssertionAuthenticator{,Factory}.java` + `META-INF/services/org.keycloak.authentication.AuthenticatorFactory`（追加一行）；`theme/phone/`（沿用）。
+- 插件（we-meet 副本，原 `Meeting/keycloak-phone-auth` 供 jusi 不动）：`we-meet/keycloak-phone-auth/Dockerfile`（官方镜像、默认 KC25）；阶段二新增 `src/com/jusiai/keycloak/MeetAssertionAuthenticator{,Factory}.java` + `META-INF/services/org.keycloak.authentication.AuthenticatorFactory`（追加一行）；`theme/phone/`（沿用）。
 - 线上 KC 部署：`we-meet/we-meet/deploy/aliyun/keycloak/compose.yaml`（image tag），在 aliyun-zlm。
 - Docs 部署：`we-meet/we-meet-docs/deploy/aliyun-docs/docs.values.yaml`（仅核对 `USER_OIDC_ESSENTIAL_CLAIMS`，无需改）。
 - meet 前端：`we-meet/we-meet/src/frontend/src/features/auth/components/{PhoneLoginPanel,QrLoginPanel}.tsx`、`features/auth/utils/authUrl.ts`（复用）、`api/mobileOtp.ts`。
