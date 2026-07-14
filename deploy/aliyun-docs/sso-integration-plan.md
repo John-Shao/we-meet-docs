@@ -30,6 +30,14 @@ Docs（La Suite impress fork）已部署到 `aliyun-sjy` 的 k3s，站点 `https
 
 ## 阶段一：Docs 手机登录（解锁 Docs SSO，独立于 meet，可先行）
 
+### A0. meet 后端补 SMS 网关（前置；已在代码中补齐，需部署）
+> 探查发现：部署的 meet 后端（`we-meet/we-meet/src/backend`）**原本没有** `/keycloak-sms/send/`（该网关只在 jusi 套件变体里有）。插件发码依赖它，故已新增（复用现有火山短信基建）：
+> - `core/api/keycloak_sms.py`（`KeycloakSmsGatewayView`，复用 `mobile_auth._send_sms`）
+> - `core/urls.py` 加路由 `keycloak-sms/send/`
+> - `meet/settings.py` 加 `KEYCLOAK_SMS_GATEWAY_TOKEN`
+>
+> **执行**：重建/部署 meet 后端镜像；设 env `KEYCLOAK_SMS_GATEWAY_TOKEN=<随机串>`（`VOLC_SMS_*` 应已有，供 mobile OTP 用）。部署后 `/keycloak-sms/send/` 才可用，第 0 步自测才会通。
+
 ### A. 把 phone-auth 插件编译并部署到线上 KC 25（在 aliyun-zlm）
 
 1. 改 `Meeting/keycloak-phone-auth/Dockerfile`：两处基础镜像 `keycloak:26.0.0` → `keycloak:25.0`（已参数化为 build-arg `KC_REPO`/`KC_VERSION`，默认仍 26；we-meet.online 用 `--build-arg KC_VERSION=25.0 --build-arg KC_REPO=quay.io/keycloak/keycloak` 构建）。Java **代码不动**（只用 `Authenticator`/`AuthenticationFlowContext`/`UserModel`/`jakarta.ws.rs`，25/26 一致）。
@@ -49,7 +57,7 @@ Docs（La Suite impress fork）已部署到 `aliyun-sjy` 的 k3s，站点 `https
 4. 主题：**用插件自带 `phone` 主题**（本轮不做品牌化，列为后续）。
 
 ### 阶段一前置确认（配置前逐条核对）
-- meet-backend env 已设 `KEYCLOAK_SMS_GATEWAY_TOKEN` + `VOLC_SMS_AK/SK/ACCOUNT/SIGN/TEMPLATE_ID`（插件此前未上线，这些可能从未启用）。
+- meet 后端已部署**带 `/keycloak-sms/send/` 网关**的新版本（见 A0），且设了 env `KEYCLOAK_SMS_GATEWAY_TOKEN` + `VOLC_SMS_AK/SK/ACCOUNT/SIGN/TEMPLATE_ID`。
 - `/keycloak-sms/send/` 路由**对公网暴露**且 aliyun-zlm 可达。
 - Docs 部署 `docs.values.yaml` 未把 `USER_OIDC_ESSENTIAL_CLAIMS` 设成含 `email`（默认 `[]`，当前安全，**无需改**，仅核对）。
 
