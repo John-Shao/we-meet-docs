@@ -71,7 +71,7 @@ curl -sS -X POST "$KC_URL/admin/realms/$REALM/clients" "${AUTH[@]}" -d '{
     "https://'"$DOCS_HOST"'"
   ],
   "attributes": {
-    "post.logout.redirect.uris": "https://'"$DOCS_HOST"'"
+    "post.logout.redirect.uris": "https://'"$DOCS_HOST"'##https://'"$DOCS_HOST"'/*"
   }
 }' || echo "(client may already exist)"
 
