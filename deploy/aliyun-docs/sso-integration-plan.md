@@ -73,7 +73,7 @@ Docs（La Suite impress fork）已部署到 `aliyun-sjy` 的 k3s，站点 `https
 **机制**：meet 网页**保留自建弹窗（手机+扫码）**；登录成功后，后端签发**短时、一次性**的登录断言，浏览器**静默**走一趟 Keycloak，一个新的「信任断言」认证器校验断言 → `setUser + success` → **建立 KC 浏览器会话**。meet 用户全程看不到 Keycloak 页面，扫码/验证码照旧在 meet UI。
 
 ### D1. Keycloak 侧：新增 `meet-assertion` 认证器（扩展现有插件仓库）
-- 在 `we-meet/keycloak-phone-auth/src/com/jusiai/keycloak/`（we-meet 副本）新增 `MeetAssertionAuthenticator.java` + `MeetAssertionAuthenticatorFactory.java`（provider id 如 `meet-assertion`），并在 `META-INF/services/org.keycloak.authentication.AuthenticatorFactory` 追加该工厂类。
+- 在 `we-meet/keycloak-phone-auth/src/we/meet/keycloak/`（we-meet 副本，包名 `we.meet.keycloak`）新增 `MeetAssertionAuthenticator.java` + `MeetAssertionAuthenticatorFactory.java`（provider id 如 `meet-assertion`），并在 `META-INF/services/org.keycloak.authentication.AuthenticatorFactory` 追加该工厂类。
 - 逻辑：从请求读断言（见 D2 的投递方式）→ 用**共享密钥 HS256 验签** + 校验 `exp`（≤60s）与 `jti`（单次）→ 取 `sub` → `ctx.getSession().users().getUserById(realm, sub)` → `ctx.setUser(user); ctx.success()`；无/无效断言则 `ctx.attempted()`（交给后续/回退）。配置项：`shared_secret`、`max_age_seconds`。
 - 与 phone-auth 同镜像打包（阶段一已在 phone 镜像里，追加类即可重编）。
 
@@ -93,7 +93,7 @@ Docs（La Suite impress fork）已部署到 `aliyun-sjy` 的 k3s，站点 `https
 
 ## 关键文件
 
-- 插件（we-meet 副本，原 `Meeting/keycloak-phone-auth` 供 jusi 不动）：`we-meet/keycloak-phone-auth/Dockerfile`（官方镜像、默认 KC25）；阶段二新增 `src/com/jusiai/keycloak/MeetAssertionAuthenticator{,Factory}.java` + `META-INF/services/org.keycloak.authentication.AuthenticatorFactory`（追加一行）；`theme/phone/`（沿用）。
+- 插件（we-meet 副本，原 `Meeting/keycloak-phone-auth` 供 jusi 不动）：`we-meet/keycloak-phone-auth/Dockerfile`（官方镜像、默认 KC25）；阶段二新增 `src/we/meet/keycloak/MeetAssertionAuthenticator{,Factory}.java` + `META-INF/services/org.keycloak.authentication.AuthenticatorFactory`（追加一行）；`theme/phone/`（沿用）。
 - 线上 KC 部署：`we-meet/we-meet/deploy/aliyun/keycloak/compose.yaml`（image tag），在 aliyun-zlm。
 - Docs 部署：`we-meet/we-meet-docs/deploy/aliyun-docs/docs.values.yaml`（仅核对 `USER_OIDC_ESSENTIAL_CLAIMS`，无需改）。
 - meet 前端：`we-meet/we-meet/src/frontend/src/features/auth/components/{PhoneLoginPanel,QrLoginPanel}.tsx`、`features/auth/utils/authUrl.ts`（复用）、`api/mobileOtp.ts`。
