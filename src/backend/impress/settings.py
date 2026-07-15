@@ -1062,7 +1062,8 @@ class Base(Configuration):
                 "frame-src": [NONE],
                 "child-src": [NONE],
                 "form-action": [NONE],
-                "frame-ancestors": [NONE],
+                # P3 内嵌（用户显式授权）:允许 we-meet（同一注册域，same-site）在框架内 iframe 打开 docs。
+                "frame-ancestors": ["'self'", "https://meet.we-meet.online", "https://meet.jusiai.com"],
                 "base-uri": [NONE],
                 "worker-src": [NONE],
                 "manifest-src": [NONE],
