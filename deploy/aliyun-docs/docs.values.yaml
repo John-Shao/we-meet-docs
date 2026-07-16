@@ -22,7 +22,7 @@ oidc:
 image:
   repository: jusi-cn-guangzhou.cr.volces.com/we-meet/impress-backend
   pullPolicy: IfNotPresent
-  tag: "docs-dev-v5.4.1"                         # pin，别用 latest；与 build-and-push.sh 的 TAG 一致
+  tag: "${DOCS_IMAGE_TAG}"                         # 由 deploy-impress.sh 从 TAG 注入（与 build-and-push.sh 同值）；3 处统一、不再手改
 
 backend:
   replicas: 1
@@ -123,7 +123,7 @@ frontend:
   image:
     repository: jusi-cn-guangzhou.cr.volces.com/we-meet/impress-frontend
     pullPolicy: IfNotPresent
-    tag: "docs-dev-v5.4.1"
+    tag: "${DOCS_IMAGE_TAG}"
 
 # ============ y-provider（协同 ws）镜像 → 火山 CR（自建）============
 yProvider:
@@ -131,7 +131,7 @@ yProvider:
   image:
     repository: jusi-cn-guangzhou.cr.volces.com/we-meet/impress-y-provider
     pullPolicy: IfNotPresent
-    tag: "docs-dev-v5.4.1"
+    tag: "${DOCS_IMAGE_TAG}"
   envVars:
     COLLABORATION_BACKEND_BASE_URL: https://docs.we-meet.online
     COLLABORATION_SERVER_ORIGIN: https://docs.we-meet.online

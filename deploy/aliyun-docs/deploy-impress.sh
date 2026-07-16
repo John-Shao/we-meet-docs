@@ -15,8 +15,8 @@ CHART="$REPO_ROOT/src/helm/impress"
 VALUES="$HERE/docs.values.yaml"
 ENV_FILE="$HERE/secrets.env"
 
-# envsubst 白名单：只替换这些变量（与 secrets.env.example 对应）
-VARS='${DOCS_CLIENT_SECRET} ${DOCS_S2S_TOKEN} ${DJANGO_SECRET_KEY} ${DOCS_DB_PASSWORD} ${DOCS_REDIS_PASSWORD} ${OSS_AK} ${OSS_SK} ${Y_PROVIDER_API_KEY} ${COLLAB_SERVER_SECRET} ${SMTP_HOST} ${SMTP_USER} ${SMTP_PASSWORD} ${SMTP_FROM}'
+# envsubst 白名单：只替换这些变量（密钥来自 secrets.env；DOCS_IMAGE_TAG 来自 TAG）
+VARS='${DOCS_CLIENT_SECRET} ${DOCS_S2S_TOKEN} ${DJANGO_SECRET_KEY} ${DOCS_DB_PASSWORD} ${DOCS_REDIS_PASSWORD} ${OSS_AK} ${OSS_SK} ${Y_PROVIDER_API_KEY} ${COLLAB_SERVER_SECRET} ${SMTP_HOST} ${SMTP_USER} ${SMTP_PASSWORD} ${SMTP_FROM} ${DOCS_IMAGE_TAG}'
 
 command -v envsubst >/dev/null || { echo "✗ 缺 envsubst：sudo apt install -y gettext-base"; exit 1; }
 command -v helm     >/dev/null || { echo "✗ 缺 helm"; exit 1; }
@@ -25,6 +25,13 @@ command -v helm     >/dev/null || { echo "✗ 缺 helm"; exit 1; }
 
 # 载入密钥（仅进程内；值含空格/特殊字符时在 secrets.env 里用双引号包裹）
 set -a; . "$ENV_FILE"; set +a
+
+# 镜像 tag 单一来源：与 build-and-push.sh 同名的 TAG（也可放 secrets.env 的 DOCS_IMAGE_TAG）。
+# 注入 docs.values.yaml 的 3 处 ${DOCS_IMAGE_TAG}，不再手改 values、不会 3 处写歪。
+# build 与 deploy 传同一个 TAG：
+#   TAG=docs-dev-v5.4.1-3 bash build-and-push.sh && TAG=docs-dev-v5.4.1-3 bash deploy-impress.sh
+export DOCS_IMAGE_TAG="${TAG:-${DOCS_IMAGE_TAG:-}}"
+[ -n "$DOCS_IMAGE_TAG" ] || { echo "✗ 未指定镜像 tag：请传 TAG=<tag>（与 build-and-push.sh 用的同一个），例：TAG=docs-dev-v5.4.1-3 bash deploy/aliyun-docs/deploy-impress.sh"; exit 1; }
 
 # 必填非空校验（SMTP 视为可选）
 missing=()
@@ -41,7 +48,7 @@ for d in postgres-docs redis-docs; do
     || { echo "✗ ns docs 缺 deploy/$d：请先跑 bash deploy/aliyun-docs/deploy-datastores.sh"; exit 1; }
 done
 
-echo "→ helm upgrade --install impress（ns docs；密钥经 envsubst 注入，明文不落盘）"
+echo "→ helm upgrade --install impress（ns docs；镜像 tag=${DOCS_IMAGE_TAG}；密钥经 envsubst 注入，明文不落盘）"
 helm upgrade --install impress "$CHART" -n docs --create-namespace \
   -f <(envsubst "$VARS" < "$VALUES") "$@"
 
