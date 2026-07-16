@@ -189,6 +189,14 @@ class Base(Configuration):
         environ_name="AWS_S3_SIGNATURE_VERSION",
         environ_prefix=None,
     )
+    # 阿里云 OSS 禁二级域名 path-style（SecondLevelDomainForbidden），需
+    # virtual-hosted（<bucket>.<endpoint>）。默认 None 保上游行为（MinIO/dev
+    # 走 path-style 不受影响），生产由环境变量设 "virtual"。
+    AWS_S3_ADDRESSING_STYLE = values.Value(
+        None,
+        environ_name="AWS_S3_ADDRESSING_STYLE",
+        environ_prefix=None,
+    )
 
     # Document images
     DOCUMENT_IMAGE_MAX_SIZE = values.IntegerValue(
