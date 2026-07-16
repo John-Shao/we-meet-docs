@@ -21,7 +21,10 @@ if (!isInitialized && !i18next.isInitialized) {
       fallbackLng,
       debug: false,
       detection: {
-        order: ['cookie', 'navigator'],
+        // P3 内嵌：querystring 优先 —— meet 用 ?lang= 驱动 docs 语言（收敛到框架）。
+        // 命中后缓存进 cookie；直连 docs（无 ?lang=）则回退 cookie/navigator。
+        order: ['querystring', 'cookie', 'navigator'],
+        lookupQuerystring: 'lang',
         caches: ['cookie'],
         lookupCookie: 'docs_language',
         cookieMinutes: 525600,
