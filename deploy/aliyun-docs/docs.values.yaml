@@ -81,6 +81,11 @@ backend:
     AWS_STORAGE_BUCKET_NAME: we-meet-docs
     AWS_S3_REGION_NAME: oss-cn-shenzhen        # ⚠️ SigV4 签名区，OSS S3 兼容需实测；错了报 403 SignatureDoesNotMatch（备选纯 cn-shenzhen）
     AWS_S3_ADDRESSING_STYLE: virtual           # OSS 走 vhost 风格（<bucket>.oss-cn-shenzhen.aliyuncs.com）
+    # boto3>=1.36 默认给写操作加 x-amz-checksum-crc32/aws-chunked（"完整性保护"），
+    # OSS S3 兼容层不认 → PATCH content 写入 500；退回旧行为（必须时才算校验和）。
+    # botocore 直接读这两个环境变量，无需改代码/重建镜像。
+    AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+    AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
     STORAGES_STATICFILES_BACKEND: django.contrib.staticfiles.storage.StaticFilesStorage
 
     # ---- 协同 ws（y-provider）后端对接 ----
