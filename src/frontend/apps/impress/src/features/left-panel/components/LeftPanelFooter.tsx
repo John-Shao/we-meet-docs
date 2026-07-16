@@ -13,8 +13,8 @@ import { LanguagePicker } from '@/features/language/components/LanguagePicker';
 export const LeftPanelFooter = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  // 被 meet 框架内嵌时（?embed=1）隐藏 docs 自带的退出 / 语言切换，收敛到外层框架：
-  // 退出走 meet 的登出（同 Keycloak SSO）；语言由 meet 经 ?lang= 驱动（见 initI18n）。
+  // 被 meet 框架内嵌时整块隐藏 docs 自带的用户区（头像+邮箱+退出+语言+Waffle），收敛到
+  // 外层 meet 框架：退出走 meet 的登出（同 Keycloak SSO）；语言由 meet 经 ?lang= 驱动（见 initI18n）。
   const isEmbedded = useIsEmbedded();
 
   const userMenu = user || {
@@ -29,16 +29,18 @@ export const LeftPanelFooter = () => {
         $justify="space-between"
         $direction="row"
       >
-        <Box $direction="row" $align="center" $gap="0.2rem">
-          <UserMenu
-            user={userMenu}
-            logout={user && !isEmbedded ? gotoLogout : undefined}
-            actions={isEmbedded ? undefined : <LanguagePicker />}
-            withMobileView={false}
-          />
-          <Waffle />
-          <ButtonLogin />
-        </Box>
+        {!isEmbedded && (
+          <Box $direction="row" $align="center" $gap="0.2rem">
+            <UserMenu
+              user={userMenu}
+              logout={user ? gotoLogout : undefined}
+              actions={<LanguagePicker />}
+              withMobileView={false}
+            />
+            <Waffle />
+            <ButtonLogin />
+          </Box>
+        )}
         <HelpMenu />
       </Box>
     </SeparatedSection>
