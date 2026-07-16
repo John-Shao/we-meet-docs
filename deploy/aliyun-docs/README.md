@@ -62,11 +62,11 @@
    > ⚠️ `registries.yaml` 含明文凭据、且是节点本地文件，**不入库**（换机器需重配）。若报 `ImagePullBackOff`，`kubectl -n docs describe pod <pod>` 看是 401（认证错）还是 manifest not found（tag 拼错）。
 7. **helm 部署 impress**：`deploy-impress.sh` 经 `envsubst` 注入 `secrets.env` 后部署：
    ```bash
-   TAG=<与 build 同值> bash deploy/aliyun-docs/deploy-impress.sh   # tag 注入 3 处 + helm upgrade，密钥明文不落盘
+   bash deploy/aliyun-docs/deploy-impress.sh   # 默认 tag=当前 commit sha（与 build 自动一致）；tag 注入 3 处 + helm upgrade
    # 迁移由 chart 的 impress-docs-backend-migrate Job 自动执行（Chart.yaml name=docs → 前缀 impress-docs）
    # 如需手动补跑： kubectl -n docs exec deploy/impress-docs-backend -- python manage.py migrate
    ```
-   > 非密钥项（域名 / 桶名 等）仍直接改 `docs.values.yaml`；**镜像 tag 由 `TAG` 注入**（不写死在 values）；密钥只在 `secrets.env`。
+   > 非密钥项（域名 / 桶名 等）仍直接改 `docs.values.yaml`；**镜像 tag 默认取 commit sha**（或 `TAG` 覆盖，不写死在 values）；密钥只在 `secrets.env`。
 8. **接通 meet**（在 we-meet 那台）：`values.meet.yaml` 已含 `DOCS_API_URL`；把 `values.secrets.yaml`
    的 `DOCS_SERVER_TO_SERVER_TOKEN` 填成与本套件 `DOCS_S2S_TOKEN` 同一个值，`helm upgrade meet`。
 
@@ -74,7 +74,7 @@
 
 - 全部密钥填 `secrets.env`（对应 `docs.values.yaml` 的 `${VAR}` 占位）：`DOCS_CLIENT_SECRET`、`DOCS_S2S_TOKEN`、`OSS_AK`/`OSS_SK`、`DOCS_DB_PASSWORD`/`DOCS_REDIS_PASSWORD`、`DJANGO_SECRET_KEY`、`Y_PROVIDER_API_KEY`、`COLLAB_SERVER_SECRET`、SMTP。
 - 域名：默认 `we-meet.online`；换 `jusiai.com` 全局替换。
-- 镜像 tag：build 与 deploy 传**同一个 `TAG`**，`deploy-impress.sh` 自动注入 values 的 3 处 `${DOCS_IMAGE_TAG}`（不再手改，也不会 3 处写歪）。
+- 镜像 tag：默认=**当前 commit 短 sha**（build/deploy 同 commit 自动一致，不用带 `TAG`）；`deploy-impress.sh` 注入 values 的 3 处 `${DOCS_IMAGE_TAG}`。显式 `TAG=xxx` 可覆盖，别用 latest。
 - 私有火山 CR：k3s 节点须配 `/etc/rancher/k3s/registries.yaml` 凭据（部署第 6 步），否则 impress 各 Pod `ImagePullBackOff`。
 - ⚠️ **OSS media ingress**：`ingressMedia`/`serviceMedia` 的 vhost/path-style + TLS SNI 需实测（见 `docs.values.yaml` 注释）；`AWS_S3_REGION_NAME` 用 `oss-cn-shenzhen`，403 SignatureDoesNotMatch 时试 `cn-shenzhen`。
 - `DJANGO_SERVER_TO_SERVER_API_TOKENS`（docs 侧）== `DOCS_SERVER_TO_SERVER_TOKEN`（meet 侧），逐字符一致。

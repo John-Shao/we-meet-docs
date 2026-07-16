@@ -23,7 +23,11 @@ set -euo pipefail
 DOCS_REPO="${DOCS_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"  # 默认=本脚本所在仓库根
 REGISTRY="${REGISTRY:-jusi-cn-guangzhou.cr.volces.com}" # 火山 CR
 NS="${NS:-we-meet}"                                    # 命名空间
-TAG="${TAG:-docs-dev-v5.4.1}"                          # pin，别用 latest
+# 默认 tag = 当前 commit 短 sha（不用每次带 TAG；每 commit 唯一→helm 正常滚动、可追溯）。
+# 只取 HEAD 不带 -dirty：build 机与部署机在同一 commit 时算出的 sha 必然相同→自动对齐。
+# 显式 TAG=xxx 可覆盖。别用 latest（同 tag 不滚 pod）。
+TAG="${TAG:-$(git -C "$DOCS_REPO" rev-parse --short HEAD 2>/dev/null || true)}"
+[[ -n "$TAG" ]] || { echo "✗ 无法取 git 短 sha 作默认 tag，请显式 TAG=<tag> 再跑"; exit 1; }
 API_ORIGIN="${API_ORIGIN:-https://docs.we-meet.online}" # 前端烘焙的后端域名
 PLATFORM="${PLATFORM:-linux/amd64}"                    # 单节点 amd64 k3s；如需 arm 加 linux/arm64
 DOCKER_USER_ARG="1001:127"                             # 与官方 CI 一致

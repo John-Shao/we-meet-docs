@@ -26,12 +26,12 @@ command -v helm     >/dev/null || { echo "✗ 缺 helm"; exit 1; }
 # 载入密钥（仅进程内；值含空格/特殊字符时在 secrets.env 里用双引号包裹）
 set -a; . "$ENV_FILE"; set +a
 
-# 镜像 tag 单一来源：与 build-and-push.sh 同名的 TAG（也可放 secrets.env 的 DOCS_IMAGE_TAG）。
-# 注入 docs.values.yaml 的 3 处 ${DOCS_IMAGE_TAG}，不再手改 values、不会 3 处写歪。
-# build 与 deploy 传同一个 TAG：
-#   TAG=docs-dev-v5.4.1-3 bash build-and-push.sh && TAG=docs-dev-v5.4.1-3 bash deploy-impress.sh
-export DOCS_IMAGE_TAG="${TAG:-${DOCS_IMAGE_TAG:-}}"
-[ -n "$DOCS_IMAGE_TAG" ] || { echo "✗ 未指定镜像 tag：请传 TAG=<tag>（与 build-and-push.sh 用的同一个），例：TAG=docs-dev-v5.4.1-3 bash deploy/aliyun-docs/deploy-impress.sh"; exit 1; }
+# 镜像 tag 单一来源，注入 docs.values.yaml 的 3 处 ${DOCS_IMAGE_TAG}（不再手改 values）。
+# 默认 = 当前 commit 短 sha（与 build-and-push.sh 同逻辑；同 commit 自动对齐，不用带 TAG）：
+#   bash build-and-push.sh && bash deploy-impress.sh      # 都默认取 sha，自动一致
+# 覆盖：TAG=xxx bash ...（build 与 deploy 传同值）；也可在 secrets.env 设 DOCS_IMAGE_TAG。
+export DOCS_IMAGE_TAG="${TAG:-${DOCS_IMAGE_TAG:-$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || true)}}"
+[ -n "$DOCS_IMAGE_TAG" ] || { echo "✗ 未指定镜像 tag 且无法取 git 短 sha：请显式传 TAG=<tag>（与 build 同值）"; exit 1; }
 
 # 必填非空校验（SMTP 视为可选）
 missing=()
