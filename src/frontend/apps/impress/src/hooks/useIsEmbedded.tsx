@@ -22,6 +22,41 @@ if (typeof window !== 'undefined') {
  */
 const EMBED_UA_MARKER = 'WeMeetApp';
 
+const isWeMeetApp = () =>
+  typeof navigator !== 'undefined' &&
+  navigator.userAgent.includes(EMBED_UA_MARKER);
+
+/**
+ * 外层框架（meet web / We Meet App）当前的界面语言；拿不到时返回 null。
+ *
+ * 被内嵌时，框架的语言才是权威 —— 那是用户在 meet 的「我的 → 设置 → 语言」里选
+ * 的。docs 默认让 `user.language`（自己 profile 里的旧值）压过一切（见
+ * ConfigProvider），在内嵌场景下就成了 bug：App 明明是简体中文，docs 仍是英文。
+ *
+ * 取值优先级：
+ *  - `?lang=`：web 端 meet 的 iframe 直接带着它加载 docs，最显式可靠；
+ *  - App 的 WebView：`?lang=` 活不过 authenticate → returnTo → `/` 的重定向链，
+ *    但 WebView 的 `navigator.language` 继承 app 的 Configuration，**就是**应用内
+ *    语言（实测：设备 en-US、app 选简体中文时它是 `zh-CN`），且不会被 i18next 写回
+ *    cookie 的缓存污染 —— 故用它；
+ *  - 其余（web iframe 但参数丢失）：返回 null，保持 docs 自身偏好优先。此时
+ *    navigator 是**浏览器**语言，未必等于 meet 的界面语言，拿它覆盖用户在 docs 里
+ *    选过的语言会造成回归。
+ */
+export const embedderLanguage = (): string | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const fromQuery = new URLSearchParams(window.location.search).get('lang');
+  if (fromQuery) {
+    return fromQuery;
+  }
+  if (isWeMeetApp()) {
+    return navigator.language || null;
+  }
+  return null;
+};
+
 /**
  * docs 被 meet iframe 或 We Meet App 的 WebView 嵌入时,收敛掉 docs 自带的用户区
  * (退出/语言/头像),交给外层框架。任一判据成立即算嵌入:
@@ -40,7 +75,7 @@ export const useIsEmbedded = (): boolean => {
     } catch {
       inIframe = true;
     }
-    const inApp = navigator.userAgent.includes(EMBED_UA_MARKER);
+    const inApp = isWeMeetApp();
     let stored = false;
     try {
       stored = window.sessionStorage.getItem(EMBED_KEY) === '1';

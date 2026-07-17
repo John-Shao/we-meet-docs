@@ -11,6 +11,7 @@ import {
   useCustomTranslations,
   useSynchronizedLanguage,
 } from '@/features/language';
+import { embedderLanguage, useIsEmbedded } from '@/hooks/useIsEmbedded';
 import { useAnalytics } from '@/libs';
 import { useSentryStore } from '@/stores/useSentryStore';
 
@@ -24,6 +25,7 @@ export const ConfigProvider = ({ children }: PropsWithChildren) => {
   const { changeLanguageSynchronized } = useSynchronizedLanguage();
   const { customizeTranslations } = useCustomTranslations();
   const { AnalyticsProvider } = useAnalytics();
+  const isEmbedded = useIsEmbedded();
   const { i18n } = useTranslation();
   const languageSynchronized = useRef(false);
   const favicon = conf?.theme_customization?.favicon;
@@ -33,13 +35,26 @@ export const ConfigProvider = ({ children }: PropsWithChildren) => {
       return;
     }
 
+    // 被 meet(web iframe / We Meet App)内嵌时，外层框架的语言优先于 docs 自己
+    // profile 里的 user.language —— 那是用户在 meet 的「设置 → 语言」里选的，理应
+    // 说了算。否则 profile 的旧值（新用户默认 en-us）会把框架语言顶掉，表现为
+    // 「App 是简体中文、docs 却始终英文，且改 App 语言也不动」。
+    // changeLanguageSynchronized 会把它 PATCH 回 profile，所以只顶这一次，之后
+    // profile 与框架自洽；独立访问 docs（非内嵌）行为不变。
+    const frameLanguage = isEmbedded ? embedderLanguage() : null;
     const targetLanguage =
-      user?.language ?? i18n.resolvedLanguage ?? i18n.language;
+      frameLanguage ?? user?.language ?? i18n.resolvedLanguage ?? i18n.language;
 
     void changeLanguageSynchronized(targetLanguage, user).then(() => {
       languageSynchronized.current = true;
     });
-  }, [user, i18n.resolvedLanguage, i18n.language, changeLanguageSynchronized]);
+  }, [
+    user,
+    isEmbedded,
+    i18n.resolvedLanguage,
+    i18n.language,
+    changeLanguageSynchronized,
+  ]);
 
   useEffect(() => {
     if (!conf?.theme_customization?.translations) {
