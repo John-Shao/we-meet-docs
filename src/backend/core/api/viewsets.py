@@ -941,6 +941,65 @@ class DocumentViewSet(
             {"id": str(document.id)}, status=status.HTTP_201_CREATED
         )
 
+    @drf.decorators.action(
+        authentication_classes=[authentication.ServerToServerAuthentication],
+        detail=False,
+        methods=["get"],
+        permission_classes=[],
+        url_path="search-for-user",
+    )
+    def search_for_user(self, request):
+        """we-meet 全局搜索代理(P1-4 搜索入口统一 M1)。
+
+        Server-to-server:按 ``sub`` 定位用户,复用与本人登录态完全一致的
+        可见性过滤(DocumentAccess ∪ 非受限 LinkTrace,同 ``get_queryset``
+        的口径),按标题做去音标不区分大小写匹配(同 ListDocumentFilter 的
+        ``q``)。轻载返回,不做 abilities 注解。
+        """
+        sub = (request.GET.get("sub") or "").strip()
+        query = (request.GET.get("q") or "").strip()
+        if not sub or len(query) < 2:
+            return drf_response.Response(
+                {"detail": "sub and q (>=2 chars) required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user = models.User.objects.filter(sub=sub).first()
+        if user is None:
+            # 从未登录过 Docs 的用户没有任何文档可见——空结果而非报错。
+            return drf_response.Response({"results": []})
+
+        access_documents_ids = models.DocumentAccess.objects.filter(
+            db.Q(user=user) | db.Q(team__in=user.teams)
+        ).values_list("document_id", flat=True)
+        traced_documents_ids = models.LinkTrace.objects.filter(
+            user=user
+        ).values_list("document_id", flat=True)
+
+        documents = (
+            models.Document.objects.filter(ancestors_deleted_at__isnull=True)
+            .filter(
+                db.Q(id__in=access_documents_ids)
+                | (
+                    db.Q(id__in=traced_documents_ids)
+                    & ~db.Q(link_reach=models.LinkReachChoices.RESTRICTED)
+                )
+            )
+            .filter(title__unaccent__icontains=query)
+            .order_by("-updated_at")[:8]
+        )
+        return drf_response.Response(
+            {
+                "results": [
+                    {
+                        "id": str(doc.id),
+                        "title": doc.title or "",
+                        "updated_at": doc.updated_at.isoformat(),
+                    }
+                    for doc in documents
+                ]
+            }
+        )
+
     @drf.decorators.action(detail=True, methods=["post"])
     @transaction.atomic
     def move(self, request, *args, **kwargs):
