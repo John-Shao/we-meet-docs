@@ -12,6 +12,7 @@ import CommentsIcon from '@/assets/icons/ui-kit/bubble-text.svg';
 import SortingResolvedSVG from '@/assets/icons/ui-kit/filter-notification.svg';
 import SortingOpenSVG from '@/assets/icons/ui-kit/filter_list.svg';
 import { Box, ButtonCloseModal, Text } from '@/components/';
+import { useCunninghamTheme } from '@/cunningham';
 import { useRightPanelStore } from '@/features/right-panel/stores/useRightPanelStore';
 import { useFocusStore } from '@/stores';
 
@@ -23,6 +24,7 @@ interface CommentSideBarProps {
 
 export const CommentSideBar = ({ onClose }: CommentSideBarProps) => {
   const { t } = useTranslation();
+  const { theme } = useCunninghamTheme();
   const { setThreadsSidebarTarget, filter, setFilter } =
     useCommentSidebarStore();
   const portalRef = useRef<HTMLDivElement>(null);
@@ -108,7 +110,7 @@ export const CommentSideBar = ({ onClose }: CommentSideBarProps) => {
       <div
         ref={portalRef}
         className="--docs--comments-sidebar bn-root bn-mantine"
-        data-mantine-color-scheme="light"
+        data-mantine-color-scheme={theme === 'dark' ? 'dark' : 'light'}
       />
     </Box>
   );

@@ -11,7 +11,11 @@ import {
   useCustomTranslations,
   useSynchronizedLanguage,
 } from '@/features/language';
-import { embedderLanguage, useIsEmbedded } from '@/hooks/useIsEmbedded';
+import {
+  embedderLanguage,
+  embedderTheme,
+  useIsEmbedded,
+} from '@/hooks/useIsEmbedded';
 import { useAnalytics } from '@/libs';
 import { useSentryStore } from '@/stores/useSentryStore';
 
@@ -73,12 +77,48 @@ export const ConfigProvider = ({ children }: PropsWithChildren) => {
   }, [conf?.SENTRY_DSN, conf?.ENVIRONMENT, setSentry]);
 
   useEffect(() => {
-    if (!conf?.FRONTEND_THEME) {
+    // 内嵌(meet web / We Meet App)时主题跟随外层端(见下方 effect),不套用后端
+    // 全局 FRONTEND_THEME —— 否则用户在 meet 里选的深浅会被后端默认顶掉。
+    if (isEmbedded || !conf?.FRONTEND_THEME) {
       return;
     }
 
     setTheme(conf.FRONTEND_THEME);
-  }, [conf?.FRONTEND_THEME, setTheme]);
+  }, [conf?.FRONTEND_THEME, setTheme, isEmbedded]);
+
+  // 内嵌场景:主题跟随外层端(用户在 meet「我的 → 设置」选的深色/浅色)。
+  //  - 首帧:embedderTheme() —— web iframe 的 ?theme= 或 App WebView 的 UA 标记;
+  //  - 运行时:web iframe(同域)经 postMessage({type:'wemeet-theme'}) 实时同步,
+  //    用户切换深浅时 docs 立即跟随、无需重载(App 端切换走重建 WebView + 新 UA)。
+  useEffect(() => {
+    if (!isEmbedded) {
+      return;
+    }
+
+    const initial = embedderTheme();
+    if (initial) {
+      setTheme(initial);
+    }
+
+    const onMessage = (e: MessageEvent) => {
+      const data = e.data as { type?: string; theme?: string } | null;
+      if (data?.type === 'wemeet-theme') {
+        setTheme(data.theme === 'dark' ? 'dark' : 'default');
+      }
+    };
+    window.addEventListener('message', onMessage);
+
+    // 通知外层框架「docs 已就绪」,便于其补发一次当前主题(规避挂载竞态)。
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'wemeet-theme-ready' }, '*');
+      }
+    } catch {
+      /* 跨域保护:非同域 parent 读取会抛,忽略 */
+    }
+
+    return () => window.removeEventListener('message', onMessage);
+  }, [isEmbedded, setTheme]);
 
   useEffect(() => {
     if (!conf?.POSTHOG_KEY || !conf?.POSTHOG_HOST) {

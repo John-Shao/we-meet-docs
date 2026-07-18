@@ -58,6 +58,39 @@ export const embedderLanguage = (): string | null => {
 };
 
 /**
+ * 外层框架（meet web / We Meet App）当前的深浅主题；拿不到时返回 null。
+ *
+ * 被内嵌时,docs 主题应跟随外层端(用户在 meet「我的 → 设置」里选的深色/浅色),
+ * 而非后端全局 `FRONTEND_THEME`。返回的是 Cunningham 主题名:'dark' 或 'default'(亮)。
+ *
+ * 取值优先级(与 {@link embedderLanguage} 同构):
+ *  - `?theme=`：web 端 meet 的 iframe 直接带着它加载 docs,最显式;运行时切换另走
+ *    postMessage(见 ConfigProvider),此处只作首帧兜底;
+ *  - App 的 WebView：`?theme=` 活不过 authenticate→returnTo→`/` 的重定向链,故 App
+ *    把主题编进 UA(`theme=dark|light`,见 we-meet-android DocsScreen),从 UA 解析;
+ *  - 其余:返回 null,保持 docs 自身(后端 FRONTEND_THEME)行为。
+ */
+export const embedderTheme = (): 'dark' | 'default' | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const fromQuery = new URLSearchParams(window.location.search).get('theme');
+  if (fromQuery === 'dark') {
+    return 'dark';
+  }
+  if (fromQuery === 'light' || fromQuery === 'default') {
+    return 'default';
+  }
+  if (isWeMeetApp()) {
+    const m = /theme=(dark|light)/.exec(navigator.userAgent);
+    if (m) {
+      return m[1] === 'dark' ? 'dark' : 'default';
+    }
+  }
+  return null;
+};
+
+/**
  * docs 被 meet iframe 或 We Meet App 的 WebView 嵌入时,收敛掉 docs 自带的用户区
  * (退出/语言/头像),交给外层框架。任一判据成立即算嵌入:
  *  - `window.self !== window.top`：iframe 场景(web 端 meet 内嵌)最可靠;

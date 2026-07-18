@@ -91,7 +91,7 @@ interface BlockNoteEditorProps {
 export const BlockNoteEditor = ({ doc, provider }: BlockNoteEditorProps) => {
   const { user } = useAuth();
   const { setEditor } = useEditorStore();
-  const { themeTokens } = useCunninghamTheme();
+  const { themeTokens, theme } = useCunninghamTheme();
   const refEditorContainer = useRef<HTMLDivElement>(null);
   useSaveDoc(doc.id, provider.document);
 
@@ -292,7 +292,7 @@ export const BlockNoteEditor = ({ doc, provider }: BlockNoteEditorProps) => {
         editor={editor}
         formattingToolbar={false}
         slashMenu={false}
-        theme="light"
+        theme={theme === 'dark' ? 'dark' : 'light'}
         comments={false}
         aria-label={t('Document editor')}
         // To not clipped the floating part in the editor area
@@ -332,6 +332,8 @@ export const BlockNoteReader = ({
   const { user } = useAuth();
   const { setEditor } = useEditorStore();
   const { threadStore } = useComments(docId, false, user);
+  // 内嵌深色时正文只读视图跟随 Cunningham 主题(此前硬编码 light)。
+  const { theme } = useCunninghamTheme();
   const editor = useCreateBlockNote(
     {
       collaboration: {
@@ -381,7 +383,7 @@ export const BlockNoteReader = ({
         className="--docs--main-editor"
         editor={editor}
         editable={false}
-        theme="light"
+        theme={theme === 'dark' ? 'dark' : 'light'}
         formattingToolbar={false}
         slashMenu={false}
         comments={false}
