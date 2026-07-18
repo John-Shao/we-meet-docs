@@ -141,8 +141,9 @@ export const DocsCommentsStyle = createGlobalStyle<{
             top: 0.3rem !important;
             background: linear-gradient(
               to left,
-              #fff 90%,
-              rgba(255, 255, 255, 0) 100%
+              var(--c--contextuals--background--semantic--contextual--primary)
+                90%,
+              transparent 100%
             );
           }
 
@@ -214,7 +215,9 @@ export const DocsCommentsStyle = createGlobalStyle<{
               }
 
               &:last-child {
-                background: white;
+                background: var(
+                  --c--contextuals--background--semantic--contextual--primary
+                );
                 border: 1px solid
                   var(--c--contextuals--border--surface--primary);
                 color: var(

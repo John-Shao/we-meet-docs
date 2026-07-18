@@ -28,7 +28,7 @@ export const DocsGridLoader = ({ isLoading }: DocsGridLoaderProps) => {
         $justify="center"
         $height="100%"
         $width="100%"
-        $background="rgba(255, 255, 255, 0.5)"
+        $background="color-mix(in srgb, var(--c--contextuals--background--semantic--contextual--primary) 50%, transparent)"
         $zIndex={998}
         $position="absolute"
         className="--docs--doc-grid-loader"

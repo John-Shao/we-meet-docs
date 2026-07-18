@@ -96,7 +96,7 @@ export const AIToolbarButton = () => {
         </Box>
       </Components.Generic.Toolbar.Button>
       <Box
-        $background={colorsTokens['gray-100']}
+        $background="var(--c--contextuals--border--surface--primary)"
         $width="1px"
         $height="70%"
         $margin={{ left: '2px' }}

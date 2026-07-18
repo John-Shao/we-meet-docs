@@ -16,14 +16,12 @@ import { useTranslation } from 'react-i18next';
 import { css } from 'styled-components';
 
 import { Box, Icon } from '@/components';
-import { useCunninghamTheme } from '@/cunningham';
 import { useDocStore } from '@/features/docs/doc-management';
 
 export const CommentToolbarButton = () => {
   const Components = useComponentsContext();
   const { currentDoc } = useDocStore();
   const { t } = useTranslation();
-  const { colorsTokens } = useCunninghamTheme();
   const comments = useExtension('comments') as unknown as ReturnType<
     ReturnType<typeof CommentsExtension>
   >;
@@ -68,7 +66,7 @@ export const CommentToolbarButton = () => {
         />
       </Components.Generic.Toolbar.Button>
       <Box
-        $background={colorsTokens['gray-100']}
+        $background="var(--c--contextuals--border--surface--primary)"
         $width="1px"
         $height="70%"
         $margin={{ left: 'var(--c--globals--spacings--4xs)' }}
