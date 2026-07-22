@@ -62,6 +62,14 @@ backend:
     OIDC_USERINFO_SHORTNAME_FIELD: given_name
     OIDC_USERINFO_FULLNAME_FIELDS: "given_name,usual_name"
 
+    # ---- 静默登录（P3 内嵌）：匿名进 `/` 时前端先带 silent=true 走
+    # authenticate（→ KC prompt=none，meet/docs/id 同注册域 cookie 可达），
+    # 用已有 Keycloak 会话无感换 docs 会话，失败才回落 /home/ 营销页。
+    # 不开此开关，新浏览器/无痕窗首次进 meet 的云文档 iframe 会停在英文
+    # 营销 landing 而非文档列表（实测 2026-07-22）。经 /api/v1.0/config/
+    # 下发给前端，纯 env 变更，helm upgrade 即生效、无需重建镜像。
+    FRONTEND_SILENT_LOGIN_ENABLED: True
+
     # ---- 数据库：Docs 专属 PG（与 meet 完全隔离）----
     # PG 单独装（bitnami helm 或自建，同 meet 那套），改 host/creds 指过去
     DB_HOST: postgres-docs-postgresql.docs.svc.cluster.local
