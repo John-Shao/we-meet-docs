@@ -91,6 +91,46 @@ export const embedderTheme = (): 'dark' | 'default' | null => {
 };
 
 /**
+ * We Meet App 的 docs WebView 注入的原生桥（见 we-meet-android `ui/docs/DocsScreen.kt`
+ * 的 `WeMeetHost` JS interface，改动需两边同步）。web iframe 场景没有这个对象。
+ */
+interface WeMeetHostBridge {
+  postEvent: (json: string) => void;
+}
+
+/**
+ * 分享云文档到聊天（入口 B：文档列表「...」菜单 / 分享弹窗的「分享到聊天」）把
+ * 事件送回宿主 —— web 端是 meet 的 iframe parent，App 端是 [WeMeetHostBridge]。
+ * 两者之一都不存在（独立部署 / 普通标签页）时静默不做事：这是宿主提供的增强
+ * 入口，不是 docs 自身功能的一部分。
+ */
+export const sendToHost = (payload: Record<string, unknown>): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  const bridge = (window as unknown as { WeMeetHost?: WeMeetHostBridge })
+    .WeMeetHost;
+  if (bridge) {
+    try {
+      bridge.postEvent(JSON.stringify(payload));
+    } catch {
+      /* ignore: malformed payload / bridge threw */
+    }
+    return;
+  }
+  try {
+    if (window.parent && window.parent !== window) {
+      // 与 wemeet-theme-ready（见 ConfigProvider）同一约定：docs 从 iframe 内不知道
+      // 宿主的精确 origin，且 meet/docs/id 同注册域部署，故用 '*'；宿主侧收到后自行
+      // 校验 e.origin 再处理（发消息到聊天是比主题同步更高风险的动作）。
+      window.parent.postMessage(payload, '*');
+    }
+  } catch {
+    /* 跨域保护:非同域 parent 读取会抛,忽略 */
+  }
+};
+
+/**
  * docs 被 meet iframe 或 We Meet App 的 WebView 嵌入时,收敛掉 docs 自带的用户区
  * (退出/语言/头像),交给外层框架。任一判据成立即算嵌入:
  *  - `window.self !== window.top`：iframe 场景(web 端 meet 内嵌)最可靠;

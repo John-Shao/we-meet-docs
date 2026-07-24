@@ -4,6 +4,7 @@ import { css } from 'styled-components';
 
 import { Box, HorizontalSeparator, Icon } from '@/components';
 import { Doc, useCopyDocLink } from '@/docs/doc-management';
+import { sendToHost, useIsEmbedded } from '@/hooks/useIsEmbedded';
 
 import { DocVisibility } from './DocVisibility';
 
@@ -17,7 +18,15 @@ export const DocShareModalFooter = ({
   onClose,
 }: DocShareModalFooterProps) => {
   const copyDocLink = useCopyDocLink(doc.id);
+  const isEmbedded = useIsEmbedded();
   const { t } = useTranslation();
+  const shareToChat = () =>
+    sendToHost({
+      type: 'wemeet-share-doc',
+      docId: doc.id,
+      title: doc.title,
+      url: `${window.location.origin}/docs/${doc.id}/`,
+    });
   return (
     <Box
       $css={css`
@@ -35,14 +44,26 @@ export const DocShareModalFooter = ({
         $justify="space-between"
         $padding={{ horizontal: 'base', bottom: 'base' }}
       >
-        <Button
-          fullWidth={false}
-          onClick={copyDocLink}
-          variant="secondary"
-          icon={<Icon iconName="add_link" $withThemeInherited />}
-        >
-          {t('Copy link')}
-        </Button>
+        <Box $direction="row" $gap="0.5rem">
+          <Button
+            fullWidth={false}
+            onClick={copyDocLink}
+            variant="secondary"
+            icon={<Icon iconName="add_link" $withThemeInherited />}
+          >
+            {t('Copy link')}
+          </Button>
+          {isEmbedded && (
+            <Button
+              fullWidth={false}
+              onClick={shareToChat}
+              variant="secondary"
+              icon={<Icon iconName="chat" $withThemeInherited />}
+            >
+              {t('Share to chat')}
+            </Button>
+          )}
+        </Box>
         <Button onClick={onClose}>{t('OK')}</Button>
       </Box>
     </Box>

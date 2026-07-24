@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import BubbleTextSVG from '@/assets/icons/ui-kit/bubble-text.svg';
 import ContentCopySVG from '@/assets/icons/ui-kit/content_copy.svg';
 import DeleteSVG from '@/assets/icons/ui-kit/delete.svg';
 import DocMoveInSVG from '@/assets/icons/ui-kit/doc-move-in.svg';
@@ -21,6 +22,7 @@ import {
   useDuplicateDoc,
   useTrans,
 } from '@/docs/doc-management';
+import { sendToHost, useIsEmbedded } from '@/hooks/useIsEmbedded';
 import { focusMainContentStart } from '@/layouts/utils';
 import { useFocusStore } from '@/stores';
 
@@ -65,6 +67,7 @@ export const DocsGridActions = ({ doc }: DocsGridActionsProps) => {
   const [isModalShareOpen, setIsModalShareOpen] = useState(false);
   const [isModalMoveOpen, setIsModalMoveOpen] = useState(false);
   const { untitledDocument } = useTrans();
+  const isEmbedded = useIsEmbedded();
 
   const { mutate: duplicateDoc } = useDuplicateDoc({
     onSuccess: () => {
@@ -107,6 +110,20 @@ export const DocsGridActions = ({ doc }: DocsGridActionsProps) => {
       },
 
       testId: `docs-grid-actions-share-${doc.id}`,
+    },
+    {
+      label: t('Share to chat'),
+      icon: <BubbleTextSVG width={24} height={24} aria-hidden="true" />,
+      callback: () => {
+        sendToHost({
+          type: 'wemeet-share-doc',
+          docId: doc.id,
+          title: doc.title || untitledDocument,
+          url: `${window.location.origin}/docs/${doc.id}/`,
+        });
+      },
+      isHidden: !isEmbedded,
+      testId: `docs-grid-actions-share-chat-${doc.id}`,
     },
     {
       label: t('Move into a doc'),
