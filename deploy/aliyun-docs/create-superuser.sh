@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Create or upgrade a Docs Django superuser in the running backend pod.
 #
+# This account is for signing in to the Docs Django admin site (/admin/) to
+# manage users and administrative data. It is separate from the Keycloak SSO
+# account used by normal Docs users.
+#
 # Usage:
 #   bash deploy/aliyun-docs/create-superuser.sh
 #   NAMESPACE=docs DEPLOYMENT=impress-docs-backend bash deploy/aliyun-docs/create-superuser.sh
