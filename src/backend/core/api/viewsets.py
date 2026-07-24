@@ -1003,6 +1003,70 @@ class DocumentViewSet(
     @drf.decorators.action(
         authentication_classes=[authentication.ServerToServerAuthentication],
         detail=False,
+        methods=["post"],
+        permission_classes=[],
+        url_path="grant-access-for-users",
+    )
+    def grant_access_for_users(self, request):
+        """we-meet「分享云文档到聊天」精准授权(server-to-server)。
+
+        入参 ``{doc_id, users: [{sub, email}]}``——we-meet 把会话成员解析成
+        (sub, email) 列表传来,这里给每人授**只读**:已在 Docs 的用户建
+        DocumentAccess(reader);未登录过 Docs 的按 email 建 Invitation(reader,
+        登录后自动转 access,同 create-for-owner 的懒授权口径)。已有更高角色
+        (owner/editor)的用 get_or_create 保持不降级。幂等:重复分享不叠加。
+        """
+        doc_id = str(request.data.get("doc_id") or "").strip()
+        users = request.data.get("users")
+        if not doc_id or not isinstance(users, list):
+            return drf_response.Response(
+                {"detail": "doc_id and users[] required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            document = models.Document.objects.filter(
+                pk=doc_id, ancestors_deleted_at__isnull=True
+            ).first()
+        except (ValueError, ValidationError):
+            document = None
+        if document is None:
+            return drf_response.Response(
+                {"detail": "document not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        granted = 0
+        for entry in users:
+            if not isinstance(entry, dict):
+                continue
+            sub = str(entry.get("sub") or "").strip()
+            email = str(entry.get("email") or "").strip()
+            if not sub:
+                continue
+            try:
+                user = models.User.objects.get_user_by_sub_or_email(sub, email)
+            except models.DuplicateEmailError:
+                user = None
+            if user is not None:
+                _, created = models.DocumentAccess.objects.get_or_create(
+                    document=document,
+                    user=user,
+                    defaults={"role": models.RoleChoices.READER},
+                )
+                if created:
+                    granted += 1
+            elif email:
+                _, created = models.Invitation.objects.get_or_create(
+                    document=document,
+                    email=email,
+                    defaults={"role": models.RoleChoices.READER},
+                )
+                if created:
+                    granted += 1
+        return drf_response.Response({"granted": granted})
+
+    @drf.decorators.action(
+        authentication_classes=[authentication.ServerToServerAuthentication],
+        detail=False,
         methods=["get"],
         permission_classes=[],
         url_path="list-for-user",
