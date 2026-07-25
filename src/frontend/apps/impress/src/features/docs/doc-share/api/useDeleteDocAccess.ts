@@ -56,7 +56,10 @@ export const useDeleteDocAccess = (options?: UseDeleteDocAccessOptions) => {
       // Broadcast to every user connected to the document
       broadcast(`${KEY_DOC}-${variables.docId}`);
 
-      void queryClient.resetQueries({
+      // ⚠️ 必须 invalidate 而非 reset —— 详见 useCreateDocAccess 同处注释:
+      // reset 清空列表缓存会让持有分享弹窗 state 的列表行卸载,弹窗随之消失
+      // (用户一移除访问权,弹窗就自己关了)。
+      void queryClient.invalidateQueries({
         queryKey: [KEY_LIST_DOC],
       });
       void queryClient.invalidateQueries({

@@ -54,7 +54,12 @@ export function useCreateDocAccess() {
   return useMutation<Access, APIError, CreateDocAccessParams>({
     mutationFn: createDocAccess,
     onSuccess: (_data, variable) => {
-      void queryClient.resetQueries({
+      // ⚠️ 这里必须是 invalidate 而非 reset:分享弹窗由文档列表行组件
+      // (DocsGridActions)持有开关 state,而 resetQueries 会把列表缓存清空
+      // → docs 为空 → DocsGrid 的 `hasDocs` 为 false → 整列表连同该行卸载
+      // → 弹窗 state 丢失 → 用户刚加完人弹窗就自己关了。invalidate 保留
+      // 现有数据、后台重取,不触发卸载(useUpdateDocAccess 一直是这么写的)。
+      void queryClient.invalidateQueries({
         queryKey: [KEY_LIST_DOC],
       });
       void queryClient.resetQueries({
