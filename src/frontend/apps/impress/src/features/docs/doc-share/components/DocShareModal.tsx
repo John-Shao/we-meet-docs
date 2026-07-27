@@ -26,6 +26,7 @@ import {
   useDocAccesses,
   useUsers,
 } from '../api';
+import { useDocAccessRefreshBridge } from '../hooks/useDocAccessRefreshBridge';
 
 import { DocInheritedShareContent } from './DocInheritedShareContent';
 import {
@@ -160,6 +161,10 @@ export const DocShareModal = ({ doc, onClose, isRootDoc = true }: Props) => {
 
   const showInheritedShareContent =
     inheritedAccesses.length > 0 && showMemberSection && !isRootDoc;
+
+  // 「分享到聊天」在 docs 之外授了权 —— 宿主端授权成功后回发消息,这里同步刷新
+  // 成员列表(否则弹窗一直停在分享前的「与 N 位用户分享」)。
+  useDocAccessRefreshBridge(doc.id);
 
   // Invalidate relevant queries to ensure fresh data on modal open
   useEffect(() => {
