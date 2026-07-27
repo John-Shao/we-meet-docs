@@ -21,18 +21,11 @@ import {
   useDuplicateDoc,
   useTrans,
 } from '@/docs/doc-management';
+import { useDocShareModalStore } from '@/docs/doc-share';
 import { focusMainContentStart } from '@/layouts/utils';
 import { useFocusStore } from '@/stores';
 
 import { DocMoveModal } from './DocMoveModal';
-
-const DocShareModal = dynamic(
-  () =>
-    import('@/docs/doc-share/components/DocShareModal').then((mod) => ({
-      default: mod.DocShareModal,
-    })),
-  { ssr: false },
-);
 
 const ModalRemoveDoc = dynamic(
   () =>
@@ -62,9 +55,11 @@ export const DocsGridActions = ({ doc }: DocsGridActionsProps) => {
   const [openDropdown, setOpenDropdown] = useState(false);
   const [isModalRemoveOpen, setIsModalRemoveOpen] = useState(false);
   const [isModalLeaveOpen, setIsModalLeaveOpen] = useState(false);
-  const [isModalShareOpen, setIsModalShareOpen] = useState(false);
   const [isModalMoveOpen, setIsModalMoveOpen] = useState(false);
   const { untitledDocument } = useTrans();
+  // 分享弹窗的 state 刻意不放这里 —— 列表重挂会把它带走(见
+  // useDocShareModalStore 注释),改由上层 DocShareModalHost 承载。
+  const openShareModal = useDocShareModalStore((state) => state.open);
 
   const { mutate: duplicateDoc } = useDuplicateDoc({
     onSuccess: () => {
@@ -103,7 +98,7 @@ export const DocsGridActions = ({ doc }: DocsGridActionsProps) => {
       label: t('Share'),
       icon: <GroupSVG width={24} height={24} aria-hidden="true" />,
       callback: () => {
-        setIsModalShareOpen(true);
+        openShareModal(doc);
       },
 
       testId: `docs-grid-actions-share-${doc.id}`,
@@ -184,15 +179,6 @@ export const DocsGridActions = ({ doc }: DocsGridActionsProps) => {
             restoreFocus();
           }}
           doc={doc}
-        />
-      )}
-      {isModalShareOpen && (
-        <DocShareModal
-          doc={doc}
-          onClose={() => {
-            setIsModalShareOpen(false);
-            restoreFocus();
-          }}
         />
       )}
       {isModalLeaveOpen && (

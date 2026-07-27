@@ -9,6 +9,7 @@ import { Box, Card, Icon, Text } from '@/components';
 import { useInfiniteDocs } from '@/docs/doc-management/api/useDocs';
 import { useImport } from '@/docs/doc-management/hooks/useImport';
 import { DocDefaultFilter } from '@/docs/doc-management/types';
+import { DocShareModalHost } from '@/docs/doc-share';
 import { useResponsiveStore } from '@/stores';
 
 import { useInfiniteDocsTrashbin } from '../api';
@@ -88,6 +89,9 @@ export const DocsGrid = ({
       $align="center"
     >
       <DocsGridLoader isLoading={isRefetching || loading || isImportPending} />
+      {/* 分享弹窗挂在列表**之上**:下面的列表会因查询失效整体卸载(hasDocs
+          转 false),挂在行里的弹窗会被一起带走。见 useDocShareModalStore。 */}
+      <DocShareModalHost />
       <Card
         data-testid="docs-grid"
         $width="100%"
