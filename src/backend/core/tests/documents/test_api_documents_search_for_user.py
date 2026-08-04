@@ -49,7 +49,7 @@ def test_api_documents_search_for_user_unknown_sub_returns_empty():
         HTTP_AUTHORIZATION="Bearer DummyToken",
     )
     assert response.status_code == 200
-    assert response.json() == {"results": []}
+    assert response.json() == {"results": [], "has_more": False}
 
 
 @override_settings(SERVER_TO_SERVER_API_TOKENS=["DummyToken"])
@@ -91,3 +91,52 @@ def test_api_documents_search_for_user_title_match_case_insensitive():
         HTTP_AUTHORIZATION="Bearer DummyToken",
     )
     assert [r["title"] for r in response.json()["results"]] == ["OKR Planning"]
+
+
+@override_settings(SERVER_TO_SERVER_API_TOKENS=["DummyToken"])
+def test_api_documents_search_for_user_pagination():
+    """limit/offset + has_more。
+
+    we-meet 把云文档收进了它的全局搜索面板,并隐掉了 docs 自带的搜索弹窗(那个是
+    无限滚动的)。这里若还钉死在默认 8 条,收敛就成了**能力退化** —— 所以分页是
+    那次收敛的配套,不是可选项。
+    """
+    owner = factories.UserFactory()
+    for i in range(12):
+        factories.DocumentFactory(title=f"预算-{i:02d}", users=[owner])
+    auth = {"HTTP_AUTHORIZATION": "Bearer DummyToken"}
+    client = APIClient()
+
+    # 不传参 = 改动前的行为:8 条,且还有更多。
+    body = client.get(URL, {"sub": owner.sub, "q": "预算"}, **auth).json()
+    assert len(body["results"]) == 8
+    assert body["has_more"] is True
+
+    # 翻到底:最后一页 has_more 为假。
+    body = client.get(
+        URL, {"sub": owner.sub, "q": "预算", "limit": 10, "offset": 10}, **auth
+    ).json()
+    assert len(body["results"]) == 2
+    assert body["has_more"] is False
+
+    # offset 不重复也不跳:两页拼起来正好是全集。
+    first = client.get(
+        URL, {"sub": owner.sub, "q": "预算", "limit": 6, "offset": 0}, **auth
+    ).json()["results"]
+    second = client.get(
+        URL, {"sub": owner.sub, "q": "预算", "limit": 6, "offset": 6}, **auth
+    ).json()["results"]
+    assert len({r["id"] for r in first + second}) == 12
+
+    # 垃圾参数不该 400,夹到合法区间继续 —— 调用方是 we-meet 后端,
+    # 让整条搜索因为一个分页参数挂掉不划算。
+    body = client.get(
+        URL, {"sub": owner.sub, "q": "预算", "limit": "abc", "offset": "-5"}, **auth
+    ).json()
+    assert len(body["results"]) == 8
+
+    # 上界防手搓的 limit=100000 拖垮查询。
+    body = client.get(
+        URL, {"sub": owner.sub, "q": "预算", "limit": 999999}, **auth
+    ).json()
+    assert len(body["results"]) == 12
