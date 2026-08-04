@@ -42,3 +42,21 @@ html[data-wemeet-embed] .--docs--left-panel {
   background-color: var(--wm-panel-bg);
   box-shadow: none;
 }
+
+/**
+ * 阅读态(`?chrome=none`,见 hooks/useEmbedShell)。
+ *
+ * 用在 App 的单文档查看器:那一屏已经有 App 自己的顶栏,docs 再给一个抽屉开关,
+ * 就是「App 顶栏 + docs 浮动条 + 抽屉」三层壳。这里只隐掉**左栏开关** ——
+ * 手机上抽屉默认就是收起的,没有开关它便进不来;而 docs 浮动条里的分享、工具箱、
+ * 右栏这些**文档自身**的功能一个不动。
+ *
+ * 刻意不 display:none 掉左栏本体:它在可拖宽布局里外面还套着一层容器,直接隐藏
+ * 有让容器空占宽度的风险,而隐掉入口已经达到目的。
+ *
+ * 来源:features/left-panel/components/LeftPanelCollapseButton.tsx
+ * (同一个组件同时供 HeaderFloatingBar 与文档页的 DocFloatingBar 使用)
+ */
+html[data-wemeet-chrome='none'] .--docs--left-panel-collapse-button {
+  display: none;
+}

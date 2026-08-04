@@ -33,6 +33,50 @@ import { isWeMeetApp, sendToHost } from './useIsEmbedded';
 
 export type EmbedPlatform = 'web' | 'app';
 
+const CHROME_KEY = 'docs-chrome';
+
+/**
+ * 「阅读态」标记(`?chrome=none`)。
+ *
+ * 用在 App 的单文档查看器上:那里已经有 App 自己的顶栏,再叠 docs 的左栏开关就是
+ * 第三层导航壳。进站时带 `?chrome=none`,这里在**模块求值时**(早于任何客户端重定向)
+ * 把它落进 sessionStorage,好活过 docs 自己的跳转链 —— 与 `?embed=1` 同款手法,
+ * 那条的教训见 useIsEmbedded 顶部。
+ */
+if (typeof window !== 'undefined') {
+  try {
+    const chrome = new URLSearchParams(window.location.search).get('chrome');
+    if (chrome === 'none') {
+      window.sessionStorage.setItem(CHROME_KEY, 'none');
+    } else if (chrome) {
+      // 显式传了别的值(App 的云文档 tab 进站带 `chrome=full`)就**清掉**标记。
+      // 不能假设两个 WebView 实例的 sessionStorage 是隔离的:万一同进程共享,
+      // 打开过一次文档查看器就会让常驻的云文档 tab 从此丢掉左栏开关。
+      window.sessionStorage.removeItem(CHROME_KEY);
+    }
+  } catch {
+    /* 隐私模式 / storage 被禁 —— 退回下面的实时判据 */
+  }
+}
+
+const isChromeHidden = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  try {
+    if (window.sessionStorage.getItem(CHROME_KEY) === 'none') {
+      return true;
+    }
+  } catch {
+    /* ignore */
+  }
+  try {
+    return new URLSearchParams(window.location.search).get('chrome') === 'none';
+  } catch {
+    return false;
+  }
+};
+
 /** 协议版本。与 we-meet `DocsFrame.tsx` 的 `HOST_PROTOCOL` 对应。 */
 const PROTOCOL = 1;
 
@@ -213,6 +257,12 @@ export const useEmbedShell = (): void => {
       root.dataset.wemeetEmbed = detected;
     } else {
       delete root.dataset.wemeetEmbed;
+    }
+    // 阅读态只在被内嵌时成立 —— 独立访问带上 ?chrome=none 不该让人失去左栏开关。
+    if (detected && isChromeHidden()) {
+      root.dataset.wemeetChrome = 'none';
+    } else {
+      delete root.dataset.wemeetChrome;
     }
   }, [setPlatform]);
 
