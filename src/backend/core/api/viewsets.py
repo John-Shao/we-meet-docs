@@ -93,6 +93,22 @@ from .throttling import (
 
 logger = logging.getLogger(__name__)
 
+
+def _clamped_int(raw, *, default, low, high):
+    """把查询参数解析成落在 [low, high] 内的整数,解析不出来就用 default。
+
+    给 server-to-server 端点的分页参数用:调用方是 we-meet 后端而不是浏览器,
+    与其在参数不合法时抛 400 让上游整条搜索挂掉,不如夹到合法区间继续 ——
+    这类参数出错既不影响正确性也不涉及权限,夹住即可。上界是防手搓的
+    ``limit=100000`` 拖垮查询。
+    """
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return max(low, min(high, value))
+
+
 # pylint: disable=too-many-ancestors
 
 
@@ -993,6 +1009,12 @@ class DocumentViewSet(
         可见性过滤(DocumentAccess ∪ 非受限 LinkTrace,同 ``get_queryset``
         的口径),按标题做去音标不区分大小写匹配(同 ListDocumentFilter 的
         ``q``)。轻载返回,不做 abilities 注解。
+
+        分页:``limit`` / ``offset``。默认 8 条 = 改动前的硬上限,老调用方不传参
+        行为完全不变;返回体多一个 ``has_more`` 供"加载更多"用。
+
+        为什么需要:we-meet 把云文档收进了它的全局搜索面板、并隐掉了 docs 自带的
+        搜索弹窗(那个是无限滚动的)。若这里还钉死 8 条,收敛就成了**能力退化**。
         """
         sub = (request.GET.get("sub") or "").strip()
         query = (request.GET.get("q") or "").strip()
@@ -1001,10 +1023,12 @@ class DocumentViewSet(
                 {"detail": "sub and q (>=2 chars) required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        limit = _clamped_int(request.GET.get("limit"), default=8, low=1, high=50)
+        offset = _clamped_int(request.GET.get("offset"), default=0, low=0, high=1000)
         user = models.User.objects.filter(sub=sub).first()
         if user is None:
             # 从未登录过 Docs 的用户没有任何文档可见——空结果而非报错。
-            return drf_response.Response({"results": []})
+            return drf_response.Response({"results": [], "has_more": False})
 
         access_documents_ids = models.DocumentAccess.objects.filter(
             db.Q(user=user) | db.Q(team__in=user.teams)
@@ -1023,8 +1047,11 @@ class DocumentViewSet(
                 )
             )
             .filter(title__unaccent__icontains=query)
-            .order_by("-updated_at")[:8]
+            .order_by("-updated_at")[offset : offset + limit + 1]
         )
+        # 多取一条来判断"还有没有下一页",省掉一次 COUNT。
+        page = list(documents)
+        has_more = len(page) > limit
         return drf_response.Response(
             {
                 "results": [
@@ -1033,8 +1060,9 @@ class DocumentViewSet(
                         "title": doc.title or "",
                         "updated_at": doc.updated_at.isoformat(),
                     }
-                    for doc in documents
-                ]
+                    for doc in page[:limit]
+                ],
+                "has_more": has_more,
             }
         )
 
