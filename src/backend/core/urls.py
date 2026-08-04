@@ -7,7 +7,7 @@ from lasuite.oidc_login.urls import urlpatterns as oidc_urls
 from lasuite.oidc_resource_server.urls import urlpatterns as oidc_resource_server_urls
 from rest_framework.routers import DefaultRouter
 
-from core.api import viewsets
+from core.api import session_bootstrap, viewsets
 from core.external_api import viewsets as external_api_viewsets
 
 # - Main endpoints
@@ -77,6 +77,13 @@ urlpatterns = [
                 path(
                     "user-reconciliations/<str:user_type>/<uuid:confirmation_id>/",
                     viewsets.ReconciliationConfirmView.as_view(),
+                ),
+                # we-meet 内嵌云文档的会话引导:票据换 Docs 会话,不经 Keycloak
+                # 浏览器会话(见 core/api/session_bootstrap.py)。
+                path(
+                    "session-from-ticket/",
+                    session_bootstrap.SessionFromTicketView.as_view(),
+                    name="session-from-ticket",
                 ),
             ]
         ),

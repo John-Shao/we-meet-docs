@@ -49,6 +49,7 @@ from rest_framework.views import APIView
 from treebeard.exceptions import InvalidMoveToDescendant
 
 from core import authentication, choices, enums, models
+from core.api import session_bootstrap
 from core.api.filters import remove_accents
 from core.services import mime_types
 from core.services.ai_services.blocknote import AIService
@@ -345,6 +346,43 @@ class UserViewSet(
 
         return drf.response.Response(
             {"detail": "Onboarding marked as done."}, status=status.HTTP_200_OK
+        )
+
+    @drf.decorators.action(
+        authentication_classes=[authentication.ServerToServerAuthentication],
+        detail=False,
+        methods=["post"],
+        permission_classes=[],
+        url_path="session-ticket",
+    )
+    def session_ticket(self, request):
+        """we-meet 内嵌云文档的会话引导:签发一张一次性票据(server-to-server)。
+
+        入参 ``{sub, email?, full_name?, short_name?, language?}`` —— 调用方
+        (we-meet 后端)已经校验过用户身份,这里只负责把这份身份封进一张 60 秒、
+        单次使用的票据;客户端拿它走 ``/api/v1.0/session-from-ticket/`` 换 Docs
+        会话。整条链路与浏览器里有没有 Keycloak 会话无关,详见
+        ``core/api/session_bootstrap.py``。
+        """
+        sub = str(request.data.get("sub") or "").strip()
+        if not sub or len(sub) > 255:
+            return drf_response.Response(
+                {"detail": "sub required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        ticket = session_bootstrap.mint_ticket(
+            {
+                "sub": sub,
+                "email": str(request.data.get("email") or "").strip(),
+                "full_name": str(request.data.get("full_name") or "").strip(),
+                "short_name": str(request.data.get("short_name") or "").strip(),
+                "language": str(request.data.get("language") or "").strip(),
+            }
+        )
+        return drf_response.Response(
+            {
+                "ticket": ticket,
+                "expires_in": session_bootstrap.TICKET_TTL_SECONDS,
+            }
         )
 
 
