@@ -228,16 +228,23 @@ const DocGridTitleBar = ({ target }: { target: DocDefaultFilter }) => {
  * 不能按全局 staleTime(3 分钟,见 AppProvider)那样当静态数据缓存 ——
  * 别人分享过来后要等最多 3 分钟才出现,用户看到的是「分享没生效」。
  *
- * 三条一起才盖得全,少一条就留死角:
- * - `refetchOnMount: 'always'`:在左栏几个筛选间切来切去时(每个 target 是**独立
- *   query key**,各自计各自的 staleTime),回到某个列表必重取;
+ * **`staleTime: 0` 是这里唯一挑大梁的那条**,别以为有了 refetchOnMount 就能省。
+ * 左栏「所有文档 / 我的文档 / 与我分享」是三个**独立 query key**,切换时 DocsGrid
+ * 并不重新挂载,只是同一个 observer 换 key —— 这条路径在 query-core 里走的是
+ * `shouldFetchOptionally()`,它只判 `isStale()`,**完全不看 refetchOnMount**
+ * (那个只在 `onSubscribe` 首次挂载时经 `shouldFetchOnMount()` 生效)。所以不把
+ * staleTime 压到 0,切筛选就还是吃 3 分钟旧缓存,加多少个 'always' 都不参与判定。
+ *
+ * 其余三条各补一个死角:
+ * - `refetchOnMount: 'always'`:真正重新挂载时(整页导航)也重取;
  * - `refetchOnWindowFocus: 'always'`:App 切走再切回来 / 网页换标签页时重取;
- * - `refetchInterval`:停在列表页**干等**时的兜底 —— 前两条都要有交互才触发,
+ * - `refetchInterval`:停在列表页**干等**时的兜底 —— 上面几条都要有交互才触发,
  *   而这正是用户等分享出现时的姿势。后台不轮询,不烧息屏时的流量。
  *
  * 都是后台重取:先渲染缓存再更新,不闪白、不回到骨架屏。
  */
 const LIVE_LIST_REFETCH = {
+  staleTime: 0,
   refetchOnMount: 'always',
   refetchOnWindowFocus: 'always',
   refetchInterval: 30 * 1000,
