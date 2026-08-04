@@ -17,6 +17,17 @@ export const DocsEditorStyle = createGlobalStyle`
   * 与 Cunningham 像素级一致。
   */
   .bn-root[data-color-scheme] {
+    /* ⭐ 正文画布底色。BlockNote 自己在 .bn-root[data-color-scheme=dark] 里把它钉成
+     * #1f1f1f、浅色是 #fff —— 浅色那档**碰巧**等于 docs 的面色(#FFFFFF),所以一直
+     * 没人发现;深色下 #1f1f1f 与页面底不同,正文就成了一块颜色不一样的板子
+     * (改品牌色之前面色是 #2F3033,板子偏暗;之后是 #161616,板子偏亮 —— 方向变了,
+     * 但一直都有缝)。
+     *
+     * 选择器与 BlockNote 那条同为 (0,2,0),靠 createGlobalStyle 运行时注入在静态 CSS
+     * 之后取胜 —— 下面的 editor-text 早就是这么覆盖的,已验证可行。 */
+    --bn-colors-editor-background: var(
+      --c--contextuals--background--surface--primary
+    );
     --bn-colors-editor-text: var(
       --c--contextuals--content--semantic--neutral--primary
     );
