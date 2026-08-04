@@ -11,6 +11,7 @@ import {
   useCustomTranslations,
   useSynchronizedLanguage,
 } from '@/features/language';
+import { useEmbedShell } from '@/hooks/useEmbedShell';
 import {
   embedderLanguage,
   embedderTheme,
@@ -30,6 +31,8 @@ export const ConfigProvider = ({ children }: PropsWithChildren) => {
   const { customizeTranslations } = useCustomTranslations();
   const { AnalyticsProvider } = useAnalytics();
   const isEmbedded = useIsEmbedded();
+  // 把内嵌形态写到 <html data-wemeet-embed>,供 styles/we-meet.css 的外壳收敛做 scope。
+  useEmbedShell();
   const { i18n } = useTranslation();
   const languageSynchronized = useRef(false);
   const favicon = conf?.theme_customization?.favicon;

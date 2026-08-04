@@ -1,0 +1,44 @@
+/**
+ * we-meet 内嵌形态的外壳收敛。
+ *
+ * 全部选择器都 scope 在 `html[data-wemeet-embed]` 下(属性由 hooks/useEmbedShell
+ * 写入),所以**独立访问 docs 的样子一字不改** —— 这里改的只是"被 meet 内嵌时
+ * 该长什么样"。
+ *
+ * 为什么单开一个文件而不是改组件:`src/cunningham/` 与 `src/pages/globals.css`
+ * 目前与 upstream 零差异,收敛涉及的元素又散在 docs 各处。上游本来就在这些节点上
+ * 留了稳定的 `--docs--*` class(给外部主题用的),配根属性写选择器即可,与 upstream
+ * 的冲突面为零。
+ *
+ * ⚠️ 依赖 upstream 的 class 名。若某次 merge 后样式"静默失效"(不报错、只是变丑),
+ * 先核对下面每条规则注明的来源文件里 class 名还在不在。
+ */
+
+html[data-wemeet-embed] {
+  /* 二级面板底色。对齐 meet 的模块二级面板(features/im/routes/ImRoute.tsx 的
+     <aside>:浅色 greyscale.50、深色 greyscale.000 上浮一档)。
+     浅色不能直接用 surface--secondary —— 它等于 gray-000(纯白),与主面无差别。 */
+  --wm-panel-bg: var(--c--globals--colors--gray-025);
+}
+
+html[data-wemeet-embed].cunningham-theme--dark {
+  /* 深色下 surface--secondary 已被 cunningham.ts 钉成 #1E1E1E(= meet greyscale.50),
+     正是 meet 二级面板的底色。 */
+  --wm-panel-bg: var(--c--contextuals--background--surface--secondary);
+}
+
+/**
+ * 左栏:docs 的 LeftPanel 不是"多余的第二个 rail",它就是 meet 三栏 IA 里的
+ * **②模块二级面板**(见 we-meet docs/phases/p6-ux-shell.md 的 D1)—— meet 的 IM
+ * 模块自己长了一个,docs 的恰好长在 iframe 里。所以不该删,该让它长得像。
+ *
+ * 造成「双层左栏」观感的头号元凶是那条 `box-shadow: 10px 0 10px rgba(0,0,0,.05)`:
+ * 它紧贴 meet 一级 rail 的右缘投影,把两栏之间硬生生画出一道浮层边界。meet 自己的
+ * 二级面板只有 1px 边框、没有投影。
+ *
+ * 来源:features/left-panel/components/LeftPanel.tsx(`--docs--left-panel`)
+ */
+html[data-wemeet-embed] .--docs--left-panel {
+  background-color: var(--wm-panel-bg);
+  box-shadow: none;
+}

@@ -139,10 +139,12 @@ export const DocsCommentsStyle = createGlobalStyle<{
           & > .mantine-Group-root:first-child {
             right: 0.3rem !important;
             top: 0.3rem !important;
+            /* 渐变起点要**不透明**面色(原值就是 #fff)。别用
+               background--semantic--contextual--primary —— 那是 5% alpha 的叠加色,
+               渐变会几乎看不见,盖不住底下的评论文字。 */
             background: linear-gradient(
               to left,
-              var(--c--contextuals--background--semantic--contextual--primary)
-                90%,
+              var(--c--contextuals--background--surface--primary) 90%,
               transparent 100%
             );
           }
@@ -215,9 +217,8 @@ export const DocsCommentsStyle = createGlobalStyle<{
               }
 
               &:last-child {
-                background: var(
-                  --c--contextuals--background--semantic--contextual--primary
-                );
+                /* 线框按钮的底(原值 white),要不透明面色而非 5% 叠加色。 */
+                background: var(--c--contextuals--background--surface--primary);
                 border: 1px solid
                   var(--c--contextuals--border--surface--primary);
                 color: var(

@@ -11,7 +11,9 @@
 | **本仓库（Docs）** | Docs 源码 + 定制（`docs-dev` 分支已简体中文化）+ **本目录部署套件** |
 | **we-meet 仓库** | 设计/路线图 `docs/phases/p3-collab-docs.md`；背景 runbook `docs/installation/docs-server.md`；Keycloak realm 建置 `deploy/aliyun/keycloak/bootstrap-realm.sh`；meet 后端接线 `src/helm/env.d/aliyun-prod/values.meet.yaml`（`DOCS_API_URL`）+ `values.secrets.yaml`（`DOCS_SERVER_TO_SERVER_TOKEN`） |
 
-> 定制在 `docs-dev` 分支:简体中文优先（`translations.json` zh + `zh_CN.po` 全 `tw2sp` 繁→简 + 术语点校）。品牌本轮**暂不改**。
+> 定制在 `docs-dev` 分支:① 简体中文优先（`translations.json` zh + `zh_CN.po` 全 `tw2sp` 繁→简 + 术语点校）;② **视觉对齐 we-meet 主应用**（`cunningham.ts` 重写:飞书蓝 + 中性灰 + 与主应用逐字一致的系统字体栈,深浅共用同一支色阶）。
+>
+> ⚠️ 改完 `cunningham.ts` 必须跑 `yarn build-theme` 重新生成 `src/cunningham/cunningham-tokens.{ts,css}` 并一并提交 —— 那两个产物是入库的,只改源文件不生成等于没改。
 
 ## 本目录文件
 

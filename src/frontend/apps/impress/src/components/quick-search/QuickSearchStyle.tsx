@@ -4,7 +4,10 @@ export const QuickSearchStyle = createGlobalStyle`
   .quick-search-container {
     [cmdk-root] {
       width: 100%;
-      background: var(--c--contextuals--background--semantic--contextual--primary);
+      /* 浮层的**不透明**面色。⚠️ 别写成 background--semantic--contextual--primary ——
+         那个指向 black-050 / white-050,是 5% alpha 的叠加色(下面 [cmdk-item] 的
+         hover 用它才是对的),拿来当面色会让整个搜索弹窗透出底下的页面。 */
+      background: var(--c--contextuals--background--surface--secondary);
       border-radius: 12px;
       overflow: hidden;
       transition: transform 100ms ease;

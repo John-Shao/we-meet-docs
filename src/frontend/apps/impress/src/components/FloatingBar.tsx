@@ -19,9 +19,12 @@ const FLOATING_STYLES = css`
     position: absolute;
     inset: 0;
     z-index: -1;
+    /* 渐变起点要**不透明**面色(原值 #fff):这条是把顶部滚动内容淡出的遮罩。
+       别用 background--semantic--contextual--primary —— 那是 5% alpha 的叠加色,
+       淡出效果基本消失,内容会直接怼到浮动条底下。 */
     background: linear-gradient(
       180deg,
-      var(--c--contextuals--background--semantic--contextual--primary, #fff) 0%,
+      var(--c--contextuals--background--surface--primary, #fff) 0%,
       transparent 100%
     );
     backdrop-filter: blur(1px);

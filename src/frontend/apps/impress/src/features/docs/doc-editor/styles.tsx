@@ -3,9 +3,18 @@ import { createGlobalStyle } from 'styled-components';
 export const DocsEditorStyle = createGlobalStyle`
   .bn-container {
     height: 100%;
+    /* 正文画布跟随 docs 的面色。BlockNote 的深浅由它自己的 theme prop 驱动
+     * (见 BlockNoteEditor),那套调色板与 Cunningham 不是一套 —— 不钉这一条,
+     * 深色下编辑区会是 BlockNote 自己的深灰,与外层页面差出一个色阶,正文区
+     * 像贴上去的另一块板子。 */
+    background-color: var(--c--contextuals--background--surface--primary);
   }
   /**
   * Token Blocknote
+  *
+  * BlockNote 只暴露这三个颜色变量(@blocknote/core 的 style.css),其余配色走它
+  * 内部的 Mantine color-scheme,改不了 —— 所以目标是「同色系、不刺眼」,不是
+  * 与 Cunningham 像素级一致。
   */
   .bn-root[data-color-scheme] {
     --bn-colors-editor-text: var(
@@ -13,6 +22,9 @@ export const DocsEditorStyle = createGlobalStyle`
     );
     --bn-colors-side-menu: var(
       --c--contextuals--content--semantic--neutral--tertiary
+    );
+    --bn-colors-hovered-background: var(
+      --c--contextuals--background--semantic--contextual--primary
     );
   }
   .bn-root .mantine-Chip-label {

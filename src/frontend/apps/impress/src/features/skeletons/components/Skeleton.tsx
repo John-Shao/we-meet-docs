@@ -52,7 +52,10 @@ export const Skeleton = ({ children }: PropsWithChildren) => {
       $align="center"
       $width="100%"
       $height="100%"
-      $background="var(--c--contextuals--background--semantic--contextual--primary)"
+      /* 骨架屏是要**盖住**底下未就绪的内容,必须用不透明面色(原值 gray-000)。
+         曾误用 background--semantic--contextual--primary —— 那是 5% alpha 的叠加色,
+         遮罩形同虚设,真实内容会从骨架下面透出来。 */
+      $background="var(--c--contextuals--background--surface--primary)"
       $css={css`
         position: absolute;
         inset: 0;

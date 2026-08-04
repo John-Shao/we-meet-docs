@@ -20,9 +20,9 @@ if (typeof window !== 'undefined') {
  * We Meet App 的 docs WebView 在 UA 末尾追加的标记（见 we-meet-android
  * `ui/docs/DocsScreen.kt` 的 EMBED_UA_MARKER，改动需两边同步）。
  */
-const EMBED_UA_MARKER = 'WeMeetApp';
+export const EMBED_UA_MARKER = 'WeMeetApp';
 
-const isWeMeetApp = () =>
+export const isWeMeetApp = () =>
   typeof navigator !== 'undefined' &&
   navigator.userAgent.includes(EMBED_UA_MARKER);
 
@@ -142,12 +142,13 @@ export const sendToHost = (payload: Record<string, unknown>): void => {
 export const useIsEmbedded = (): boolean => {
   const [embedded, setEmbedded] = useState(false);
   useEffect(() => {
-    let inIframe = false;
-    try {
-      inIframe = window.self !== window.top;
-    } catch {
-      inIframe = true;
-    }
+    const inIframe = (() => {
+      try {
+        return window.self !== window.top;
+      } catch {
+        return true;
+      }
+    })();
     const inApp = isWeMeetApp();
     let stored = false;
     try {
