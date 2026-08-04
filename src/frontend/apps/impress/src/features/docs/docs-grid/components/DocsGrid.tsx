@@ -235,6 +235,10 @@ const useDocsQuery = (target: DocDefaultFilter) => {
     },
     {
       enabled: target !== DocDefaultFilter.TRASHBIN,
+      // 别人刚把文档分享给我时,「所有文档」会在全局 staleTime(3 分钟)内继续吃缓存:
+      // 切到「与我分享」是新 query key 所以能看到,切回来却少一条。列表是随时被他人
+      // 改动的数据,每次挂载都后台重取一次(先渲染缓存,不闪白)。
+      refetchOnMount: 'always',
     },
   );
 
