@@ -23,8 +23,11 @@ export const DocsEditorStyle = createGlobalStyle`
      * (改品牌色之前面色是 #2F3033,板子偏暗;之后是 #161616,板子偏亮 —— 方向变了,
      * 但一直都有缝)。
      *
-     * 选择器与 BlockNote 那条同为 (0,2,0),靠 createGlobalStyle 运行时注入在静态 CSS
-     * 之后取胜 —— 下面的 editor-text 早就是这么覆盖的,已验证可行。 */
+     * ⚠️ 这条只是「顺手把变量也接对」,**不能当作修复本身**:选择器与 BlockNote 那条
+     * 同为 (0,2,0),谁赢取决于注入顺序,而 BlockNote 的样式表是随动态 chunk(DocEditor
+     * 是 next/dynamic 懒加载的)在运行时插进 head 的,顺序不可靠 —— 实测线上带了这条
+     * 变量覆盖后板子依旧,就是输在了顺序上。真正兜底的是下面 .bn-root .bn-editor
+     * 那条:specificity 更高,与顺序无关。 */
     --bn-colors-editor-background: var(
       --c--contextuals--background--surface--primary
     );
@@ -46,6 +49,17 @@ export const DocsEditorStyle = createGlobalStyle`
   .bn-root {
     .bn-editor {
       height: 100%;
+      /* ⭐ 深色下「正文是一块颜色不一样的板子」的正解。
+       *
+       * BlockNote 自己用 .bn-editor 的 background-color 画正文画布,取
+       * --bn-colors-editor-background:深色档钉死 #1f1f1f、浅色档 #fff。浅色那档
+       * **碰巧**等于 docs 的面色(#FFFFFF)所以从没露过馅;深色下两者不等,正文就浮出一块。
+       *
+       * 只覆盖那个变量不够 —— 变量声明与 BlockNote 的同 specificity,胜负取决于注入
+       * 顺序,而它的样式表随懒加载 chunk 在运行时插入,顺序不可靠(线上实测输了)。
+       * 这里直接钉在元素上:.bn-root .bn-editor 是 (0,2,0),压过 BlockNote 的
+       * .bn-editor (0,1,0),**与顺序无关**。 */
+      background-color: var(--c--contextuals--background--surface--primary);
     }
 
     .mantine-Menu-itemLabel,

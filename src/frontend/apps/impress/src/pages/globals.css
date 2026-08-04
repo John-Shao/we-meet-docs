@@ -12,6 +12,11 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+
+  /* 页面画布本来没人画,浅色下靠浏览器默认的白**碰巧**等于面色所以看不出来;
+     深色下默认画布与面色不同,任何没被子元素盖满的地方都会露出一条色差。
+     显式钉成面色,两种主题都不再依赖"默认色恰好对得上"。 */
+  background-color: var(--c--contextuals--background--surface--primary);
 }
 
 /* stylelint-disable-next-line selector-id-pattern */
