@@ -49,7 +49,7 @@ export const DocsGrid = ({
   const {
     data,
     isFetching,
-    isRefetching,
+    isFetchingNextPage,
     isLoading,
     fetchNextPage,
     hasNextPage,
@@ -70,6 +70,12 @@ export const DocsGrid = ({
   }, [data?.pages]);
 
   const loading = isFetching || isLoading;
+  /**
+   * 遮罩只给「屏幕上还没有内容」的等待用。它是盖满列表的半透明层 + 锁滚动,
+   * 挂在 `isFetching` 上的话,LIVE_LIST_REFETCH 的每次后台重取(30s 轮询、
+   * 切回前台)都会闪一次转圈并抢走滚动 —— 静默更新的意义就没了。
+   */
+  const showOverlay = isLoading || isImportPending;
   const hasDocs = data?.pages.some((page) => page.results.length > 0);
   const loadMore = (inView: boolean) => {
     if (!inView || loading) {
@@ -88,7 +94,7 @@ export const DocsGrid = ({
       $minHeight="0"
       $align="center"
     >
-      <DocsGridLoader isLoading={isRefetching || loading || isImportPending} />
+      <DocsGridLoader isLoading={showOverlay} />
       {/* 分享弹窗挂在列表**之上**:下面的列表会因查询失效整体卸载(hasDocs
           转 false),挂在行里的弹窗会被一起带走。见 useDocShareModalStore。 */}
       <DocShareModalHost />
@@ -112,7 +118,7 @@ export const DocsGrid = ({
           : {})}
       >
         <DocGridTitleBar target={target} />
-        {!hasDocs && !loading && (
+        {!hasDocs && !showOverlay && (
           <Box $padding={{ vertical: 'sm' }} $align="center" $justify="center">
             <Text $size="sm" $weight="700">
               {t('No documents found')}
@@ -151,13 +157,15 @@ export const DocsGrid = ({
                 <DocGridContentList docs={docs} />
               </Box>
             </Box>
-            {hasNextPage && !loading && (
+            {/* 「加载更多」的显隐只看「是否正在取下一页」:挂在 isFetching 上会被
+                30s 的后台重取每次抹掉一瞬。 */}
+            {hasNextPage && !isFetchingNextPage && (
               <InView
                 data-testid="infinite-scroll-trigger"
                 as="div"
                 onChange={loadMore}
               >
-                {!isFetching && hasNextPage && (
+                {!isFetchingNextPage && hasNextPage && (
                   <Button
                     onClick={() => void fetchNextPage()}
                     color="brand"
@@ -215,6 +223,27 @@ const DocGridTitleBar = ({ target }: { target: DocDefaultFilter }) => {
   );
 };
 
+/**
+ * 文档列表是**随时被别人改动**的数据(他人分享给我、协作者改标题、被移走),
+ * 不能按全局 staleTime(3 分钟,见 AppProvider)那样当静态数据缓存 ——
+ * 别人分享过来后要等最多 3 分钟才出现,用户看到的是「分享没生效」。
+ *
+ * 三条一起才盖得全,少一条就留死角:
+ * - `refetchOnMount: 'always'`:在左栏几个筛选间切来切去时(每个 target 是**独立
+ *   query key**,各自计各自的 staleTime),回到某个列表必重取;
+ * - `refetchOnWindowFocus: 'always'`:App 切走再切回来 / 网页换标签页时重取;
+ * - `refetchInterval`:停在列表页**干等**时的兜底 —— 前两条都要有交互才触发,
+ *   而这正是用户等分享出现时的姿势。后台不轮询,不烧息屏时的流量。
+ *
+ * 都是后台重取:先渲染缓存再更新,不闪白、不回到骨架屏。
+ */
+const LIVE_LIST_REFETCH = {
+  refetchOnMount: 'always',
+  refetchOnWindowFocus: 'always',
+  refetchInterval: 30 * 1000,
+  refetchIntervalInBackground: false,
+} as const;
+
 const useDocsQuery = (target: DocDefaultFilter) => {
   const trashbinQuery = useInfiniteDocsTrashbin(
     {
@@ -222,6 +251,7 @@ const useDocsQuery = (target: DocDefaultFilter) => {
     },
     {
       enabled: target === DocDefaultFilter.TRASHBIN,
+      ...LIVE_LIST_REFETCH,
     },
   );
 
@@ -235,10 +265,7 @@ const useDocsQuery = (target: DocDefaultFilter) => {
     },
     {
       enabled: target !== DocDefaultFilter.TRASHBIN,
-      // 别人刚把文档分享给我时,「所有文档」会在全局 staleTime(3 分钟)内继续吃缓存:
-      // 切到「与我分享」是新 query key 所以能看到,切回来却少一条。列表是随时被他人
-      // 改动的数据,每次挂载都后台重取一次(先渲染缓存,不闪白)。
-      refetchOnMount: 'always',
+      ...LIVE_LIST_REFETCH,
     },
   );
 
