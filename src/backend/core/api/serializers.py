@@ -2,6 +2,7 @@
 # pylint: disable=too-many-lines
 
 import binascii
+import json
 import mimetypes
 from base64 import b64decode
 from os.path import splitext
@@ -534,6 +535,98 @@ class ServerCreateDocumentSerializer(serializers.Serializer):
             "title": subject,
         }
         document.send_email(subject, [email], context, language)
+
+
+class ServerCreateTableDocumentSerializer(serializers.Serializer):
+    """Create a collaborative document containing one native BlockNote table."""
+
+    title = serializers.CharField(required=True, max_length=255)
+    intro = serializers.CharField(required=False, allow_blank=True, default="")
+    columns = serializers.ListField(
+        child=serializers.CharField(allow_blank=True, max_length=255),
+        min_length=1,
+        max_length=100,
+    )
+    rows = serializers.ListField(child=serializers.ListField(), max_length=10000)
+    sub = serializers.CharField(
+        required=True, validators=[validators.sub_validator], max_length=255
+    )
+    email = serializers.EmailField(required=True)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        width = len(attrs["columns"])
+        normalized = []
+        for index, row in enumerate(attrs["rows"]):
+            if len(row) != width:
+                raise serializers.ValidationError(
+                    {"rows": f"row {index} has {len(row)} cells; expected {width}"}
+                )
+            normalized.append([str(value)[:10000] for value in row])
+        attrs["rows"] = normalized
+        return attrs
+
+    def create(self, validated_data):
+        email = validated_data["email"]
+        try:
+            user = models.User.objects.get_user_by_sub_or_email(
+                validated_data["sub"], email
+            )
+        except models.DuplicateEmailError as err:
+            raise serializers.ValidationError({"email": [err.message]}) from err
+
+        blocks = []
+        if validated_data.get("intro"):
+            blocks.append(
+                {"type": "paragraph", "content": validated_data["intro"]}
+            )
+        table_rows = [validated_data["columns"], *validated_data["rows"]]
+        blocks.append(
+            {
+                "type": "table",
+                "content": {
+                    "type": "tableContent",
+                    "headerRows": 1,
+                    "rows": [{"cells": row} for row in table_rows],
+                },
+            }
+        )
+        try:
+            content = Converter().convert(
+                json.dumps(blocks, ensure_ascii=False).encode("utf-8"),
+                mime_types.BLOCKNOTE,
+                mime_types.YJS,
+            )
+        except ConversionError as err:
+            raise serializers.ValidationError(
+                {"rows": ["Could not convert table content"]}
+            ) from err
+
+        document = create_tree_node_with_retry(
+            lambda: models.Document.add_root(
+                title=validated_data["title"], creator=user
+            )
+        )
+        if user:
+            models.DocumentAccess.objects.create(
+                document=document, role=models.RoleChoices.OWNER, user=user
+            )
+        else:
+            models.Invitation.objects.create(
+                document=document,
+                email=email,
+                role=models.RoleChoices.OWNER,
+            )
+        document.content = content
+        document.save()
+        posthog_capture(PosthogEventName.DOC_CREATED, user, {}, document=document)
+        posthog_capture(
+            PosthogEventName.DOC_IMPORTED,
+            user,
+            {"content_type": mime_types.BLOCKNOTE, "create_table_for_owner": True},
+            document=document,
+        )
+        return document
 
     def update(self, instance, validated_data):
         """

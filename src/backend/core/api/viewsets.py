@@ -998,6 +998,22 @@ class DocumentViewSet(
     @drf.decorators.action(
         authentication_classes=[authentication.ServerToServerAuthentication],
         detail=False,
+        methods=["post"],
+        permission_classes=[],
+        url_path="create-table-for-owner",
+    )
+    def create_table_for_owner(self, request):
+        """Create a native table document for an external trusted service."""
+        serializer = serializers.ServerCreateTableDocumentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        document = serializer.save()
+        return drf_response.Response(
+            {"id": str(document.id)}, status=status.HTTP_201_CREATED
+        )
+
+    @drf.decorators.action(
+        authentication_classes=[authentication.ServerToServerAuthentication],
+        detail=False,
         methods=["get"],
         permission_classes=[],
         url_path="search-for-user",
