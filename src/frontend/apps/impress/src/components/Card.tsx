@@ -13,7 +13,7 @@ export const Card = ({
       $withThemeBG
       $withThemeBorder
       className={`--docs--card ${className || ''}`}
-      $radius="var(--c--globals--spacings--st)"
+      $radius="var(--wm-radius-card)"
       $padding={{ horizontal: 'xs', vertical: '3xs' }}
       $scope={props.$theme ? props.$scope || 'semantic' : 'surface'}
       $theme={props.$theme || 'primary'}

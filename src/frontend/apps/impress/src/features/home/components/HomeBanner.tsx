@@ -27,8 +27,7 @@ export default function HomeBanner() {
       $width="100%"
       $justify="space-around"
       $align="center"
-      $height="100vh"
-      $margin={{ top: `-${getHeaderHeight(isSmallMobile)}px` }}
+      $minHeight={`calc(100dvh - ${getHeaderHeight(isSmallMobile)}px)`}
       $position="relative"
       className="--docs--home-banner"
     >
@@ -39,8 +38,7 @@ export default function HomeBanner() {
         $position="relative"
         $direction={!isMobile ? 'row' : 'column'}
         $gap="1rem"
-        $overflow="auto"
-        $css="flex-basis: 70%;"
+        $css="flex: 1;"
       >
         <Box
           $width={!isMobile ? '50%' : '100%'}
@@ -62,13 +60,16 @@ export default function HomeBanner() {
             />
           )}
           <Text
-            as="h2"
-            $size={!isMobile ? 'xs-alt' : '2.3rem'}
+            as="h1"
+            $size="2.3rem"
             $weight="bold"
             $textAlign="center"
             $margin="none"
             $css={css`
-              line-height: ${!isMobile ? '56px' : '45px'};
+              max-width: 14ch;
+              font-size: clamp(2.25rem, 4vw, 3.5rem);
+              line-height: 1.15;
+              text-wrap: balance;
             `}
           >
             {t('Collaborative writing, Simplified.')}
@@ -109,7 +110,7 @@ export default function HomeBanner() {
           />
         )}
       </Box>
-      <Box $css="bottom: 3rem" $position="absolute">
+      <Box $margin={{ bottom: 'lg' }}>
         <Button
           color="brand"
           variant="secondary"

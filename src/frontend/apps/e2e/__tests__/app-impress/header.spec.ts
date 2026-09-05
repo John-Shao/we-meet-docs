@@ -58,6 +58,14 @@ test.describe('Header', () => {
     await expect(header.getByLabel('Docs animated icon')).not.toBeInViewport();
     await expect(header.getByLabel('Search docs')).toBeVisible();
 
+    // The shared CSS breakpoint includes 768px; JS layout must match it.
+    await header.getByLabel('Toggle left panel').click();
+    await expect(page.getByTestId('left-panel')).toBeVisible();
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await expect(page.getByTestId('left-panel')).toHaveCSS('position', 'fixed');
+    await expect(header.getByLabel('Docs animated icon')).toBeVisible();
+    await expect(header.getByLabel('Search docs')).toBeVisible();
+
     // Mobile viewport
     await page.setViewportSize({ width: 500, height: 1200 });
     await expect(header.getByLabel('Toggle left panel')).toBeVisible();

@@ -72,8 +72,8 @@ export const CardFloatingBar = ({
         padding: var(--c--globals--spacings--xxxs);
         align-items: center;
         gap: var(--c--globals--spacings--xxxs);
-        border-radius: var(--c--globals--spacings--xs);
-        box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+        border-radius: var(--wm-radius-card);
+        box-shadow: var(--wm-shadow-raised);
       `}
       {...props}
     >

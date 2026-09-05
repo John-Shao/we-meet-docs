@@ -54,7 +54,7 @@ export const useResponsiveStore = create<UseResponsiveStore>((set) => ({
           isLargeScreen: false,
           screenWidth: width,
         });
-      } else if (width < BREAKPOINTS.MOBILE) {
+      } else if (width <= BREAKPOINTS.MOBILE) {
         set({
           isDesktop: false,
           screenSize: 'mobile',
@@ -64,7 +64,7 @@ export const useResponsiveStore = create<UseResponsiveStore>((set) => ({
           isLargeScreen: false,
           screenWidth: width,
         });
-      } else if (width >= BREAKPOINTS.MOBILE && width < BREAKPOINTS.TABLET) {
+      } else if (width < BREAKPOINTS.TABLET) {
         set({
           isDesktop: false,
           isLargeScreen: true,

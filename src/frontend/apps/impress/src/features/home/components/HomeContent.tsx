@@ -51,7 +51,7 @@ export function HomeContent() {
       <HomeHeader />
       <Box
         $css={css`
-          height: calc(100vh - ${getHeaderHeight(isSmallMobile)}px);
+          height: calc(100dvh - ${getHeaderHeight(isSmallMobile)}px);
           overflow-y: auto;
         `}
       >
@@ -78,7 +78,7 @@ export function HomeContent() {
                 title={t('Govs ❤️ Open Source.')}
                 tag={t('Open Source')}
                 textWidth="60%"
-                $css={`min-height: calc(100vh - ${getHeaderHeight(isSmallMobile)}px);`}
+                $css={`min-height: calc(100dvh - ${getHeaderHeight(isSmallMobile)}px);`}
                 description={
                   <Box>
                     <Box

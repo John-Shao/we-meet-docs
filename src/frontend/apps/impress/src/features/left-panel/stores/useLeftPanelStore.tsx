@@ -19,7 +19,7 @@ interface LeftPanelState {
 }
 
 const isMobileOnInit = () =>
-  typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
+  typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT;
 
 export const useLeftPanelStore = create<LeftPanelState>((set, get) => ({
   isPanelOpen: !isMobileOnInit(),

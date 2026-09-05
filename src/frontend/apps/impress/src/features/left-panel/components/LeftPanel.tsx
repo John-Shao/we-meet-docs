@@ -36,12 +36,17 @@ export const LeftPanel = ({ isResizable }: { isResizable?: boolean }) => {
         className="--docs--left-panel"
         data-testid="left-panel"
         aria-label={t('Left panel')}
-        $width={isResizable ? '100%' : '300px'}
+        $width={
+          isResizable
+            ? '100%'
+            : isMobile
+              ? 'min(300px, calc(100vw - 48px))'
+              : '300px'
+        }
         $css={css`
           height: 100dvh;
           overflow: hidden;
           background-color: var(--c--contextuals--background--surface--primary);
-          box-shadow: 10px 0px 10px 0px rgba(0, 0, 0, 0.05);
           transition:
             transform 0.2s ease-in-out,
             width 0.2s ease-in-out;

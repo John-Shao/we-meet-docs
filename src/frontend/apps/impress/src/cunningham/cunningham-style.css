@@ -3,6 +3,25 @@
 
 :root {
   /**
+   * WeMeet cross-client geometry and elevation contract.
+   * Keep these values in sync with we-meet/src/design-tokens.
+   */
+  --wm-radius-field: 4px;
+  --wm-radius-control: 8px;
+  --wm-radius-card: 12px;
+  --wm-radius-panel: 16px;
+  --wm-radius-modal: 24px;
+  --wm-control-height-compact: 32px;
+  --wm-control-height-default: 40px;
+  --wm-control-height-large: 48px;
+  --wm-interaction-target-min: 48px;
+  --wm-shadow-raised: 0 2px 8px -1px rgb(0 0 0 / 14%);
+  --wm-shadow-overlay: 0 0 1px rgb(0 0 0 / 16%), 0 6px 20px rgb(0 0 0 / 12%);
+  --wm-shadow-modal: 0 0 1px rgb(0 0 0 / 16%), 0 12px 40px rgb(0 0 0 / 20%);
+  --c--components--modal--border-radius: var(--wm-radius-modal);
+  --c--components--modal--box-shadow: var(--wm-shadow-modal);
+
+  /**
   * Input
   */
   --c--components--forms-input--border-radius--hover: var(
@@ -35,6 +54,15 @@
   --c--components--button--border-radius--active: var(
     --c--components--button--border-radius
   );
+}
+
+.cunningham-theme--dark {
+  --wm-shadow-raised:
+    inset 0 0 0 1px rgb(255 255 255 / 10%), 0 2px 8px -1px rgb(0 0 0 / 40%);
+  --wm-shadow-overlay:
+    inset 0 0 0 1px rgb(255 255 255 / 10%), 0 6px 20px rgb(0 0 0 / 50%);
+  --wm-shadow-modal:
+    inset 0 0 0 1px rgb(255 255 255 / 10%), 0 12px 40px rgb(0 0 0 / 60%);
 }
 
 /**

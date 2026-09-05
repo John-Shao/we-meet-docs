@@ -68,6 +68,16 @@ main ::-webkit-scrollbar-thumb:hover,
   outline: inherit;
 }
 
+/* Match the mobile interaction target used by the WeMeet shell. */
+@media screen and (width <= 768px) {
+  .c__button,
+  .--docs--drop-button {
+    min-width: var(--wm-interaction-target-min);
+    min-height: var(--wm-interaction-target-min);
+    height: auto;
+  }
+}
+
 .material-icons,
 .material-icons-filled,
 .material-symbols-outlined {
