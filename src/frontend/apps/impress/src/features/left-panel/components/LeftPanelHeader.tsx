@@ -48,9 +48,12 @@ export const LeftPanelHeader = () => {
               data-testid="header-logo-link"
               $css={css`
                 outline: none;
+                @media screen and (width <= 768px) {
+                  min-height: var(--wm-interaction-target-min);
+                }
                 &:focus-visible {
                   box-shadow: 0 0 0 2px var(--c--globals--colors--brand-400) !important;
-                  border-radius: var(--c--globals--spacings--st);
+                  border-radius: var(--wm-radius-control);
                 }
               `}
             >

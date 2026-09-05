@@ -4,7 +4,8 @@
 :root {
   /**
    * WeMeet cross-client geometry and elevation contract.
-   * Keep these values in sync with we-meet/src/design-tokens.
+   * The prebuild alignment check validates these values against
+   * we-meet/src/design-tokens when both repositories are available.
    */
   --wm-radius-field: 4px;
   --wm-radius-control: 8px;

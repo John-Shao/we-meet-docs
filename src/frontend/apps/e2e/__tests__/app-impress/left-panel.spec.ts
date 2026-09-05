@@ -270,6 +270,20 @@ test.describe('Left panel responsive', () => {
     await expect(newDocButton).not.toBeInViewport();
     await expect(userMenu).not.toBeInViewport();
 
+    await openHeaderMenu(page);
+    const touchTargets = [
+      leftPanel.getByTestId('header-logo-link'),
+      leftPanel.getByRole('link', { name: 'All docs' }),
+      leftPanel.getByRole('link', { name: 'My docs' }),
+      leftPanel.getByRole('link', { name: 'Shared with me' }),
+      leftPanel.getByRole('link', { name: 'Trashbin' }),
+    ];
+    for (const target of touchTargets) {
+      await expect(target).toBeVisible();
+      expect((await target.boundingBox())?.height).toBeGreaterThanOrEqual(48);
+    }
+    await leftPanel.getByRole('button', { name: 'Close left panel' }).click();
+
     await createDoc(page, 'mobile-doc-test', browserName, 1, true);
 
     await header.getByLabel(/Show the side panel/).click();

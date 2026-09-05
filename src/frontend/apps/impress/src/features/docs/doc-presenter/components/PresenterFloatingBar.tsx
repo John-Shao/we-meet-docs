@@ -32,13 +32,13 @@ const barCss = css`
   align-items: center;
   gap: 0.25rem;
   padding: var(--c--globals--spacings--3xs, 4px);
-  border-radius: 8px;
+  border-radius: var(--wm-radius-card);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   color: var(--c--contextuals--content--semantic--neutral--secondary);
   border: 1px solid var(--c--contextuals--border--surface--primary);
   background: var(--c--contextuals--background--surface--primary);
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: var(--wm-shadow-raised);
 `;
 
 const separatorCss = css`

@@ -88,6 +88,9 @@ export const LeftPanelTargetFilters = () => {
               color: inherit;
               text-decoration: none;
               cursor: pointer;
+              @media screen and (width <= 768px) {
+                min-height: var(--wm-interaction-target-min);
+              }
               &:hover {
                 background-color: var(
                   --c--contextuals--background--semantic--contextual--primary
@@ -96,7 +99,7 @@ export const LeftPanelTargetFilters = () => {
               &:focus-visible {
                 outline: none !important;
                 box-shadow: 0 0 0 2px ${colorsTokens['brand-400']} !important;
-                border-radius: var(--c--globals--spacings--st);
+                border-radius: var(--wm-radius-control);
               }
             `}
           >
