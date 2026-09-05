@@ -12,7 +12,7 @@
       width="23.3"
       height="31.3"
       rx="3.20556"
-      fill="white"
+      fill="var(--c--contextuals--background--surface--tertiary, white)"
     />
     <rect
       x="4.35"
@@ -29,7 +29,7 @@
       width="23.3"
       height="31.3"
       rx="3.20556"
-      stroke="#F6F8F9"
+      stroke="var(--c--contextuals--background--surface--tertiary, #f6f8f9)"
       stroke-opacity="0.8"
       stroke-width="0.7"
     />

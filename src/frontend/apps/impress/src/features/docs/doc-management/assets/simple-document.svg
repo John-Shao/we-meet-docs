@@ -5,7 +5,14 @@
 >
   <g clip-path="url(#clip0_3236_2952)">
     <g clip-path="url(#clip1_3236_2952)">
-      <rect x="4.5" y="0.5" width="24" height="32" rx="3.55556" fill="white" />
+      <rect
+        x="4.5"
+        y="0.5"
+        width="24"
+        height="32"
+        rx="3.55556"
+        fill="var(--c--contextuals--background--surface--tertiary, white)"
+      />
       <path
         fill-rule="evenodd"
         clip-rule="evenodd"
@@ -62,7 +69,7 @@
       width="23.3"
       height="31.3"
       rx="3.20556"
-      stroke="white"
+      stroke="var(--c--contextuals--background--surface--tertiary, white)"
       stroke-opacity="0.65"
       stroke-width="0.7"
     />
@@ -86,8 +93,14 @@
       y2="32.3206"
       gradientUnits="userSpaceOnUse"
     >
-      <stop stop-color="white" stop-opacity="0" />
-      <stop offset="1" stop-color="white" />
+      <stop
+        stop-color="var(--c--contextuals--background--surface--tertiary, white)"
+        stop-opacity="0"
+      />
+      <stop
+        offset="1"
+        stop-color="var(--c--contextuals--background--surface--tertiary, white)"
+      />
     </linearGradient>
     <linearGradient
       id="paint1_linear_3236_2952"
@@ -97,8 +110,14 @@
       y2="32.5"
       gradientUnits="userSpaceOnUse"
     >
-      <stop stop-color="white" stop-opacity="0" />
-      <stop offset="1" stop-color="white" />
+      <stop
+        stop-color="var(--c--contextuals--background--surface--tertiary, white)"
+        stop-opacity="0"
+      />
+      <stop
+        offset="1"
+        stop-color="var(--c--contextuals--background--surface--tertiary, white)"
+      />
     </linearGradient>
     <clipPath id="clip0_3236_2952">
       <rect

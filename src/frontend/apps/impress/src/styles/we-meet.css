@@ -25,6 +25,11 @@ html[data-wemeet-embed].cunningham-theme--dark {
   /* 深色下 surface--secondary 已被 cunningham.ts 钉成 #1E1E1E(= meet greyscale.50),
      正是 meet 二级面板的底色。 */
   --wm-panel-bg: var(--c--contextuals--background--surface--secondary);
+
+  /* Keep compact floating controls distinct without drawing a bright double
+     outline around them on the near-black App shell. */
+  --wm-shadow-raised:
+    inset 0 0 0 1px rgb(255 255 255 / 6%), 0 2px 6px -1px rgb(0 0 0 / 28%);
 }
 
 /**
