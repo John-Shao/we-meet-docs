@@ -39,6 +39,7 @@ from core.choices import (
     LinkRoleChoices,
     RoleChoices,
     get_equivalent_link_definition,
+    get_language_choices,
 )
 from core.utils.treebeard import create_tree_node_with_retry
 from core.validators import sub_validator
@@ -164,7 +165,7 @@ class User(AbstractBaseUser, BaseModel, auth_models.PermissionsMixin):
 
     language = models.CharField(
         max_length=10,
-        choices=settings.LANGUAGES,
+        choices=get_language_choices,
         default=None,
         verbose_name=_("language"),
         help_text=_("The language in which the user wants to see the interface."),

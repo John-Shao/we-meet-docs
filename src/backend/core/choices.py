@@ -1,7 +1,13 @@
 """Declare and configure choices for Docs' core application."""
 
+from django.conf import settings
 from django.db.models import TextChoices
 from django.utils.translation import gettext_lazy as _
+
+
+def get_language_choices():
+    """Return the languages enabled for the current deployment."""
+    return settings.LANGUAGES
 
 
 class PriorityTextChoices(TextChoices):
