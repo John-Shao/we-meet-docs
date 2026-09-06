@@ -36,19 +36,29 @@ export type EmbedPlatform = 'web' | 'app';
 const CHROME_KEY = 'docs-chrome';
 
 /**
- * 「阅读态」标记(`?chrome=none`)。
+ * 内嵌壳收敛模式:`none` = 阅读态(隐左栏,用于 App 单文档查看器)、
+ * `editor` = 编辑画布(隐站点 chrome,只留编辑器,用于 App 编辑画布)、
+ * 其它/缺省 = `full`(不收敛,独立访问或云文档 tab 的完整页)。
  *
- * 用在 App 的单文档查看器上:那里已经有 App 自己的顶栏,再叠 docs 的左栏开关就是
- * 第三层导航壳。进站时带 `?chrome=none`,这里在**模块求值时**(早于任何客户端重定向)
+ * 进站时带 `?chrome=<mode>`,这里在**模块求值时**(早于任何客户端重定向)
  * 把它落进 sessionStorage,好活过 docs 自己的跳转链 —— 与 `?embed=1` 同款手法,
  * 那条的教训见 useIsEmbedded 顶部。
  */
+const normalizeChrome = (raw: string | null): 'none' | 'editor' | null => {
+  if (raw === 'none' || raw === 'editor') {
+    return raw;
+  }
+  return null;
+};
+
 if (typeof window !== 'undefined') {
   try {
-    const chrome = new URLSearchParams(window.location.search).get('chrome');
-    if (chrome === 'none') {
-      window.sessionStorage.setItem(CHROME_KEY, 'none');
-    } else if (chrome) {
+    const chrome = normalizeChrome(
+      new URLSearchParams(window.location.search).get('chrome'),
+    );
+    if (chrome) {
+      window.sessionStorage.setItem(CHROME_KEY, chrome);
+    } else {
       // 显式传了别的值(App 的云文档 tab 进站带 `chrome=full`)就**清掉**标记。
       // 不能假设两个 WebView 实例的 sessionStorage 是隔离的:万一同进程共享,
       // 打开过一次文档查看器就会让常驻的云文档 tab 从此丢掉左栏开关。
@@ -59,19 +69,24 @@ if (typeof window !== 'undefined') {
   }
 }
 
-const isChromeHidden = (): boolean => {
+/** 当前是否处于某项收敛壳(如 `editor` / `none`);未收敛返回 false。 */
+const isChromeMode = (mode: 'none' | 'editor' | 'full'): boolean => {
   if (typeof window === 'undefined') {
     return false;
   }
+  // full 是"不收敛",任何带标记的收敛态都不算 full。
+  if (mode === 'full') {
+    return !isChromeMode('none') && !isChromeMode('editor');
+  }
   try {
-    if (window.sessionStorage.getItem(CHROME_KEY) === 'none') {
+    if (window.sessionStorage.getItem(CHROME_KEY) === mode) {
       return true;
     }
   } catch {
     /* ignore */
   }
   try {
-    return new URLSearchParams(window.location.search).get('chrome') === 'none';
+    return new URLSearchParams(window.location.search).get('chrome') === mode;
   } catch {
     return false;
   }
@@ -258,9 +273,15 @@ export const useEmbedShell = (): void => {
     } else {
       delete root.dataset.wemeetEmbed;
     }
-    // 阅读态只在被内嵌时成立 —— 独立访问带上 ?chrome=none 不该让人失去左栏开关。
-    if (detected && isChromeHidden()) {
-      root.dataset.wemeetChrome = 'none';
+    // 收敛壳只在被内嵌时成立 —— 独立访问带上 ?chrome=none/editor 不该让人失去
+    // 左栏/站点 chrome(与 `?chrome=none` 原有判据一致,这里泛化到 `editor`)。
+    const chromeMode = isChromeMode('editor')
+      ? 'editor'
+      : isChromeMode('none')
+        ? 'none'
+        : null;
+    if (detected && chromeMode) {
+      root.dataset.wemeetChrome = chromeMode;
     } else {
       delete root.dataset.wemeetChrome;
     }
