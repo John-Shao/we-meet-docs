@@ -30,6 +30,8 @@ TAG="${TAG:-$(git -C "$DOCS_REPO" rev-parse --short HEAD 2>/dev/null || true)}"
 [[ -n "$TAG" ]] || { echo "✗ 无法取 git 短 sha 作默认 tag，请显式 TAG=<tag> 再跑"; exit 1; }
 API_ORIGIN="${API_ORIGIN:-https://docs.we-meet.online}" # 前端烘焙的后端域名
 PLATFORM="${PLATFORM:-linux/amd64}"                    # 单节点 amd64 k3s；如需 arm 加 linux/arm64
+NEXT_CACHE_REVISION="${NEXT_CACHE_REVISION:-v1}"         # 改用新值可从空的 Next 编译缓存开始
+[[ "$NEXT_CACHE_REVISION" =~ ^[a-zA-Z0-9_.-]+$ ]] || { echo "✗ NEXT_CACHE_REVISION 只能包含字母、数字、点、下划线或连字符"; exit 1; }
 DOCKER_USER_ARG="1001:127"                             # 与官方 CI 一致
 
 # 国内构建换源（默认阿里云/npmmirror；想走官方源就把对应变量设成官方值，如 ALPINE_MIRROR= 空即用官方 apk 源）。
@@ -70,6 +72,7 @@ docker buildx build --platform "$PLATFORM" \
 # 2) frontend（含简体 translations.json；API_ORIGIN 烘焙进 NEXT_PUBLIC_API_ORIGIN）
 docker buildx build --platform "$PLATFORM" \
   -f src/frontend/Dockerfile --target frontend-production \
+  --build-arg NEXT_CACHE_REVISION="$NEXT_CACHE_REVISION" \
   --build-arg API_ORIGIN="$API_ORIGIN" \
   --build-arg PUBLISH_AS_MIT=false \
   --build-arg DOCKER_USER="$DOCKER_USER_ARG" \

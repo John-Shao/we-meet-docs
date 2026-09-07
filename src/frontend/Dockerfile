@@ -55,7 +55,12 @@ ENV NEXT_PUBLIC_SW_DEACTIVATED=${SW_DEACTIVATED}
 ARG PUBLISH_AS_MIT
 ENV NEXT_PUBLIC_PUBLISH_AS_MIT=${PUBLISH_AS_MIT}
 
-RUN yarn build
+ARG NEXT_CACHE_REVISION=v1
+ARG TARGETPLATFORM
+# BuildKit owns this cache; it is never copied into the runtime image.
+# The helper isolates dependencies/configuration inside the locked mount.
+RUN --mount=type=cache,id=we-meet-docs-next-${NEXT_CACHE_REVISION},target=/var/cache/we-meet-next,sharing=locked \
+    node scripts/build-with-next-cache.mjs /var/cache/we-meet-next
 
 # Normalize output path to /app (matches the runtime-prod layout)
 FROM scratch AS frontend-build-output

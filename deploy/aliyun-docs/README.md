@@ -72,6 +72,24 @@
 8. **接通 meet**（在 we-meet 那台）：`values.meet.yaml` 已含 `DOCS_API_URL`；把 `values.secrets.yaml`
    的 `DOCS_SERVER_TO_SERVER_TOKEN` 填成与本套件 `DOCS_S2S_TOKEN` 同一个值，`helm upgrade meet`。
 
+## 前端编译缓存
+
+`build-and-push.sh` 默认通过 BuildKit 持久化 `.next/cache`。首次构建预热缓存，后续源码修改仍执行完整 `yarn build`，但可复用兼容的编译中间结果。缓存保存在当前 builder，不会随镜像推送到仓库，也不会进入最终 Nginx 镜像；镜像仍只复制本次静态导出的 `out`。
+
+- 缓存按 Node 版本、平台、依赖清单/锁文件、Next/TypeScript 配置、`.env*` 文件及 `NEXT_PUBLIC_*` 构建环境自动分区。普通 CSS/组件修改不更换分区。
+- 缓存挂载使用 `sharing=locked`；同一缓存修订号的并行前端构建会排队，避免同时写入。
+- 构建日志中的 `[next-cache] new/existing namespace` 表示分区是否已有数据，不保证每个模块都命中缓存。实际提速取决于改动范围和 Next.js 的缓存失效规则；格式检查、静态导出和镜像推送仍会耗时。
+
+正常构建命令不变。需要排查缓存问题时指定一个未使用过的修订号：
+
+```bash
+NEXT_CACHE_REVISION=reset-20260907-1 bash deploy/aliyun-docs/build-and-push.sh
+```
+
+之后继续使用相同修订号即可复用这份新缓存。该参数只影响前端编译阶段，不清空其它项目缓存；仅传 Docker 的 `--no-cache` 不会清空 cache mount。直接运行 `docker buildx build` 时对应参数为 `--build-arg NEXT_CACHE_REVISION=reset-20260907-1`。
+
+缓存会占用构建机磁盘，受 BuildKit 垃圾回收管理；可用 `docker buildx du` 查看占用。更换 builder 或缓存被回收后会重新预热，不影响构建正确性。不持久化整个 `.next` 或 `out`，避免携带旧构建产物。
+
 ## 部署时须核对（占位 + ⚠️）
 
 - 全部密钥填 `secrets.env`（对应 `docs.values.yaml` 的 `${VAR}` 占位）：`DOCS_CLIENT_SECRET`、`DOCS_S2S_TOKEN`、`OSS_AK`/`OSS_SK`、`DOCS_DB_PASSWORD`/`DOCS_REDIS_PASSWORD`、`DJANGO_SECRET_KEY`、`Y_PROVIDER_API_KEY`、`COLLAB_SERVER_SECRET`、SMTP。
