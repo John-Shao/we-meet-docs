@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import * as Y from 'yjs';
 
 import { useDocContentUpdate } from '@/docs/doc-management/api/useDocContentUpdate';
@@ -7,6 +7,7 @@ import { useProviderStore } from '@/docs/doc-management/stores/useProviderStore'
 import { KEY_LIST_DOC_VERSIONS } from '@/docs/doc-versioning/api/useDocVersions';
 import { COMMENT_UPDATE_ORIGIN } from '@/features/docs/doc-comments/api/DocsThreadStore';
 import { useIsOffline } from '@/features/service-worker';
+import { isWeMeetApp, sendToHost } from '@/hooks/useIsEmbedded';
 import { toBase64 } from '@/utils/string';
 import { isFirefox } from '@/utils/userAgent';
 
@@ -22,18 +23,48 @@ export const useSaveDoc = (docId: string, yDoc: Y.Doc) => {
 
   const { isOffline } = useIsOffline();
   const isSavingRef = useRef(false);
+  const revision = useRef(0);
+  const savedRevision = useRef(0);
+  const savingRevision = useRef(0);
+  const pendingRequests = useRef(new Set<string>());
+  const flushRef = useRef<() => boolean>(() => false);
+  const reportDirty = useCallback(() => {
+    if (isWeMeetApp()) {
+      sendToHost({
+        type: 'wemeet-editor-dirty',
+        docId,
+        dirty: revision.current !== savedRevision.current,
+      });
+    }
+  }, [docId]);
+  const finishRequests = useCallback(
+    (success: boolean) => {
+      pendingRequests.current.forEach((requestId) => {
+        sendToHost({ type: 'wemeet-save-result', docId, requestId, success });
+      });
+      pendingRequests.current.clear();
+    },
+    [docId],
+  );
   const { mutate: updateDocContent } = useDocContentUpdate({
     listInvalidQueries: [KEY_LIST_DOC_VERSIONS],
     isOptimistic: isOffline, // Enable optimistic updates when offline, to update the cache immediately
     onSuccess: () => {
       isSavingRef.current = false;
-      setIsLocalChange(false);
+      savedRevision.current = savingRevision.current;
+      reportDirty();
+      if (revision.current === savedRevision.current) {
+        finishRequests(true);
+      } else if (pendingRequests.current.size) {
+        flushRef.current();
+      }
     },
     onError: () => {
       isSavingRef.current = false;
+      reportDirty();
+      finishRequests(false);
     },
   });
-  const [isLocalChange, setIsLocalChange] = useState<boolean>(false);
 
   /**
    * Update initial doc when doc is updated by other users,
@@ -76,7 +107,10 @@ export const useSaveDoc = (docId: string, yDoc: Y.Doc) => {
         return;
       }
 
-      setIsLocalChange(transaction.local || isAIChange);
+      if (transaction.local || isAIChange) {
+        revision.current += 1;
+        reportDirty();
+      }
     };
 
     yDoc.on('update', onUpdate);
@@ -84,14 +118,15 @@ export const useSaveDoc = (docId: string, yDoc: Y.Doc) => {
     return () => {
       yDoc.off('update', onUpdate);
     };
-  }, [yDoc]);
+  }, [yDoc, reportDirty]);
 
   const saveDoc = useCallback(() => {
-    if (!isLocalChange || isSavingRef.current) {
+    if (revision.current === savedRevision.current || isSavingRef.current) {
       return false;
     }
 
     isSavingRef.current = true;
+    savingRevision.current = revision.current;
     updateDocContent({
       id: docId,
       content: toBase64(Y.encodeStateAsUpdate(yDoc)),
@@ -99,7 +134,46 @@ export const useSaveDoc = (docId: string, yDoc: Y.Doc) => {
     });
 
     return true;
-  }, [isLocalChange, updateDocContent, docId, yDoc, isConnectedToCollabServer]);
+  }, [updateDocContent, docId, yDoc, isConnectedToCollabServer]);
+
+  useEffect(() => {
+    flushRef.current = saveDoc;
+  }, [saveDoc]);
+
+  useEffect(() => {
+    if (!isWeMeetApp()) {
+      return;
+    }
+    reportDirty();
+    const onMessage = (event: MessageEvent) => {
+      const data = event.data as {
+        type?: string;
+        docId?: string;
+        requestId?: unknown;
+      } | null;
+      if (
+        data?.type !== 'wemeet-save-now' ||
+        data.docId !== docId ||
+        typeof data.requestId !== 'string' ||
+        data.requestId.length > 100
+      ) {
+        return;
+      }
+      pendingRequests.current.add(data.requestId);
+      if (isOffline) {
+        finishRequests(false);
+      } else if (
+        revision.current === savedRevision.current &&
+        !isSavingRef.current
+      ) {
+        finishRequests(true);
+      } else {
+        saveDoc();
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [docId, finishRequests, isOffline, reportDirty, saveDoc]);
 
   const router = useRouter();
 

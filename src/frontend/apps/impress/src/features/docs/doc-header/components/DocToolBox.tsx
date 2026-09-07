@@ -7,7 +7,7 @@ import {
 import { Present } from '@gouvfr-lasuite/ui-kit/icons';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import AddLinkSVG from '@/assets/icons/ui-kit/add_link.svg';
@@ -107,6 +107,20 @@ export const DocToolBox = ({ doc }: DocToolBoxProps) => {
   const [isModalExportOpen, setIsModalExportOpen] = useState(false);
   const [isModalShareOpen, setIsModalShareOpen] = useState(false);
   const [isModalHistoryOpen, setIsModalHistoryOpen] = useState(false);
+  const openedVersion = useRef<string | undefined>(undefined);
+  const requestedVersion =
+    typeof router.query.version === 'string' ? router.query.version : undefined;
+  useEffect(() => {
+    if (
+      doc.abilities.versions_list &&
+      requestedVersion &&
+      requestedVersion.length <= 1024 &&
+      openedVersion.current !== requestedVersion
+    ) {
+      openedVersion.current = requestedVersion;
+      setIsModalHistoryOpen(true);
+    }
+  }, [doc.abilities.versions_list, requestedVersion]);
   const [isModalLeaveOpen, setIsModalLeaveOpen] = useState(false);
   const [isPresenterOpen, setIsPresenterOpen] = useState(false);
 
@@ -289,6 +303,7 @@ export const DocToolBox = ({ doc }: DocToolBoxProps) => {
       )}
       {isModalHistoryOpen && (
         <ModalSelectVersion
+          initialVersionId={requestedVersion}
           onClose={() => {
             setIsModalHistoryOpen(false);
             restoreFocus();

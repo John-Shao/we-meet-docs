@@ -40,15 +40,18 @@ const NoPaddingStyle = createGlobalStyle`
 type ModalSelectVersionProps = {
   doc: Doc;
   onClose: () => void;
+  initialVersionId?: string;
 };
 
 export const ModalSelectVersion = ({
   onClose,
   doc,
+  initialVersionId,
 }: ModalSelectVersionProps) => {
   const { t } = useTranslation();
-  const [selectedVersionId, setSelectedVersionId] =
-    useState<Versions['version_id']>();
+  const [selectedVersionId, setSelectedVersionId] = useState<
+    Versions['version_id'] | undefined
+  >(initialVersionId);
   const canRestore = doc.abilities.partial_update;
   const restoreModal = useModal();
 

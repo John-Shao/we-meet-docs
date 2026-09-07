@@ -84,8 +84,7 @@ html[data-wemeet-chrome='none'] .--docs--left-panel-collapse-button {
  */
 html[data-wemeet-chrome='editor'] .--docs--resizable-left-panel,
 html[data-wemeet-chrome='editor'] .--docs--left-panel,
-html[data-wemeet-chrome='editor'] .--docs--left-panel-collapse-button,
-html[data-wemeet-chrome='editor'] .--docs--right-panel {
+html[data-wemeet-chrome='editor'] .--docs--left-panel-collapse-button {
   display: none;
 }
 

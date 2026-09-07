@@ -271,6 +271,31 @@ export const BlockNoteEditor = ({ doc, provider }: BlockNoteEditorProps) => {
     };
   }, [setEditor, editor]);
 
+  useEffect(() => {
+    if (!canSeeComment || !threadStore) {
+      return;
+    }
+    const requested = new URLSearchParams(window.location.search).get('thread');
+    if (!requested) {
+      return;
+    }
+    let selected = false;
+    const select = () => {
+      const thread = threadStore.getThreads().get(requested);
+      if (selected || !thread) {
+        return;
+      }
+      selected = true;
+      useCommentSidebarStore
+        .getState()
+        .setFilter(thread.resolved ? 'resolved' : 'open');
+      useRightPanelStore.getState().setActivePanel('comments');
+      editor.getExtension(CommentsExtension)?.selectThread(requested);
+    };
+    select();
+    return threadStore.subscribe(select);
+  }, [canSeeComment, editor, threadStore]);
+
   return (
     <Box ref={refEditorContainer} $height="100%">
       <DocsEditorStyle />

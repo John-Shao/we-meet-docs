@@ -15,6 +15,7 @@ import {
 } from '../types';
 
 import { DocsThreadStoreAuth } from './DocsThreadStoreAuth';
+import { normalizeCommentBody } from './normalizeCommentBody';
 
 type ServerThreadListResponse = ServerThread[];
 
@@ -35,6 +36,26 @@ export class DocsThreadStore extends ThreadStore {
   private yDoc?: Y.Doc;
   private lastPingAt = 0;
   private pingTimer?: ReturnType<typeof setTimeout>;
+  private refreshTimer?: ReturnType<typeof setInterval>;
+  private polling = false;
+  private destroyed = false;
+  private refreshVisible = () => {
+    if (
+      this.destroyed ||
+      document.visibilityState === 'hidden' ||
+      this.polling
+    ) {
+      return;
+    }
+    this.polling = true;
+    void this.initThreads()
+      .catch(() => {
+        // Keep the last successful snapshot; retry on visibility or the next interval.
+      })
+      .finally(() => {
+        this.polling = false;
+      });
+  };
 
   constructor(
     protected docId: Doc['id'],
@@ -50,10 +71,15 @@ export class DocsThreadStore extends ThreadStore {
       this.awareness?.on('update', this.onAwarenessUpdate);
 
       this.refreshThreads();
+      this.refreshTimer = setInterval(this.refreshVisible, 30_000);
+      document.addEventListener('visibilitychange', this.refreshVisible);
     }
   }
 
   public destroy() {
+    this.destroyed = true;
+    clearInterval(this.refreshTimer);
+    document.removeEventListener('visibilitychange', this.refreshVisible);
     this.awareness?.off('update', this.onAwarenessUpdate);
     if (this.pingTimer) {
       clearTimeout(this.pingTimer);
@@ -363,6 +389,9 @@ export class DocsThreadStore extends ThreadStore {
     }
 
     const threads = (await response.json()) as ServerThreadListResponse;
+    if (this.destroyed) {
+      return;
+    }
     const next = new Map<string, ClientThreadData>();
     threads.forEach((thread) => {
       // Orphan threads without comments - we delete them to avoid side effects
@@ -625,7 +654,7 @@ const serverCommentToClientComment = (c: ServerComment): ClientCommentData => ({
   type: 'comment',
   id: c.id,
   userId: encodeURIComponent(c.user?.full_name || ''),
-  body: c.body,
+  body: normalizeCommentBody(c.body),
   createdAt: new Date(c.created_at),
   updatedAt: new Date(c.updated_at),
   reactions: (c.reactions ?? []).map(serverReactionToReactionData),
