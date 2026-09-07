@@ -2,6 +2,12 @@
 
 此协议用于 `WeMeetApp` WebView 中的编辑画布。普通 Web 的保存策略不变。配套 Android 设计与验收记录位于 `we-meet-android/docs/云文档原生化_复审与功能对齐.md`。
 
+## 编辑画布布局
+
+App 的 `chrome=editor` 模式隐藏整排文档浮动工具栏（分享、评论开关、更多操作），同时移除其占位高度和滚动渐变遮罩。分享、评论和版本入口由原生详情页提供。保留可编辑标题、正文格式工具、评论定位面板及历史版本弹窗；关闭画布仍经过保存确认。此规则只匹配 `data-wemeet-embed="app"` 与 `data-wemeet-chrome="editor"`，普通 Web、Web 内嵌和 `chrome=none/full` 不受影响。
+
+布局规则位于 `src/frontend/apps/impress/src/styles/we-meet.css`，需要重新构建并部署 Docs 前端后生效，无需更新 Android APK。
+
 ## 就绪与消息身份
 
 App 每次主页面加载生成新的 `editorInstanceId`。画布完成数据加载、挂载保存协调器后，才响应 hello。App 收到匹配的 ready 前隐藏画布并禁止输入；超时提供重试，不能将没有收到 dirty 当作已经保存。

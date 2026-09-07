@@ -69,18 +69,16 @@ html[data-wemeet-chrome='none'] .--docs--left-panel-collapse-button {
 /**
  * 编辑画布(`?chrome=editor`,见 hooks/useEmbedShell)。
  *
- * 用在 App 的编辑画布:那一屏已经有 App 自己的顶栏(原生标题编辑框 + 顶栏),
- * docs 只需要**编辑器本体**。这里隐掉 docs 站点级 chrome —— 左栏(可拖宽 panel)、
- * 右栏、左栏抽屉开关 —— 让主内容(编辑器 + DocFloatingBar)占满整个视口。
+ * App 已提供原生顶栏和文档详情操作入口。编辑画布保留可编辑标题与正文，
+ * 隐藏站点左栏、左栏开关及 App 中重复的文档浮动工具栏。
  *
- * 刻意保留 `DocFloatingBar`:它承载评论/版本/分享/工具箱等**文档自身**功能,
- * 是编辑画布该有的工具入口(与 `?chrome=none` 阅读态保留分享/工具箱一致)。
+ * 右侧评论面板继续支持原生评论定位，正文格式工具栏和历史版本弹窗也保留。
  *
  * 来源:
  * - features/left-panel/components/ResizableLeftPanel.tsx(`--docs--resizable-left-panel`)
  * - features/left-panel/components/LeftPanel.tsx(`--docs--left-panel`)
  * - features/left-panel/components/LeftPanelCollapseButton.tsx(`--docs--left-panel-collapse-button`)
- * - features/right-panel/components/RightPanel.tsx(`--docs--right-panel`)
+ * - components/FloatingBar.tsx(`--docs--floating-bar`)
  */
 html[data-wemeet-chrome='editor'] .--docs--resizable-left-panel,
 html[data-wemeet-chrome='editor'] .--docs--left-panel,
@@ -90,5 +88,12 @@ html[data-wemeet-chrome='editor'] .--docs--left-panel-collapse-button {
 
 /* 收敛后左栏不再有 resize handle;隐藏它避免空占/可拖把手残留。 */
 html[data-wemeet-chrome='editor'] [data-panel-resize-handle] {
+  display: none;
+}
+
+/* 隐藏整个容器，连同 sticky 区域、渐变遮罩和最小高度一起移除。
+   仅限 App 编辑画布；普通 Web、Web 内嵌和 chrome=none/full 保留文档操作。 */
+html[data-wemeet-embed='app'][data-wemeet-chrome='editor']
+  .--docs--floating-bar {
   display: none;
 }
