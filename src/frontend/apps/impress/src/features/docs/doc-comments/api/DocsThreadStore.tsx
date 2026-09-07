@@ -3,6 +3,7 @@ import type { Awareness } from 'y-protocols/awareness';
 import * as Y from 'yjs';
 
 import { APIError, errorCauses, fetchAPI } from '@/api';
+import { trackEditorComment } from '@/docs/doc-editor/nativeSaveTasks';
 import { Doc } from '@/features/docs/doc-management';
 
 import { useEditorStore } from '../../doc-editor/stores';
@@ -281,29 +282,30 @@ export class DocsThreadStore extends ThreadStore {
       metadata?: unknown;
     };
     metadata?: unknown;
-  }) => {
-    const response = await fetchAPI(`documents/${this.docId}/threads/`, {
-      method: 'POST',
-      body: JSON.stringify({
-        body: options.initialComment.body,
-      }),
+  }) =>
+    trackEditorComment(this.docId, async () => {
+      const response = await fetchAPI(`documents/${this.docId}/threads/`, {
+        method: 'POST',
+        body: JSON.stringify({
+          body: options.initialComment.body,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new APIError(
+          'Failed to create thread in document',
+          await errorCauses(response),
+        );
+      }
+
+      const thread = (await response.json()) as ServerThread;
+      const threadData: ClientThreadData = serverThreadToClientThread(thread);
+      this.upsertClientThreadData(threadData);
+      this.notifySubscribers();
+      this.ping(threadData.id);
+
+      return threadData;
     });
-
-    if (!response.ok) {
-      throw new APIError(
-        'Failed to create thread in document',
-        await errorCauses(response),
-      );
-    }
-
-    const thread = (await response.json()) as ServerThread;
-    const threadData: ClientThreadData = serverThreadToClientThread(thread);
-    this.upsertClientThreadData(threadData);
-    this.notifySubscribers();
-    this.ping(threadData.id);
-
-    return threadData;
-  };
 
   public getThread(threadId: string) {
     const thread = this.threads.get(threadId);
@@ -413,46 +415,53 @@ export class DocsThreadStore extends ThreadStore {
       metadata?: unknown;
     };
     threadId: string;
-  }) => {
-    const { threadId } = options;
+  }) =>
+    trackEditorComment(this.docId, async () => {
+      const { threadId } = options;
 
-    const response = await fetchAPI(
-      `documents/${this.docId}/threads/${threadId}/comments/`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          body: options.comment.body,
-        }),
-      },
-    );
+      const response = await fetchAPI(
+        `documents/${this.docId}/threads/${threadId}/comments/`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            body: options.comment.body,
+          }),
+        },
+      );
 
-    if (!response.ok) {
-      throw new APIError('Failed to add comment ', await errorCauses(response));
-    }
+      if (!response.ok) {
+        throw new APIError(
+          'Failed to add comment ',
+          await errorCauses(response),
+        );
+      }
 
-    const comment = (await response.json()) as ServerComment;
+      const comment = (await response.json()) as ServerComment;
 
-    // Optimistically update local thread with new comment
-    const existing = this.threads.get(threadId);
-    if (existing) {
-      const updated: ClientThreadData = {
-        ...existing,
-        updatedAt: new Date(comment.updated_at || comment.created_at),
-        comments: [...existing.comments, serverCommentToClientComment(comment)],
-      };
-      this.upsertClientThreadData(updated);
-      this.notifySubscribers();
-    } else {
-      // Fallback to fetching the thread if we don't have it locally
-      await this.refreshThread(threadId);
-    }
-    this.ping(threadId);
+      // Optimistically update local thread with new comment
+      const existing = this.threads.get(threadId);
+      if (existing) {
+        const updated: ClientThreadData = {
+          ...existing,
+          updatedAt: new Date(comment.updated_at || comment.created_at),
+          comments: [
+            ...existing.comments,
+            serverCommentToClientComment(comment),
+          ],
+        };
+        this.upsertClientThreadData(updated);
+        this.notifySubscribers();
+      } else {
+        // Fallback to fetching the thread if we don't have it locally
+        await this.refreshThread(threadId);
+      }
+      this.ping(threadId);
 
-    // Auto-scroll to bottom of thread after adding comment
-    this.scrollToBottomOfThread();
+      // Auto-scroll to bottom of thread after adding comment
+      this.scrollToBottomOfThread();
 
-    return serverCommentToClientComment(comment);
-  };
+      return serverCommentToClientComment(comment);
+    });
 
   public updateComment = async (options: {
     comment: {
@@ -461,31 +470,32 @@ export class DocsThreadStore extends ThreadStore {
     };
     threadId: string;
     commentId: string;
-  }) => {
-    const { threadId, commentId, comment } = options;
+  }) =>
+    trackEditorComment(this.docId, async () => {
+      const { threadId, commentId, comment } = options;
 
-    const response = await fetchAPI(
-      `documents/${this.docId}/threads/${threadId}/comments/${commentId}/`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({
-          body: comment.body,
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      throw new APIError(
-        'Failed to add thread to document',
-        await errorCauses(response),
+      const response = await fetchAPI(
+        `documents/${this.docId}/threads/${threadId}/comments/${commentId}/`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            body: comment.body,
+          }),
+        },
       );
-    }
 
-    await this.refreshThread(threadId);
-    this.ping(threadId);
+      if (!response.ok) {
+        throw new APIError(
+          'Failed to add thread to document',
+          await errorCauses(response),
+        );
+      }
 
-    return;
-  };
+      await this.refreshThread(threadId);
+      this.ping(threadId);
+
+      return;
+    });
 
   public deleteComment = async (options: {
     threadId: string;

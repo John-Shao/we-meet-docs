@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-query';
 
 import { APIError, errorCauses, fetchAPI } from '@/api';
+import { trackEditorTitle } from '@/docs/doc-editor/nativeSaveTasks';
 
 import { Doc } from '../types';
 
@@ -16,20 +17,24 @@ export interface UpdateDocParams {
 export const updateDoc = async ({
   id,
   ...params
-}: UpdateDocParams): Promise<Doc> => {
-  const response = await fetchAPI(`documents/${id}/`, {
-    method: 'PATCH',
-    body: JSON.stringify({
-      ...params,
-    }),
+}: UpdateDocParams): Promise<Doc> =>
+  trackEditorTitle(id, async () => {
+    const response = await fetchAPI(`documents/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        ...params,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new APIError(
+        'Failed to update the doc',
+        await errorCauses(response),
+      );
+    }
+
+    return response.json() as Promise<Doc>;
   });
-
-  if (!response.ok) {
-    throw new APIError('Failed to update the doc', await errorCauses(response));
-  }
-
-  return response.json() as Promise<Doc>;
-};
 
 type UseUpdateDoc = UseMutationOptions<Doc, APIError, UpdateDocParams> & {
   listInvalidQueries?: string[];

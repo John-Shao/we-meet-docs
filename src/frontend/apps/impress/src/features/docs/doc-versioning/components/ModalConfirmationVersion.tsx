@@ -10,6 +10,7 @@ import { createGlobalStyle } from 'styled-components';
 
 import { Box, Text } from '@/components';
 import { useThreadStore } from '@/docs/doc-comments/stores/useThreadStore';
+import { trackEditorRestore } from '@/docs/doc-editor/nativeSaveTasks';
 import { Doc, base64ToYDoc, useProviderStore } from '@/docs/doc-management/';
 import { useDocContentUpdate } from '@/docs/doc-management/api/useDocContentUpdate';
 
@@ -45,12 +46,17 @@ export const ModalConfirmationVersion = ({
   const { toast } = useToastProvider();
   const { provider } = useProviderStore();
   const { threadStore } = useThreadStore();
-  const { mutate: updateDocContent } = useDocContentUpdate({
+  const {
+    mutateAsync: updateDocContent,
+    isPending,
+    isError,
+  } = useDocContentUpdate({
     listInvalidQueries: [KEY_LIST_DOC_VERSIONS],
     onSuccess: () => {
       const onDisplaySuccess = () => {
         toast(t('Version restored successfully'), VariantType.SUCCESS);
         onSuccess();
+        onClose();
       };
 
       if (!provider || !version?.content) {
@@ -77,14 +83,19 @@ export const ModalConfirmationVersion = ({
   return (
     <Modal
       isOpen
-      closeOnClickOutside
-      onClose={() => onClose()}
+      closeOnClickOutside={!isPending}
+      onClose={() => {
+        if (!isPending) {
+          onClose();
+        }
+      }}
       aria-label={t('Warning')}
       rightActions={
         <>
           <Button
             aria-label={`${t('Cancel')} - ${t('Warning')}`}
             variant="secondary"
+            disabled={isPending}
             fullWidth
             autoFocus
             onClick={() => onClose()}
@@ -94,18 +105,19 @@ export const ModalConfirmationVersion = ({
           <Button
             aria-label={t('Restore')}
             color="error"
+            disabled={isPending}
             fullWidth
             onClick={() => {
               if (!version?.content) {
                 return;
               }
 
-              updateDocContent({
-                id: docId,
-                content: version.content,
-              });
-
-              onClose();
+              void trackEditorRestore(docId, () =>
+                updateDocContent({
+                  id: docId,
+                  content: version.content,
+                }),
+              ).catch(() => undefined);
             }}
           >
             {t('Restore')}
@@ -126,7 +138,13 @@ export const ModalConfirmationVersion = ({
       }
     >
       <ModalStyle />
-      <Box className="--docs--modal-confirmation-version">
+      <Box
+        className="--docs--modal-confirmation-version"
+        data-restore-pending={isPending || isError ? 'true' : undefined}
+      >
+        {isError && (
+          <Text role="alert">{t('An error occurred. Please try again.')}</Text>
+        )}
         <Box>
           <Text $variation="secondary" as="p" $margin="none">
             {t(

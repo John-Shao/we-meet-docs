@@ -86,14 +86,18 @@ export const blockNoteSchema = (withMultiColumn?.(baseBlockNoteSchema) ||
 interface BlockNoteEditorProps {
   doc: Doc;
   provider: HocuspocusProvider;
+  readOnly?: boolean;
 }
 
-export const BlockNoteEditor = ({ doc, provider }: BlockNoteEditorProps) => {
+export const BlockNoteEditor = ({
+  doc,
+  provider,
+  readOnly = false,
+}: BlockNoteEditorProps) => {
   const { user } = useAuth();
   const { setEditor } = useEditorStore();
   const { themeTokens, theme } = useCunninghamTheme();
   const refEditorContainer = useRef<HTMLDivElement>(null);
-  useSaveDoc(doc.id, provider.document);
 
   const { i18n, t } = useTranslation();
   const langLocalesBN =
@@ -263,6 +267,40 @@ export const BlockNoteEditor = ({ doc, provider }: BlockNoteEditorProps) => {
 
   useUploadStatus(editor);
 
+  useSaveDoc(doc.id, provider.document, () => {
+    if (document.querySelector('[data-restore-pending="true"]')) {
+      return 'version-restore';
+    }
+    // Unsaved comment composers are independent of the document's Y.Doc.
+    const commentDraft = [
+      ...document.querySelectorAll(
+        '.bn-comment-editor [contenteditable="true"]',
+      ),
+    ].some(
+      (element) =>
+        element.textContent?.trim() || element.querySelector('img,video,audio'),
+    );
+    if (commentDraft) {
+      return 'comment-draft';
+    }
+    const pendingMedia = (blocks: typeof editor.document): boolean =>
+      blocks.some((block) => {
+        if (block.type === 'uploadLoader') {
+          return true;
+        }
+        if (
+          'url' in block.props &&
+          typeof block.props.url === 'string' &&
+          ['image', 'video', 'audio', 'file', 'pdf'].includes(block.type) &&
+          (!block.props.url || block.props.url.includes('media-check'))
+        ) {
+          return true;
+        }
+        return block.children?.length ? pendingMedia(block.children) : false;
+      });
+    return pendingMedia(editor.document) ? 'attachment' : undefined;
+  });
+
   useEffect(() => {
     setEditor(editor);
 
@@ -313,6 +351,7 @@ export const BlockNoteEditor = ({ doc, provider }: BlockNoteEditorProps) => {
         </Box>
       )}
       <BlockNoteView
+        editable={!readOnly}
         className="--docs--main-editor"
         editor={editor}
         formattingToolbar={false}

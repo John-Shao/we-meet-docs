@@ -296,8 +296,12 @@ export const useEmbedShell = (): void => {
     let settled = false;
 
     const onMessage = (e: MessageEvent) => {
-      const data = e.data as { type?: string; features?: unknown } | null;
-      if (data?.type !== MSG.hostHello) {
+      const data = e.data as {
+        type?: string;
+        features?: unknown;
+        protocolVersion?: number;
+      } | null;
+      if (data?.type !== MSG.hostHello || data.protocolVersion === 2) {
         return;
       }
       settled = true;
@@ -406,6 +410,16 @@ export const useEmbedShell = (): void => {
       if (data?.type === MSG.uiCommand) {
         if (data.command === 'close-left-panel') {
           useLeftPanelStore.getState().closePanel();
+        } else if (data.command === 'close-panels') {
+          useLeftPanelStore.getState().closePanel();
+          const hasDraft = [
+            ...document.querySelectorAll(
+              '.bn-comment-editor [contenteditable="true"]',
+            ),
+          ].some((element) => element.textContent?.trim());
+          if (!hasDraft) {
+            useRightPanelStore.getState().setActivePanel(null);
+          }
         } else if (data.command === 'open-left-panel') {
           useLeftPanelStore.getState().openPanel();
         }

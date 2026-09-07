@@ -11,9 +11,16 @@ import { isWeMeetApp, sendToHost } from '@/hooks/useIsEmbedded';
 import { toBase64 } from '@/utils/string';
 import { isFirefox } from '@/utils/userAgent';
 
+import { attachNativeEditorBridge } from '../nativeEditorBridge';
+
 const SAVE_INTERVAL = 60000;
 
-export const useSaveDoc = (docId: string, yDoc: Y.Doc) => {
+export const useSaveDoc = (
+  docId: string,
+  yDoc: Y.Doc,
+  blocker: () => string | undefined = () => undefined,
+) => {
+  const router = useRouter();
   /**
    * isSynced is more reliable than isConnected in this cases
    * because it indicates that the content is fully synchronised
@@ -28,6 +35,11 @@ export const useSaveDoc = (docId: string, yDoc: Y.Doc) => {
   const savingRevision = useRef(0);
   const pendingRequests = useRef(new Set<string>());
   const flushRef = useRef<() => boolean>(() => false);
+  const nativeWaiters = useRef(
+    new Set<{ resolve: () => void; reject: (error: Error) => void }>(),
+  );
+  const delegateRef = useRef({ isOffline, blocker });
+  delegateRef.current = { isOffline, blocker };
   const reportDirty = useCallback(() => {
     if (isWeMeetApp()) {
       sendToHost({
@@ -55,7 +67,9 @@ export const useSaveDoc = (docId: string, yDoc: Y.Doc) => {
       reportDirty();
       if (revision.current === savedRevision.current) {
         finishRequests(true);
-      } else if (pendingRequests.current.size) {
+        nativeWaiters.current.forEach(({ resolve }) => resolve());
+        nativeWaiters.current.clear();
+      } else if (pendingRequests.current.size || nativeWaiters.current.size) {
         flushRef.current();
       }
     },
@@ -63,6 +77,8 @@ export const useSaveDoc = (docId: string, yDoc: Y.Doc) => {
       isSavingRef.current = false;
       reportDirty();
       finishRequests(false);
+      nativeWaiters.current.forEach(({ reject }) => reject(new Error('save')));
+      nativeWaiters.current.clear();
     },
   });
 
@@ -144,15 +160,49 @@ export const useSaveDoc = (docId: string, yDoc: Y.Doc) => {
     if (!isWeMeetApp()) {
       return;
     }
+    const detach = attachNativeEditorBridge(docId, {
+      watchNavigation: (guard) => {
+        router.events.on('beforeHistoryChange', guard);
+        return () => router.events.off('beforeHistoryChange', guard);
+      },
+      isOffline: () => delegateRef.current.isOffline,
+      blocker: () => delegateRef.current.blocker(),
+      flush: () => {
+        if (
+          revision.current === savedRevision.current &&
+          !isSavingRef.current
+        ) {
+          return Promise.resolve();
+        }
+        return new Promise<void>((resolve, reject) => {
+          nativeWaiters.current.add({ resolve, reject });
+          flushRef.current();
+        });
+      },
+    });
+    const waiters = nativeWaiters.current;
+    return () => {
+      detach();
+      waiters.forEach(({ reject }) => reject(new Error('unmounted')));
+      waiters.clear();
+    };
+  }, [docId, yDoc, router.events]);
+
+  useEffect(() => {
+    if (!isWeMeetApp()) {
+      return;
+    }
     reportDirty();
     const onMessage = (event: MessageEvent) => {
       const data = event.data as {
         type?: string;
         docId?: string;
         requestId?: unknown;
+        editorInstanceId?: unknown;
       } | null;
       if (
         data?.type !== 'wemeet-save-now' ||
+        data.editorInstanceId !== undefined ||
         data.docId !== docId ||
         typeof data.requestId !== 'string' ||
         data.requestId.length > 100
@@ -174,8 +224,6 @@ export const useSaveDoc = (docId: string, yDoc: Y.Doc) => {
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
   }, [docId, finishRequests, isOffline, reportDirty, saveDoc]);
-
-  const router = useRouter();
 
   useEffect(() => {
     const onSave = (e?: Event) => {

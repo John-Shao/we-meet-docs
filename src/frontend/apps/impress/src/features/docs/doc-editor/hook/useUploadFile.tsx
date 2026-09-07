@@ -8,6 +8,7 @@ import { isSafeUrl } from '@/utils/url';
 
 import { useCreateDocAttachment } from '../api';
 import { ANALYZE_URL } from '../conf';
+import { trackEditorUpload } from '../nativeSaveTasks';
 import { DocsBlockNoteEditor } from '../types';
 
 export const useUploadFile = (docId: string) => {
@@ -22,10 +23,12 @@ export const useUploadFile = (docId: string) => {
       const body = new FormData();
       body.append('file', file);
 
-      const ret = await createDocAttachment({
-        docId,
-        body,
-      });
+      const ret = await trackEditorUpload(docId, () =>
+        createDocAttachment({
+          docId,
+          body,
+        }),
+      );
 
       return `${backendUrl()}${ret.file}`;
     },

@@ -14,6 +14,7 @@ import {
 import { useAuth } from '@/features/auth/';
 import { SkeletonEditorCore, useSkeletonStore } from '@/features/skeletons';
 import { useSkeletonFadeOut } from '@/features/skeletons/hooks/useFadeOut';
+import { isWeMeetApp } from '@/hooks/useIsEmbedded';
 import { useAnalytics } from '@/libs';
 import { useResponsiveStore } from '@/stores';
 
@@ -162,7 +163,9 @@ export const DocCoreEditor = ({ doc, readOnly }: DocCoreEditorProps) => {
     );
   }
 
-  if (readOnly) {
+  // Keep the same Y.Doc/save coordinator when native permissions change, so
+  // unsaved content is not silently replaced by a fresh reader coordinator.
+  if (readOnly && !isWeMeetApp()) {
     return (
       <BlockNoteReader
         initialContent={provider.document.getXmlFragment('document-store')}
@@ -171,5 +174,12 @@ export const DocCoreEditor = ({ doc, readOnly }: DocCoreEditorProps) => {
     );
   }
 
-  return <BlockNoteEditor doc={doc} provider={provider} />;
+  return (
+    <BlockNoteEditor
+      key={doc.id}
+      doc={doc}
+      provider={provider}
+      readOnly={readOnly}
+    />
+  );
 };
