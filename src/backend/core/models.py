@@ -360,7 +360,10 @@ class User(AbstractBaseUser, BaseModel, auth_models.PermissionsMixin):
         DocumentAccess.objects.bulk_create(
             [
                 DocumentAccess(
-                    user=self, document=invitation.document, role=invitation.role
+                    user=self,
+                    document=invitation.document,
+                    role=invitation.role,
+                    chat_permissions=invitation.chat_permissions,
                 )
                 for invitation in valid_invitations
             ]
@@ -526,7 +529,12 @@ class UserReconciliation(BaseModel):
         self.inactive_user.is_active = False
 
         # Actually perform the bulk operations
-        DocumentAccess.objects.bulk_update(updated_accesses, ["user", "role"])
+        # Reconciled identities have merged rights, not a reliably separable chat source.
+        for access in updated_accesses:
+            access.chat_permissions = {}
+        DocumentAccess.objects.bulk_update(
+            updated_accesses, ["user", "role", "chat_permissions"]
+        )
 
         if removed_accesses:
             ids_to_delete = [entry.id for entry in removed_accesses]
@@ -1629,6 +1637,7 @@ class DocumentAccess(BaseAccess):
         on_delete=models.CASCADE,
         related_name="accesses",
     )
+    chat_permissions = models.JSONField(default=dict, blank=True, editable=False)
 
     class Meta:
         db_table = "impress_document_access"
@@ -1661,6 +1670,13 @@ class DocumentAccess(BaseAccess):
 
     def save(self, *args, **kwargs):
         """Override save to clear the document's cache for number of accesses."""
+        if not kwargs.pop("chat_grant_update", False) and self.chat_permissions:
+            # A manual access edit supersedes source tracking. Never later undo it.
+            self.chat_permissions = {}
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = set(kwargs["update_fields"]) | {
+                    "chat_permissions"
+                }
         super().save(*args, **kwargs)
         self.document.invalidate_nb_accesses_cache()
 
@@ -2034,10 +2050,33 @@ class Reaction(BaseModel):
         return f"Reaction {self.emoji} on comment {self.comment.id}"
 
 
+class DocumentChatShare(BaseModel):
+    """One sharer's current grant for a document in a conversation."""
+
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    actor = models.ForeignKey(User, on_delete=models.CASCADE)
+    cid = models.CharField(max_length=255)
+    role = models.CharField(
+        max_length=20, choices=[("reader", "Reader"), ("editor", "Editor")]
+    )
+    complete = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["document", "actor", "cid"], name="unique_document_chat_sharer"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.actor_id}:{self.document_id}:{self.cid} ({self.role})"
+
+
 class Invitation(BaseModel):
     """User invitation to a document."""
 
     email = models.EmailField(_("email address"), null=False, blank=False)
+    chat_permissions = models.JSONField(default=dict, blank=True, editable=False)
     document = models.ForeignKey(
         Document,
         on_delete=models.CASCADE,
@@ -2066,6 +2105,16 @@ class Invitation(BaseModel):
 
     def __str__(self):
         return f"{self.email} invited to {self.document}"
+
+    def save(self, *args, **kwargs):
+        """Manual invitation edits supersede chat source tracking."""
+        if not kwargs.pop("chat_grant_update", False) and self.chat_permissions:
+            self.chat_permissions = {}
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = set(kwargs["update_fields"]) | {
+                    "chat_permissions"
+                }
+        super().save(*args, **kwargs)
 
     def clean(self):
         """Validate fields."""

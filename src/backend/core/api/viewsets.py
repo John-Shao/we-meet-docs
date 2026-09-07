@@ -54,6 +54,7 @@ from core.api.filters import remove_accents
 from core.services import mime_types
 from core.services.ai_services.blocknote import AIService
 from core.services.ai_services.legacy import get_legacy_ai_service
+from core.services.chat_permissions import chat_access
 from core.services.collaboration_services import CollaborationService
 from core.services.converter_services import (
     ConversionError,
@@ -1049,9 +1050,9 @@ class DocumentViewSet(
         access_documents_ids = models.DocumentAccess.objects.filter(
             db.Q(user=user) | db.Q(team__in=user.teams)
         ).values_list("document_id", flat=True)
-        traced_documents_ids = models.LinkTrace.objects.filter(
-            user=user
-        ).values_list("document_id", flat=True)
+        traced_documents_ids = models.LinkTrace.objects.filter(user=user).values_list(
+            "document_id", flat=True
+        )
 
         documents = (
             models.Document.objects.filter(ancestors_deleted_at__isnull=True)
@@ -1089,21 +1090,24 @@ class DocumentViewSet(
         permission_classes=[],
         url_path="grant-access-for-users",
     )
-    def grant_access_for_users(self, request):
-        """we-meet「分享云文档到聊天」精准授权(server-to-server)。
+    @transaction.atomic
+    def grant_access_for_users(self, request):  # noqa: PLR0912 - validate actor and reconcile each recipient independently
+        """Grant reader/editor access; explicit roles require the acting manager.
 
-        入参 ``{doc_id, users: [{sub, email}]}``——we-meet 把会话成员解析成
-        (sub, email) 列表传来,这里给每人授**只读**:已在 Docs 的用户建
-        DocumentAccess(reader);未登录过 Docs 的按 email 建 Invitation(reader,
-        登录后自动转 access,同 create-for-owner 的懒授权口径)。已有更高角色
-        (owner/editor)的用 get_or_create 保持不降级。幂等:重复分享不叠加。
+        Legacy S2S calls without role retain the existing reader-only contract.
         """
         doc_id = str(request.data.get("doc_id") or "").strip()
         users = request.data.get("users")
-        if not doc_id or not isinstance(users, list):
+        explicit_role = "role" in request.data
+        role = request.data.get("role", "reader")
+        if (
+            role not in ("reader", "editor")
+            or not doc_id
+            or not isinstance(users, list)
+        ):
             return drf_response.Response(
-                {"detail": "doc_id and users[] required"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"detail": "doc_id, users[] and reader/editor role required"},
+                status=400,
             )
         try:
             document = models.Document.objects.filter(
@@ -1112,39 +1116,80 @@ class DocumentViewSet(
         except (ValueError, ValidationError):
             document = None
         if document is None:
-            return drf_response.Response(
-                {"detail": "document not found"}, status=status.HTTP_404_NOT_FOUND
+            return drf_response.Response({"detail": "document not found"}, status=404)
+        if explicit_role:
+            actor_sub = str(request.data.get("actor_sub") or "").strip()
+            actor = (
+                models.User.objects.filter(sub=actor_sub).first() if actor_sub else None
             )
+            if actor is None or not document.get_abilities(actor).get(
+                "accesses_manage"
+            ):
+                return drf_response.Response(
+                    {"detail": "Document access management permission required"},
+                    status=403,
+                )
 
+        ranks = {
+            "reader": 0,
+            "commenter": 1,
+            "editor": 2,
+            "administrator": 3,
+            "owner": 4,
+        }
         granted = 0
+        complete = True
         for entry in users:
-            if not isinstance(entry, dict):
+            if not isinstance(entry, dict) or not entry.get("sub"):
+                complete = False
                 continue
-            sub = str(entry.get("sub") or "").strip()
+            sub = str(entry["sub"]).strip()
             email = str(entry.get("email") or "").strip()
-            if not sub:
-                continue
             try:
                 user = models.User.objects.get_user_by_sub_or_email(sub, email)
             except models.DuplicateEmailError:
-                user = None
+                complete = False
+                continue
             if user is not None:
-                _, created = models.DocumentAccess.objects.get_or_create(
-                    document=document,
-                    user=user,
-                    defaults={"role": models.RoleChoices.READER},
+                access, created = (
+                    models.DocumentAccess.objects.select_for_update().get_or_create(
+                        document=document,
+                        user=user,
+                        defaults={"role": role},
+                    )
                 )
-                if created:
-                    granted += 1
             elif email:
-                _, created = models.Invitation.objects.get_or_create(
-                    document=document,
-                    email=email,
-                    defaults={"role": models.RoleChoices.READER},
+                access, created = (
+                    models.Invitation.objects.select_for_update().get_or_create(
+                        document=document,
+                        email=email,
+                        defaults={"role": role},
+                    )
                 )
-                if created:
-                    granted += 1
-        return drf_response.Response({"granted": granted})
+            else:
+                complete = False
+                continue
+            if created:
+                granted += 1
+            elif ranks.get(access.role, 99) < ranks[role]:
+                access.role = role
+                access.save(update_fields=["role"])
+                granted += 1
+        result = {"granted": granted}
+        if explicit_role:
+            result.update(role=role, complete=complete)
+        return drf_response.Response(result)
+
+    @drf.decorators.action(
+        authentication_classes=[authentication.ServerToServerAuthentication],
+        detail=False,
+        methods=["post"],
+        permission_classes=[],
+        url_path="chat-access",
+    )
+    def chat_access(self, request):
+        """Read or change this actor's conversation grant."""
+        return drf_response.Response(chat_access(request.data))
 
     @drf.decorators.action(
         authentication_classes=[authentication.ServerToServerAuthentication],
@@ -1173,9 +1218,9 @@ class DocumentViewSet(
         access_documents_ids = models.DocumentAccess.objects.filter(
             db.Q(user=user) | db.Q(team__in=user.teams)
         ).values_list("document_id", flat=True)
-        traced_documents_ids = models.LinkTrace.objects.filter(
-            user=user
-        ).values_list("document_id", flat=True)
+        traced_documents_ids = models.LinkTrace.objects.filter(user=user).values_list(
+            "document_id", flat=True
+        )
 
         documents = models.Document.objects.filter(
             ancestors_deleted_at__isnull=True
