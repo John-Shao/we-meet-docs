@@ -104,6 +104,15 @@ export const DocsGridActions = ({ doc }: DocsGridActionsProps) => {
       testId: `docs-grid-actions-share-${doc.id}`,
     },
     {
+      label: t('Members and permissions'),
+      icon: <GroupSVG width={24} height={24} aria-hidden="true" />,
+      callback: () => {
+        openShareModal(doc, 'members');
+      },
+      isHidden: !doc.abilities.accesses_view,
+      testId: `docs-grid-actions-members-${doc.id}`,
+    },
+    {
       label: t('Move into a doc'),
       icon: <DocMoveInSVG width={24} height={24} aria-hidden="true" />,
       callback: () => {

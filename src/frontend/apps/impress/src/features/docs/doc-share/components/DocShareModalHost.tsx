@@ -14,7 +14,7 @@ import { DocShareModal } from './DocShareModal';
  * mutation 都会失效 KEY_DOC,故 doc 始终新鲜。
  */
 export const DocShareModalHost = () => {
-  const { doc: snapshot, close } = useDocShareModalStore();
+  const { doc: snapshot, page, close } = useDocShareModalStore();
 
   const { data: fresh } = useDoc(
     { id: snapshot?.id ?? '' },
@@ -30,5 +30,12 @@ export const DocShareModalHost = () => {
     return null;
   }
 
-  return <DocShareModal doc={doc} onClose={close} />;
+  return (
+    <DocShareModal
+      key={`${doc.id}-${page}`}
+      doc={doc}
+      initialPage={page}
+      onClose={close}
+    />
+  );
 };

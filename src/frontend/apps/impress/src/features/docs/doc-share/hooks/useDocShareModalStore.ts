@@ -5,7 +5,8 @@ import { Doc } from '@/docs/doc-management';
 interface DocShareModalStore {
   /** 打开中的文档快照;null = 弹窗关闭。 */
   doc: Doc | null;
-  open: (doc: Doc) => void;
+  page: 'share' | 'members';
+  open: (doc: Doc, page?: 'share' | 'members') => void;
   close: () => void;
 }
 
@@ -22,6 +23,7 @@ interface DocShareModalStore {
  */
 export const useDocShareModalStore = create<DocShareModalStore>((set) => ({
   doc: null,
-  open: (doc) => set({ doc }),
-  close: () => set({ doc: null }),
+  page: 'share',
+  open: (doc, page = 'share') => set({ doc, page }),
+  close: () => set({ doc: null, page: 'share' }),
 }));

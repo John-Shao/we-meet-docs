@@ -1,5 +1,5 @@
 import { Button, Modal, ModalSize } from '@gouvfr-lasuite/cunningham-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createGlobalStyle } from 'styled-components';
 
@@ -15,9 +15,14 @@ import { DocMembersModal } from './DocMembersModal';
 
 const ShareStyle = createGlobalStyle`
   .doc-sharing-layout { display: flex; flex-direction: column; min-height: 0; max-height: min(72dvh, 640px); font-size: 14px; line-height: 1.5; }
-  .doc-sharing-tabs { display: flex; gap: 8px; padding: 12px 24px; border-bottom: 1px solid var(--c--contextuals--border--surface--primary); }
+  .doc-sharing-tabs { display: flex; flex-shrink: 0; align-items: center; gap: 4px; padding: 12px 24px 0; border-bottom: 1px solid var(--c--contextuals--border--surface--primary); }
+  .doc-sharing-tab { display: inline-flex; align-items: center; justify-content: center; min-width: 5rem; min-height: var(--wm-control-height-compact); padding: 6px 12px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--c--contextuals--content--semantic--neutral--secondary); font: inherit; font-size: var(--c--globals--font--sizes--sm); font-weight: var(--c--globals--font--weights--medium); line-height: 1.428571; letter-spacing: 0.1px; cursor: pointer; transition: color 150ms, border-color 150ms, background-color 150ms; }
+  .doc-sharing-tab:hover:not(:disabled) { background: var(--c--contextuals--background--surface--secondary); color: var(--c--contextuals--content--semantic--neutral--primary); }
+  .doc-sharing-tab[aria-selected='true'] { border-bottom-color: var(--c--contextuals--border--semantic--brand--primary); color: var(--c--contextuals--content--semantic--brand--primary); }
+  .doc-sharing-tab:focus-visible { outline: 2px solid var(--c--contextuals--border--semantic--brand--primary); outline-offset: -2px; }
+  .doc-sharing-tab:disabled { color: var(--c--contextuals--content--semantic--neutral--tertiary); cursor: default; }
   .doc-sharing-scroll { overflow-y: auto; min-height: 0; padding: 16px 24px; }
-  .doc-sharing-footer { display: flex; flex-shrink: 0; justify-content: space-between; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--c--contextuals--border--surface--primary); }
+  .doc-sharing-footer { display: flex; flex-shrink: 0; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--c--contextuals--border--surface--primary); }
   .doc-sharing-options { padding: 0; border: 0; margin: 0 0 24px; }
   .doc-sharing-options legend { font-weight: 600; margin-bottom: 12px; }
   .doc-sharing-option { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; cursor: pointer; }
@@ -39,10 +44,10 @@ export function DocShareModal({
   initialPage?: 'share' | 'members';
 }) {
   const { t } = useTranslation();
+  const tabsId = useId();
   const canChat = useHostFeature('docs-sharing-v2');
   const hasLegacyHost = useHostFeature('route-sync');
   const platform = useEmbedPlatform();
-  const [page, setPage] = useState(initialPage);
   const [tab, setTab] = useState<'chat' | 'link'>('link');
   const touchedTab = useRef(false);
   const savingRef = useRef(false);
@@ -67,20 +72,9 @@ export function DocShareModal({
       setTab('link');
     }
   }, [canChat]);
-  if (page === 'members') {
+  if (initialPage === 'members') {
     return <DocMembersModal doc={doc} isRootDoc={isRootDoc} onClose={close} />;
   }
-  const membersEntry = doc.abilities.accesses_view ? (
-    <Button
-      variant="tertiary"
-      disabled={saving}
-      onClick={() => setPage('members')}
-    >
-      {t('Members and permissions')}
-    </Button>
-  ) : (
-    <span />
-  );
   const activeTab = canChat ? tab : 'link';
   return (
     <Modal
@@ -115,35 +109,52 @@ export function DocShareModal({
             role="tablist"
             aria-label={t('Sharing method')}
             onKeyDown={(event) => {
-              if (
-                !saving &&
-                (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
-              ) {
-                event.preventDefault();
-                touchedTab.current = true;
-                setTab(activeTab === 'chat' ? 'link' : 'chat');
-                const buttons =
-                  event.currentTarget.querySelectorAll<HTMLButtonElement>(
-                    '[role="tab"]',
-                  );
-                buttons[activeTab === 'chat' ? 1 : 0]?.focus();
+              if (saving) {
+                return;
               }
+              let nextTab: 'chat' | 'link';
+              switch (event.key) {
+                case 'ArrowLeft':
+                case 'ArrowRight':
+                  nextTab = activeTab === 'chat' ? 'link' : 'chat';
+                  break;
+                case 'Home':
+                  nextTab = 'chat';
+                  break;
+                case 'End':
+                  nextTab = 'link';
+                  break;
+                default:
+                  return;
+              }
+              event.preventDefault();
+              touchedTab.current = true;
+              setTab(nextTab);
+              const buttons =
+                event.currentTarget.querySelectorAll<HTMLButtonElement>(
+                  '[role="tab"]',
+                );
+              buttons[nextTab === 'chat' ? 0 : 1]?.focus();
             }}
           >
             {(['chat', 'link'] as const).map((value) => (
-              <Button
+              <button
                 key={value}
+                type="button"
+                className="doc-sharing-tab"
+                id={`${tabsId}-${value}-tab`}
+                aria-controls={`${tabsId}-${value}-panel`}
                 role="tab"
                 aria-selected={activeTab === value}
                 tabIndex={activeTab === value ? 0 : -1}
-                variant={activeTab === value ? 'primary' : 'tertiary'}
+                disabled={saving}
                 onClick={() => {
                   touchedTab.current = true;
                   setTab(value);
                 }}
               >
                 {value === 'chat' ? t('Share to chat') : t('Link sharing')}
-              </Button>
+              </button>
             ))}
           </div>
         )}
@@ -159,6 +170,9 @@ export function DocShareModal({
         ) : (
           <>
             <div
+              id={`${tabsId}-link-panel`}
+              role={canChat ? 'tabpanel' : undefined}
+              aria-labelledby={canChat ? `${tabsId}-link-tab` : undefined}
               hidden={activeTab !== 'link'}
               className={
                 activeTab === 'link' ? 'doc-sharing-layout' : undefined
@@ -166,14 +180,19 @@ export function DocShareModal({
             >
               <DocLinkSharePanel
                 doc={doc}
-                footerStart={membersEntry}
+                onCopied={close}
                 onBusyChange={(value) => {
                   savingRef.current = value;
                   setSaving(value);
                 }}
               />
             </div>
-            <div hidden={activeTab !== 'chat'}>
+            <div
+              id={`${tabsId}-chat-panel`}
+              role={canChat ? 'tabpanel' : undefined}
+              aria-labelledby={canChat ? `${tabsId}-chat-tab` : undefined}
+              hidden={activeTab !== 'chat'}
+            >
               <div className="doc-sharing-scroll">
                 <p>
                   {t(
@@ -209,7 +228,6 @@ export function DocShareModal({
                 </p>
               </div>
               <div className="doc-sharing-footer">
-                {membersEntry}
                 <Button
                   disabled={!doc.abilities.retrieve}
                   onClick={() =>

@@ -1,6 +1,10 @@
-import { Button } from '@gouvfr-lasuite/cunningham-react';
+import {
+  Button,
+  VariantType,
+  useToastProvider,
+} from '@gouvfr-lasuite/cunningham-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ReactNode, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -17,14 +21,15 @@ import { updateDocLink } from '../api/useUpdateDocLink';
 
 export function DocLinkSharePanel({
   doc,
-  footerStart,
   onBusyChange,
+  onCopied,
 }: {
   doc: Doc;
-  footerStart?: ReactNode;
   onBusyChange?: (busy: boolean) => void;
+  onCopied?: () => void;
 }) {
   const { t } = useTranslation();
+  const { toast } = useToastProvider();
   const queryClient = useQueryClient();
   const [reach, setReach] = useState(getDocLinkReach(doc));
   const [role, setRole] = useState(getDocLinkRole(doc) || LinkRole.READER);
@@ -34,9 +39,9 @@ export function DocLinkSharePanel({
   });
   const running = useRef(false);
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<
-    'copied' | 'copy-failed' | 'save-failed' | null
-  >(null);
+  const [status, setStatus] = useState<'copy-failed' | 'save-failed' | null>(
+    null,
+  );
   const canManage = doc.abilities.link_configuration;
   const remoteReach = getDocLinkReach(doc);
   const remoteRole = getDocLinkRole(doc);
@@ -109,14 +114,16 @@ export function DocLinkSharePanel({
       await navigator.clipboard.writeText(
         `${window.location.origin}/docs/${doc.id}/`,
       );
-      setStatus('copied');
     } catch {
       setStatus('copy-failed');
+      return;
     } finally {
       running.current = false;
       setBusy(false);
       onBusyChange?.(false);
     }
+    toast(t('Link Copied !'), VariantType.SUCCESS, { duration: 3000 });
+    onCopied?.();
   };
   return (
     <>
@@ -176,14 +183,12 @@ export function DocLinkSharePanel({
           </p>
         )}
         {status && (
-          <p role={status === 'copied' ? 'status' : 'alert'}>
-            {status === 'copied'
-              ? t('Link copied')
-              : status === 'save-failed'
-                ? t(
-                    'Could not save link settings. Nothing was copied. Please retry.',
-                  )
-                : t('Link settings are saved. Select and copy the link below.')}
+          <p role="alert">
+            {status === 'save-failed'
+              ? t(
+                  'Could not save link settings. Nothing was copied. Please retry.',
+                )
+              : t('Link settings are saved. Select and copy the link below.')}
           </p>
         )}
         {status === 'copy-failed' && (
@@ -197,7 +202,6 @@ export function DocLinkSharePanel({
         )}
       </div>
       <div className="doc-sharing-footer">
-        {footerStart || <span />}
         <Button
           onClick={() => void saveAndCopy()}
           disabled={
