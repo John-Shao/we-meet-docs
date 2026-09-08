@@ -6,6 +6,7 @@ from django.db import transaction
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from core import models
+from core.services.trusted_users import ensure_trusted_user
 
 
 def apply_chat_role(access, source, role, *, created):
@@ -68,27 +69,16 @@ def chat_access(data):
         if not isinstance(entry, dict) or not str(entry.get("sub") or "").strip():
             complete = False
             continue
-        sub, email = str(entry["sub"]).strip(), str(entry.get("email") or "").strip()
         try:
-            user = models.User.objects.get_user_by_sub_or_email(sub, email)
-        except models.DuplicateEmailError:
+            user = ensure_trusted_user(entry)
+        except ModelValidationError:
             complete = False
             continue
-        if user:
-            access, created = (
-                models.DocumentAccess.objects.select_for_update().get_or_create(
-                    document=document, user=user, defaults={"role": role}
-                )
+        access, created = (
+            models.DocumentAccess.objects.select_for_update().get_or_create(
+                document=document, user=user, defaults={"role": role}
             )
-        elif email:
-            access, created = (
-                models.Invitation.objects.select_for_update().get_or_create(
-                    document=document, email=email, defaults={"role": role}
-                )
-            )
-        else:
-            complete = False
-            continue
+        )
         apply_chat_role(access, str(share.id), role, created=created)
     share.role, share.complete = role, complete
     share.save(update_fields=["role", "complete", "updated_at"])

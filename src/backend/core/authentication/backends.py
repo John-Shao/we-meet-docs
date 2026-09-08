@@ -78,7 +78,12 @@ class OIDCAuthenticationBackend(LaSuiteOIDCAuthenticationBackend):
 
         """
 
-        if is_new_user and settings.SIGNUP_NEW_USER_TO_MARKETING_EMAIL:
+        if (
+            is_new_user
+            and user
+            and user.email
+            and settings.SIGNUP_NEW_USER_TO_MARKETING_EMAIL
+        ):
             create_or_update_contact.delay(
                 email=user.email, attributes={"DOCS_SOURCE": ["SIGNIN"]}
             )

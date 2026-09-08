@@ -24,6 +24,7 @@ from core.services.converter_services import (
     ConversionError,
     Converter,
 )
+from core.services.trusted_users import ensure_trusted_user
 from core.utils.analytics import PosthogEventName, posthog_capture
 from core.utils.treebeard import create_tree_node_with_retry
 
@@ -438,9 +439,8 @@ class ServerCreateDocumentSerializer(serializers.Serializer):
     via a Node.js microservice. The conversion is handled automatically, so third parties
     only need to provide markdown.
 
-    Both "sub" and "email" are required because the external app calling doesn't know
-    if the user will pre-exist in Docs database. If the user pre-exist, we will ignore the
-    submitted "email" field and use the email address set on the user account in our database
+    The trusted sub identifies the owner, provisioning a Docs account when needed.
+    Email is optional and never used to bind ownership.
     """
 
     # Document
@@ -450,7 +450,9 @@ class ServerCreateDocumentSerializer(serializers.Serializer):
     sub = serializers.CharField(
         required=True, validators=[validators.sub_validator], max_length=255
     )
-    email = serializers.EmailField(required=True)
+    email = serializers.EmailField(
+        required=False, allow_blank=True, allow_null=True, default=""
+    )
     language = serializers.ChoiceField(
         required=False, choices=lazy(lambda: settings.LANGUAGES, tuple)()
     )
@@ -459,22 +461,12 @@ class ServerCreateDocumentSerializer(serializers.Serializer):
     subject = serializers.CharField(required=False)
 
     def create(self, validated_data):
-        """Create the document and associate it with the user or send an invitation."""
+        """Create the document and grant ownership to the trusted identity immediately."""
         language = validated_data.get("language", settings.LANGUAGE_CODE)
 
-        # Get the user on its sub (unique identifier). Default on email if allowed in settings
-        email = validated_data["email"]
-
-        try:
-            user = models.User.objects.get_user_by_sub_or_email(
-                validated_data["sub"], email
-            )
-        except models.DuplicateEmailError as err:
-            raise serializers.ValidationError({"email": [err.message]}) from err
-
-        if user:
-            email = user.email
-            language = user.language or language
+        user = ensure_trusted_user(validated_data)
+        email = user.email or validated_data.get("email")
+        language = user.language or language
 
         try:
             document_content = Converter().convert(
@@ -503,25 +495,15 @@ class ServerCreateDocumentSerializer(serializers.Serializer):
             document=document,
         )
 
-        if user:
-            # Associate the document with the pre-existing user
-            models.DocumentAccess.objects.create(
-                document=document,
-                role=models.RoleChoices.OWNER,
-                user=user,
-            )
-        else:
-            # The user doesn't exist in our database: we need to invite him/her
-            models.Invitation.objects.create(
-                document=document,
-                email=email,
-                role=models.RoleChoices.OWNER,
-            )
+        models.DocumentAccess.objects.create(
+            document=document, role=models.RoleChoices.OWNER, user=user
+        )
 
         document.content = document_content
         document.save()
 
-        self._send_email_notification(document, validated_data, email, language)
+        if email:
+            self._send_email_notification(document, validated_data, email, language)
         return document
 
     def _send_email_notification(self, document, validated_data, email, language):
@@ -551,7 +533,9 @@ class ServerCreateTableDocumentSerializer(serializers.Serializer):
     sub = serializers.CharField(
         required=True, validators=[validators.sub_validator], max_length=255
     )
-    email = serializers.EmailField(required=True)
+    email = serializers.EmailField(
+        required=False, allow_blank=True, allow_null=True, default=""
+    )
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -567,19 +551,11 @@ class ServerCreateTableDocumentSerializer(serializers.Serializer):
         return attrs
 
     def create(self, validated_data):
-        email = validated_data["email"]
-        try:
-            user = models.User.objects.get_user_by_sub_or_email(
-                validated_data["sub"], email
-            )
-        except models.DuplicateEmailError as err:
-            raise serializers.ValidationError({"email": [err.message]}) from err
+        user = ensure_trusted_user(validated_data)
 
         blocks = []
         if validated_data.get("intro"):
-            blocks.append(
-                {"type": "paragraph", "content": validated_data["intro"]}
-            )
+            blocks.append({"type": "paragraph", "content": validated_data["intro"]})
         table_rows = [validated_data["columns"], *validated_data["rows"]]
         blocks.append(
             {
@@ -607,16 +583,9 @@ class ServerCreateTableDocumentSerializer(serializers.Serializer):
                 title=validated_data["title"], creator=user
             )
         )
-        if user:
-            models.DocumentAccess.objects.create(
-                document=document, role=models.RoleChoices.OWNER, user=user
-            )
-        else:
-            models.Invitation.objects.create(
-                document=document,
-                email=email,
-                role=models.RoleChoices.OWNER,
-            )
+        models.DocumentAccess.objects.create(
+            document=document, role=models.RoleChoices.OWNER, user=user
+        )
         document.content = content
         document.save()
         posthog_capture(PosthogEventName.DOC_CREATED, user, {}, document=document)

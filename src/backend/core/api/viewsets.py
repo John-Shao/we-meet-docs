@@ -66,10 +66,12 @@ from core.services.converter_services import (
 from core.services.converter_services import (
     ValidationError as YProviderValidationError,
 )
+from core.services.member_access import member_access
 from core.services.search_indexers import (
     get_document_indexer,
     get_visited_document_ids_of,
 )
+from core.services.trusted_users import ensure_trusted_user
 from core.tasks.access import reset_service_connections_in_cascade
 from core.tasks.mail import send_ask_for_access_mail
 from core.utils.analytics import PosthogEventName, posthog_capture
@@ -1091,7 +1093,7 @@ class DocumentViewSet(
         url_path="grant-access-for-users",
     )
     @transaction.atomic
-    def grant_access_for_users(self, request):  # noqa: PLR0912 - validate actor and reconcile each recipient independently
+    def grant_access_for_users(self, request):
         """Grant reader/editor access; explicit roles require the acting manager.
 
         Legacy S2S calls without role retain the existing reader-only contract.
@@ -1143,32 +1145,16 @@ class DocumentViewSet(
             if not isinstance(entry, dict) or not entry.get("sub"):
                 complete = False
                 continue
-            sub = str(entry["sub"]).strip()
-            email = str(entry.get("email") or "").strip()
             try:
-                user = models.User.objects.get_user_by_sub_or_email(sub, email)
-            except models.DuplicateEmailError:
+                user = ensure_trusted_user(entry)
+            except ValidationError:
                 complete = False
                 continue
-            if user is not None:
-                access, created = (
-                    models.DocumentAccess.objects.select_for_update().get_or_create(
-                        document=document,
-                        user=user,
-                        defaults={"role": role},
-                    )
+            access, created = (
+                models.DocumentAccess.objects.select_for_update().get_or_create(
+                    document=document, user=user, defaults={"role": role}
                 )
-            elif email:
-                access, created = (
-                    models.Invitation.objects.select_for_update().get_or_create(
-                        document=document,
-                        email=email,
-                        defaults={"role": role},
-                    )
-                )
-            else:
-                complete = False
-                continue
+            )
             if created:
                 granted += 1
             elif ranks.get(access.role, 99) < ranks[role]:
@@ -1179,6 +1165,17 @@ class DocumentViewSet(
         if explicit_role:
             result.update(role=role, complete=complete)
         return drf_response.Response(result)
+
+    @drf.decorators.action(
+        authentication_classes=[authentication.ServerToServerAuthentication],
+        detail=False,
+        methods=["post"],
+        permission_classes=[],
+        url_path="member-access",
+    )
+    def member_access(self, request):
+        """Direct membership with identities supplied only by the trusted Meet server."""
+        return drf_response.Response(member_access(request.data))
 
     @drf.decorators.action(
         authentication_classes=[authentication.ServerToServerAuthentication],

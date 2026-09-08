@@ -125,8 +125,8 @@ def test_api_documents_create_for_owner_missing_sub():
 
 
 @override_settings(SERVER_TO_SERVER_API_TOKENS=["DummyToken"])
-def test_api_documents_create_for_owner_missing_email():
-    """Requests with no email should not be allowed to create documents for owner."""
+def test_api_documents_create_for_owner_missing_email(mock_convert_md):
+    """A trusted sub can own a document without an email."""
     data = {
         "title": "My Document",
         "content": "Document content",
@@ -140,10 +140,10 @@ def test_api_documents_create_for_owner_missing_email():
         HTTP_AUTHORIZATION="Bearer DummyToken",
     )
 
-    assert response.status_code == 400
-    assert not Document.objects.exists()
-
-    assert response.json() == {"email": ["This field is required."]}
+    assert response.status_code == 201
+    assert (
+        Document.objects.get().accesses.filter(user__sub="123", role="owner").exists()
+    )
 
 
 @override_settings(SERVER_TO_SERVER_API_TOKENS=["DummyToken"])
@@ -243,13 +243,13 @@ def test_api_documents_create_for_owner_existing(mock_convert_md):
 def test_api_documents_create_for_owner_new_user(mock_convert_md):
     """
     It should be possible to create a document on behalf of new users by
-    passing their unknown sub and email address.
+    passing their trusted sub; email is only an optional notification address.
     """
     data = {
         "title": "My Document",
         "content": "Document content",
         "sub": "123",
-        "email": "john.doe@example.com",  # Should be used to create a new user
+        "email": "john.doe@example.com",  # Optional notification address, never an identity key
     }
 
     with mock.patch("core.api.serializers.posthog_capture") as mock_capture:
@@ -271,60 +271,25 @@ def test_api_documents_create_for_owner_new_user(mock_convert_md):
 
     assert document.title == "My Document"
     assert document.content == "Converted document content"
-    assert document.creator is None
-    assert document.accesses.exists() is False
-
-    mock_capture.assert_any_call(
-        PosthogEventName.DOC_CREATED,
-        None,
-        {},
-        document=document,
-    )
-    mock_capture.assert_any_call(
-        PosthogEventName.DOC_IMPORTED,
-        None,
-        {
-            "content_type": mime_types.MARKDOWN,
-            "create_for_owner": True,
-        },
-        document=document,
-    )
-
-    assert mock_capture.call_count == 2
-
-    invitation = Invitation.objects.get()
-    assert invitation.email == "john.doe@example.com"
-    assert invitation.role == "owner"
-
-    assert len(mail.outbox) == 1
-    email = mail.outbox[0]
-    assert email.to == ["john.doe@example.com"]
-    assert email.subject == "A new document was created on your behalf!"
-    email_content = " ".join(email.body.split())
-    assert "A new document was created on your behalf!" in email_content
-    assert (
-        "You have been granted ownership of a new document: My Document"
-    ) in email_content
-
-    # The creator field on the document should be set when the user is created
-    user = User.objects.create(email="john.doe@example.com", password="!")
-    document.refresh_from_db()
+    user = User.objects.get(sub="123")
     assert document.creator == user
+    assert document.accesses.filter(user=user, role="owner").exists()
+    assert user.email is None
+    assert not Invitation.objects.exists()
+    mock_capture.assert_any_call(
+        PosthogEventName.DOC_CREATED, user, {}, document=document
+    )
+    assert mock_capture.call_count == 2
 
 
 @override_settings(
     SERVER_TO_SERVER_API_TOKENS=["DummyToken"],
     OIDC_FALLBACK_TO_EMAIL_FOR_IDENTIFICATION=True,
 )
-def test_api_documents_create_for_owner_existing_user_email_no_sub_with_fallback(
+def test_api_documents_create_for_owner_different_sub_ignores_email_fallback(
     mock_convert_md,
 ):
-    """
-    It should be possible to create a document on behalf of a pre-existing user for
-    who the sub was not found if the settings allow it. This edge case should not
-    happen in a healthy OIDC federation but can be useful if an OIDC provider modifies
-    users sub on each login for example...
-    """
+    """Trusted ownership never follows the optional OIDC email fallback setting."""
     user = factories.UserFactory(language="en-us")
 
     data = {
@@ -352,20 +317,10 @@ def test_api_documents_create_for_owner_existing_user_email_no_sub_with_fallback
 
     assert document.title == "My Document"
     assert document.content == "Converted document content"
-    assert document.creator == user
-    assert document.accesses.filter(user=user, role="owner").exists()
-
-    assert Invitation.objects.exists() is False
-
-    assert len(mail.outbox) == 1
-    email = mail.outbox[0]
-    assert email.to == [user.email]
-    assert email.subject == "A new document was created on your behalf!"
-    email_content = " ".join(email.body.split())
-    assert "A new document was created on your behalf!" in email_content
-    assert (
-        "You have been granted ownership of a new document: My Document"
-    ) in email_content
+    assert document.creator.sub == "123"
+    assert document.creator != user
+    assert not document.accesses.filter(user=user).exists()
+    assert not Invitation.objects.exists()
 
 
 @override_settings(
@@ -373,14 +328,10 @@ def test_api_documents_create_for_owner_existing_user_email_no_sub_with_fallback
     OIDC_FALLBACK_TO_EMAIL_FOR_IDENTIFICATION=False,
     OIDC_ALLOW_DUPLICATE_EMAILS=False,
 )
-def test_api_documents_create_for_owner_existing_user_email_no_sub_no_fallback(
+def test_api_documents_create_for_owner_different_sub_with_unique_email_policy(
     mock_convert_md,
 ):
-    """
-    When a user does not match an existing sub and fallback to matching on email is
-    not allowed in settings, it should raise an error if the email is already used by
-    a registered user and duplicate emails are not allowed.
-    """
+    """An existing email does not prevent provisioning a different trusted sub."""
     user = factories.UserFactory()
 
     data = {
@@ -396,19 +347,10 @@ def test_api_documents_create_for_owner_existing_user_email_no_sub_no_fallback(
         format="json",
         HTTP_AUTHORIZATION="Bearer DummyToken",
     )
-    assert response.status_code == 400
-    assert response.json() == {
-        "email": [
-            (
-                "We couldn't find a user with this sub but the email is already "
-                "associated with a registered user."
-            )
-        ]
-    }
-    assert mock_convert_md.called is False
-    assert Document.objects.exists() is False
-    assert Invitation.objects.exists() is False
-    assert len(mail.outbox) == 0
+    assert response.status_code == 201
+    assert Document.objects.get().creator.sub == "123"
+    assert not Document.objects.get().accesses.filter(user=user).exists()
+    assert not Invitation.objects.exists()
 
 
 @override_settings(
@@ -416,15 +358,10 @@ def test_api_documents_create_for_owner_existing_user_email_no_sub_no_fallback(
     OIDC_FALLBACK_TO_EMAIL_FOR_IDENTIFICATION=False,
     OIDC_ALLOW_DUPLICATE_EMAILS=True,
 )
-def test_api_documents_create_for_owner_new_user_no_sub_no_fallback_allow_duplicate(
+def test_api_documents_create_for_owner_different_sub_with_duplicate_emails_allowed(
     mock_convert_md,
 ):
-    """
-    When a user does not match an existing sub and fallback to matching on email is
-    not allowed in settings, it should be possible to create a new user with the same
-    email as an existing user if the settings allow it (identification is still done
-    via the sub in this case).
-    """
+    """Allowing duplicate emails does not merge two different trusted identities."""
     user = factories.UserFactory()
 
     data = {
@@ -450,27 +387,10 @@ def test_api_documents_create_for_owner_new_user_no_sub_no_fallback_allow_duplic
 
     assert document.title == "My Document"
     assert document.content == "Converted document content"
-    assert document.creator is None
-    assert document.accesses.exists() is False
-
-    invitation = Invitation.objects.get()
-    assert invitation.email == user.email
-    assert invitation.role == "owner"
-
-    assert len(mail.outbox) == 1
-    email = mail.outbox[0]
-    assert email.to == [user.email]
-    assert email.subject == "A new document was created on your behalf!"
-    email_content = " ".join(email.body.split())
-    assert "A new document was created on your behalf!" in email_content
-    assert (
-        "You have been granted ownership of a new document: My Document"
-    ) in email_content
-
-    # The creator field on the document should be set when the user is created
-    user = User.objects.create(email=user.email, password="!")
-    document.refresh_from_db()
-    assert document.creator == user
+    assert document.creator.sub == "123"
+    assert document.creator != user
+    assert document.accesses.filter(user__sub="123", role="owner").exists()
+    assert not Invitation.objects.exists()
 
 
 @pytest.mark.django_db(transaction=True)

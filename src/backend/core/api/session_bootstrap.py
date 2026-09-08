@@ -39,6 +39,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
 from core import models
+from core.services.trusted_users import ensure_trusted_user
 
 logger = logging.getLogger(__name__)
 
@@ -98,40 +99,15 @@ def _safe_next(request, raw: str | None) -> str:
 
 
 def _resolve_user(payload: dict[str, Any]) -> models.User | None:
-    """按 sub / email 找到用户;从未登录过 Docs 的按票据里的身份补建。
+    """Resolve the trusted sub, including accounts provisioned before first login.
 
-    补建走 ``User.objects.create``,与 OIDC 首次登录建号是同一条路 ——
-    ``User.save()`` 在新建时会把待生效的 Invitation 转成 DocumentAccess
-    (别人分享给他的文档因此立刻可见)。
-
-    已存在的用户只认不改:昵称 / 邮箱以 Docs 自己的资料为准,免得 meet 侧一个
-    临时展示名(常常就是手机号)把用户在 Docs 里的名字盖掉。
+    Existing names are retained; only an empty name is filled from Meet.
+    Email is neither required nor used to merge accounts or claim invitations.
     """
     sub = str(payload.get("sub") or "").strip()
-    email = str(payload.get("email") or "").strip()
     if not sub:
         return None
-
-    try:
-        user = models.User.objects.get_user_by_sub_or_email(sub, email)
-    except models.DuplicateEmailError:
-        logger.warning("session-from-ticket: duplicate email for sub=%s", sub)
-        return None
-    if user is not None:
-        return user
-
-    language = str(payload.get("language") or "").strip().lower()
-    if language not in dict(settings.LANGUAGES):
-        language = None
-
-    return models.User.objects.create(
-        sub=sub,
-        email=email or None,
-        password="!",  # noqa: S106 - OIDC-only account, never used for login
-        full_name=str(payload.get("full_name") or "") or None,
-        short_name=str(payload.get("short_name") or "") or None,
-        language=language,
-    )
+    return ensure_trusted_user(payload)
 
 
 class SessionFromTicketView(View):

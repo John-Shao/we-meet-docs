@@ -85,15 +85,15 @@ def test_missing_actor_and_invalid_role_are_rejected(grant_setup):
     assert client.post(URL, body, format="json").status_code == 400
 
 
-def test_invitation_upgrade_and_legacy_default(grant_setup):
+def test_identity_provisioning_and_legacy_default(grant_setup):
     client, doc, owner = grant_setup
-    recipient = {"sub": "future-chat-user", "email": "future@example.test"}
+    recipient = {"sub": "future-chat-user"}
     body = {"doc_id": str(doc.id), "users": [recipient]}
     assert client.post(URL, body, format="json").json() == {"granted": 1}
     body.update(actor_sub=owner.sub, role="editor")
     assert client.post(URL, body, format="json").json()["complete"] is True
     assert (
-        models.Invitation.objects.get(document=doc, email=recipient["email"]).role
+        models.DocumentAccess.objects.get(document=doc, user__sub=recipient["sub"]).role
         == "editor"
     )
 
@@ -106,7 +106,7 @@ def test_invalid_recipient_is_not_reported_as_complete(grant_setup):
             "doc_id": str(doc.id),
             "actor_sub": owner.sub,
             "role": "reader",
-            "users": [{"sub": "missing-email"}],
+            "users": [{"sub": ""}],
         },
         format="json",
     )

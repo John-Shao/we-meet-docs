@@ -118,14 +118,8 @@ def test_api_session_from_ticket_rejects_external_next():
 
 
 @override_settings(SERVER_TO_SERVER_API_TOKENS=["DummyToken"])
-def test_api_session_from_ticket_creates_the_user_and_converts_invitations():
-    """A user who never logged into Docs is provisioned, invitations included.
-
-    Mirrors first OIDC login: `User.save()` turns pending invitations into
-    accesses, so a doc shared to them through we-meet is visible right away.
-    """
-    # add_root 而非 DocumentFactory:工厂会连带把 content 写进对象存储,这条用例
-    # 只关心「新用户 + 待生效邀请」,不需要正文,也就不该依赖 S3。
+def test_api_session_from_ticket_uses_sub_without_claiming_email_invitations():
+    """A trusted sub owns its account; matching email is not proof of access."""
     document = Document.add_root(title="Shared doc")
     Invitation.objects.create(
         document=document, email="newcomer@example.com", role=RoleChoices.READER
@@ -141,10 +135,10 @@ def test_api_session_from_ticket_creates_the_user_and_converts_invitations():
 
     assert response.status_code == 302
     user = User.objects.get(sub="fresh-sub")
-    assert user.email == "newcomer@example.com"
+    assert user.email is None
     assert user.full_name == "New Comer"
     assert response.wsgi_request.user == user
-    assert DocumentAccess.objects.filter(
+    assert not DocumentAccess.objects.filter(
         user=user, document=document, role=RoleChoices.READER
     ).exists()
     assert Document.objects.filter(pk=document.pk).exists()

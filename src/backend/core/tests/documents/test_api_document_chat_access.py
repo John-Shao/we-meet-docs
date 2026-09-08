@@ -85,13 +85,14 @@ def test_deleted_access_is_not_resurrected_by_reading_card(share):
     assert not models.DocumentAccess.objects.filter(document=doc, user=user).exists()
 
 
-def test_invitation_conversion_keeps_sources(share):
+def test_first_time_identity_keeps_sources(share):
     client, body, doc, _ = share
-    body["users"] = [{"sub": "new-recipient", "email": "recipient@example.test"}]
+    body["users"] = [{"sub": "new-recipient"}]
     assert (
         client.post(URL, {**body, "role": "editor"}, format="json").status_code == 200
     )
-    user = factories.UserFactory(sub="new-recipient", email="recipient@example.test")
+    user = models.User.objects.get(sub="new-recipient")
+    assert user.email is None
     assert models.DocumentAccess.objects.get(document=doc, user=user).chat_permissions
     client.post(URL, {**body, "role": "reader"}, format="json")
     assert models.DocumentAccess.objects.get(document=doc, user=user).role == "reader"
