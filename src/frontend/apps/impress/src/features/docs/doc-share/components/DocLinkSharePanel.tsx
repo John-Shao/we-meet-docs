@@ -72,6 +72,11 @@ export function DocLinkSharePanel({
     ),
   };
   const roles = doc.abilities.link_select_options[reach] || [];
+  const roleLabels = {
+    [LinkRole.READER]: t('Can read'),
+    [LinkRole.COMMENTER]: t('Commenter'),
+    [LinkRole.EDITOR]: t('Can edit'),
+  };
   const changeReach = (value: LinkReach) => {
     setReach(value);
     setStatus(null);
@@ -158,7 +163,7 @@ export function DocLinkSharePanel({
             className="doc-sharing-options"
           >
             <legend>{t('Link permission')}</legend>
-            {[LinkRole.READER, LinkRole.EDITOR].map((value) => (
+            {Object.values(LinkRole).map((value) => (
               <label className="doc-sharing-option" key={value}>
                 <input
                   type="radio"
@@ -170,9 +175,7 @@ export function DocLinkSharePanel({
                     setStatus(null);
                   }}
                 />
-                <span>
-                  {value === LinkRole.READER ? t('Can read') : t('Can edit')}
-                </span>
+                <span>{roleLabels[value]}</span>
               </label>
             ))}
           </fieldset>

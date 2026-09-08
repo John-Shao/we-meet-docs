@@ -48,8 +48,8 @@ const doc = {
     link_configuration: true,
     link_select_options: {
       restricted: null,
-      authenticated: [LinkRole.READER, LinkRole.EDITOR],
-      public: [LinkRole.READER, LinkRole.EDITOR],
+      authenticated: [LinkRole.READER, LinkRole.COMMENTER, LinkRole.EDITOR],
+      public: [LinkRole.READER, LinkRole.COMMENTER, LinkRole.EDITOR],
     },
   },
 } as unknown as Doc;
@@ -75,12 +75,15 @@ describe('link sharing drafts', () => {
     await waitFor(() => expect(mocks.toast).toHaveBeenCalled());
     expect(mocks.update).not.toHaveBeenCalled();
   });
-  it('saves the selected scope and role before copying', async () => {
+  it.each([
+    ['Can edit', LinkRole.EDITOR],
+    ['Commenter', LinkRole.COMMENTER],
+  ])('saves %s before copying', async (label, role) => {
     render(<DocLinkSharePanel doc={doc} onCopied={mocks.onCopied} />);
     fireEvent.click(
       screen.getByRole('radio', { name: /Anyone with the link/ }),
     );
-    fireEvent.click(screen.getByRole('radio', { name: 'Can edit' }));
+    fireEvent.click(screen.getByRole('radio', { name: label }));
     expect(mocks.update).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Save and copy link' }));
     await waitFor(() => expect(mocks.onCopied).toHaveBeenCalledOnce());
@@ -90,11 +93,44 @@ describe('link sharing drafts', () => {
     expect(mocks.update).toHaveBeenCalledExactlyOnceWith({
       id: 'doc',
       link_reach: 'public',
-      link_role: 'editor',
+      link_role: role,
     });
     expect(mocks.update.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.copy.mock.invocationCallOrder[0],
     );
+  });
+  it('preserves an existing commenter link when copying', async () => {
+    render(
+      <DocLinkSharePanel
+        doc={{
+          ...doc,
+          link_reach: LinkReach.AUTHENTICATED,
+          link_role: LinkRole.COMMENTER,
+        }}
+      />,
+    );
+    expect(screen.getByRole('radio', { name: 'Commenter' })).toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: 'Save and copy link' }));
+    await waitFor(() => expect(mocks.copy).toHaveBeenCalledOnce());
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+  it('disables commenting when the server does not allow it', () => {
+    render(
+      <DocLinkSharePanel
+        doc={{
+          ...doc,
+          link_reach: LinkReach.AUTHENTICATED,
+          abilities: {
+            ...doc.abilities,
+            link_select_options: {
+              ...doc.abilities.link_select_options,
+              authenticated: [LinkRole.READER, LinkRole.EDITOR],
+            },
+          },
+        }}
+      />,
+    );
+    expect(screen.getByRole('radio', { name: 'Commenter' })).toBeDisabled();
   });
   it('does not copy after a save failure and retains the draft for retry', async () => {
     mocks.update.mockRejectedValueOnce(new Error('offline'));

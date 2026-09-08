@@ -45,6 +45,7 @@ export enum LinkReach {
 
 export enum LinkRole {
   READER = 'reader',
+  COMMENTER = 'commenter',
   EDITOR = 'editor',
 }
 
