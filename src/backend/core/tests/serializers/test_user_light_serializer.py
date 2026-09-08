@@ -3,7 +3,7 @@
 import pytest
 
 from core import factories
-from core.api.serializers import UserLightSerializer
+from core.api.serializers import UserLightSerializer, UserSerializer
 
 pytestmark = pytest.mark.django_db
 
@@ -42,3 +42,25 @@ def test_user_light_serializer_no_short_name():
     serializer = UserLightSerializer(user)
     assert serializer.data["full_name"] == "test_foo"
     assert serializer.data["short_name"] == "test_foo"
+
+
+@pytest.mark.parametrize("serializer_class", [UserSerializer, UserLightSerializer])
+@pytest.mark.parametrize("email", [None, ""])
+@pytest.mark.parametrize(
+    "full_name,short_name,expected",
+    [("Phone User", None, "Phone User"), (None, "Phone", "Phone"), (None, None, None)],
+)
+def test_user_serializer_without_email(
+    serializer_class, email, full_name, short_name, expected
+):
+    """Both member and limited user responses support incomplete phone-only profiles."""
+    user = factories.UserFactory.build(
+        email=email, full_name=full_name, short_name=short_name
+    )
+    data = serializer_class(user).data
+    assert data["full_name"]
+    assert data["short_name"]
+    if expected:
+        assert data["full_name"] == expected
+        assert data["short_name"] == expected
+    assert "sub" not in data

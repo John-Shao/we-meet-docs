@@ -29,6 +29,39 @@ def setup(settings):
     return client, doc, owner
 
 
+@pytest.mark.parametrize("full_name", ["Phone User", ""])
+def test_new_member_is_visible_before_first_login(setup, full_name):
+    """Grant success must be followed by a readable membership list, without email."""
+    client, doc, owner = setup
+    response = client.post(
+        URL,
+        {
+            "doc_id": str(doc.id),
+            "actor_sub": owner.sub,
+            "role": "reader",
+            "users": [{"sub": "new-phone-member", "full_name": full_name}],
+        },
+        format="json",
+    )
+    assert response.status_code == 200
+    assert response.json()["results"][0]["status"] == "added"
+    member = models.User.objects.get(sub="new-phone-member")
+    assert member.email is None
+    assert member.short_name is None
+
+    client.credentials()
+    client.force_login(owner)
+    response = client.get(f"/api/v1.0/documents/{doc.id}/accesses/")
+    assert response.status_code == 200
+    row = next(row for row in response.json() if row["user"]["id"] == str(member.id))
+    assert row["role"] == "reader"
+    assert row["user"]["full_name"]
+    assert row["user"]["short_name"]
+    if full_name:
+        assert row["user"]["full_name"] == full_name
+        assert row["user"]["short_name"] == full_name
+
+
 @pytest.mark.parametrize("role", ["reader", "commenter", "editor"])
 def test_no_email_grant_login_and_retry(setup, role):
     client, doc, owner = setup
