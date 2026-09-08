@@ -1693,7 +1693,9 @@ class DocumentViewSet(
         user_role = document_to_duplicate.get_role(user)
         is_owner_or_admin = user_role in models.PRIVILEGED_ROLES
 
-        base64_yjs_content = document_to_duplicate.content
+        # Native title-only pages have no stored body before their first edit.
+        # The content setter accepts strings, including an empty document, not None.
+        base64_yjs_content = document_to_duplicate.content or ""
 
         # Duplicate the document instance
         link_kwargs = (
@@ -1704,7 +1706,7 @@ class DocumentViewSet(
             if with_accesses
             else {}
         )
-        extracted_attachments = set(extract_attachments(document_to_duplicate.content))
+        extracted_attachments = set(extract_attachments(base64_yjs_content))
         attachments = list(
             extracted_attachments & set(document_to_duplicate.attachments)
         )

@@ -74,6 +74,35 @@ def test_api_documents_duplicate_anonymous():
     mock_capture.assert_not_called()
 
 
+@pytest.mark.parametrize("as_child", [False, True])
+def test_api_documents_duplicate_before_first_content_save(as_child):
+    """A title-only native document has no stored body until its first edit."""
+    user = factories.UserFactory()
+    client = APIClient()
+    client.force_login(user)
+    if as_child:
+        parent = factories.DocumentFactory()
+        models.DocumentAccess.objects.create(document=parent, user=user, role="owner")
+        endpoint = f"/api/v1.0/documents/{parent.id}/children/"
+    else:
+        endpoint = "/api/v1.0/documents/"
+    created = client.post(endpoint, {"title": "Never edited"})
+    assert created.status_code == 201
+    original = models.Document.objects.get(id=created.json()["id"])
+    assert original.content is None
+
+    response = client.post(f"/api/v1.0/documents/{original.id}/duplicate/")
+
+    assert response.status_code == 201
+    duplicate = models.Document.objects.get(id=response.json()["id"])
+    assert duplicate.id != original.id
+    assert duplicate.title == "Copy of Never edited"
+    assert not duplicate.content
+    assert duplicate.duplicated_from == original
+    assert duplicate.get_parent() == original.get_parent()
+    assert duplicate.get_role(user) == "owner"
+
+
 @pytest.mark.parametrize("index", range(3))
 def test_api_documents_duplicate_success(index):
     """
