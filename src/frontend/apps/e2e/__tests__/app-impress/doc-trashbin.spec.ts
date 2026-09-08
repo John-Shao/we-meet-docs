@@ -69,12 +69,12 @@ test.describe('Doc Trashbin', () => {
 
     await expect(
       row2.getByRole('button', {
-        name: 'Open the sharing settings for the document',
+        name: 'Members and permissions',
       }),
     ).toBeVisible();
     await expect(
       row2.getByRole('button', {
-        name: 'Open the sharing settings for the document',
+        name: 'Members and permissions',
       }),
     ).toBeDisabled();
 
@@ -91,9 +91,21 @@ test.describe('Doc Trashbin', () => {
     await expect(row2.getByText(title2)).toBeVisible();
     await expect(
       row2.getByRole('button', {
-        name: 'Open the sharing settings for the document',
+        name: 'Members and permissions',
       }),
     ).toBeEnabled();
+
+    await row2.getByRole('button', { name: 'Members and permissions' }).click();
+    const membersDialog = page.getByRole('dialog', {
+      name: 'Members and permissions',
+    });
+    await expect(membersDialog).toBeVisible();
+    await expect(
+      page.getByRole('dialog', { name: 'Share the document', exact: true }),
+    ).toBeHidden();
+    await membersDialog
+      .getByRole('button', { name: 'Close', exact: true })
+      .click();
 
     await page.getByRole('link', { name: 'Trashbin' }).click();
     await expect(row2.getByText(title2)).toBeHidden();
