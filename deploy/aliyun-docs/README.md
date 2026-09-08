@@ -22,7 +22,7 @@
 | `build-and-push.sh` | 从 `docs-dev` 构建三镜像（backend/frontend/y-provider）推火山 CR。前端 `API_ORIGIN` build 期烘焙、镜像自带简体中文。默认从脚本所在仓库根构建 |
 | `docs.values.yaml` | helm values：自有火山 CR 镜像 + OIDC(realm `meet`, client `docs`) + 阿里云 OSS 深圳(S3 兼容) + server token + 简体中文语言 + ingress。密钥为 `${VAR}` 占位，由 `secrets.env` 经 `deploy-impress.sh` 注入 |
 | `secrets.env.example` | 密钥模板（入库）。`cp secrets.env.example secrets.env` 填真实值；`secrets.env` 已 gitignore、绝不入库 |
-| `deploy-impress.sh` | 读 `secrets.env` → `envsubst` 渲染 `docs.values.yaml` 的 `${VAR}` → `helm upgrade --install`（明文不落盘、不入库） |
+| `deploy-impress.sh` | 快进拉取代码 → 读 `secrets.env` → `envsubst` 渲染 values → Helm 部署并等待任务和滚动更新（密钥明文不落盘、不入库） |
 | `datastores.yaml` | Docs 专属 PG(`postgres:16-alpine`)+Redis(`redis:7-alpine`) manifest 模板，单节点 hostPath(`/data/docs/*`)。Service 名锁定 `docs.values.yaml` 的库地址；密码为 `${...}` 占位 |
 | `deploy-datastores.sh` | 读 `secrets.env` → `envsubst` 注入 DB/Redis 密码 → `kubectl apply -n docs` 建库。**须先于 `deploy-impress.sh` 跑** |
 | `bootstrap-docs-client.sh` | 在 Keycloak realm `meet` 加 `docs` confidential client（独立版,凭据走 env） |
@@ -64,13 +64,52 @@
    > ⚠️ `registries.yaml` 含明文凭据、且是节点本地文件，**不入库**（换机器需重配）。若报 `ImagePullBackOff`，`kubectl -n docs describe pod <pod>` 看是 401（认证错）还是 manifest not found（tag 拼错）。
 7. **helm 部署 impress**：`deploy-impress.sh` 经 `envsubst` 注入 `secrets.env` 后部署：
    ```bash
-   bash deploy/aliyun-docs/deploy-impress.sh   # 默认 tag=当前 commit sha（与 build 自动一致）；tag 注入 3 处 + helm upgrade
+   bash deploy/aliyun-docs/deploy-impress.sh   # 自动拉取当前分支；部署拉取后 SHA 对应的已推送镜像并等待完成
    # 迁移由 chart 的 impress-docs-backend-migrate Job 自动执行（Chart.yaml name=docs → 前缀 impress-docs）
    # 如需手动补跑： kubectl -n docs exec deploy/impress-docs-backend -- python manage.py migrate
    ```
    > 非密钥项（域名 / 桶名 等）仍直接改 `docs.values.yaml`；**镜像 tag 默认取 commit sha**（或 `TAG` 覆盖，不写死在 values）；密钥只在 `secrets.env`。
 8. **接通 meet**（在 we-meet 那台）：`values.meet.yaml` 已含 `DOCS_API_URL`；把 `values.secrets.yaml`
    的 `DOCS_SERVER_TO_SERVER_TOKEN` 填成与本套件 `DOCS_S2S_TOKEN` 同一个值，`helm upgrade meet`。
+
+## 日常更新
+
+先在构建机拉取目标代码并运行 `build-and-push.sh`，推送同一 tag 的三个镜像。
+然后在 Docs 服务器执行（可从任意目录通过脚本路径调用）：
+
+```bash
+bash deploy/aliyun-docs/deploy-impress.sh
+# 指定已构建的镜像版本，避免部署时分支已出现更新提交：
+bash deploy/aliyun-docs/deploy-impress.sh --tag b5a4c2b3
+# 指定代码分支和等待时限：
+bash deploy/aliyun-docs/deploy-impress.sh --branch feat/docs-native --timeout 15m
+# 验证本地配置，不拉代码、不修改集群，也不输出含密钥的渲染清单：
+bash deploy/aliyun-docs/deploy-impress.sh --skip-git-pull --dry-run
+```
+
+- 默认以 `git pull --ff-only origin <当前分支>` 更新代码，并重新进入更新后的脚本。
+  `--branch` / `BRANCH` 可指定分支；有未提交的已跟踪文件改动时停止，避免部署混合代码。
+  `--skip-git-pull` 使用本地检出，不切分支、不拉取。
+- 镜像 tag 优先级：`--tag` → `TAG` → `DOCS_IMAGE_TAG` → 拉取后 HEAD 短 SHA。
+  兼容原有 `TAG=xxx bash ...` 用法；禁止 `latest`。部署脚本不构建镜像。
+- Helm 使用 `--wait --wait-for-jobs` 等待就绪和迁移任务完成，再逐个等待本次 release
+  的 Deployment 完成滚动更新，最后打印就绪副本数和镜像。只有全部通过才显示“更新完成”。
+- 默认等待时限为 `10m`，可用 `--timeout` / `TIMEOUT` 调整（Helm 和每次 rollout 分别计时）。
+  失败或超时返回非零退出码，并打印 Pod 状态和最近事件，方便定位镜像拉取、Pod 创建等问题。
+- 原有额外 Helm 参数（如 `--set`、`-f`）仍可传入；命名空间、镜像 tag 和等待参数由脚本统一设置。
+  切换集群应设置 `KUBECONFIG` 和当前 context，让 Helm 与 kubectl 使用同一个集群。
+
+## Django 管理员账号
+
+阿里云配置关闭 `backend.createsuperuser.enabled`，避免每次部署都执行未配置
+`DJANGO_SUPERUSER_EMAIL` / `DJANGO_SUPERUSER_PASSWORD` 的管理员创建任务。
+这不影响数据库迁移或现有账号。需要创建或更新 Docs `/admin/` 管理员时执行：
+
+```bash
+bash deploy/aliyun-docs/create-superuser.sh
+```
+
+脚本交互读取邮箱和密码；此账号独立于普通用户的 Keycloak SSO 账号。
 
 ## 前端编译缓存
 

@@ -295,9 +295,11 @@ backend:
         python manage.py migrate --no-input
     restartPolicy: Never
 
+  ## @param backend.createsuperuser.enabled Create a superuser Job during deployment
   ## @param backend.createsuperuser.command backend migrate command
   ## @param backend.createsuperuser.restartPolicy backend migrate job restart policy
   createsuperuser:
+    enabled: true
     command:
       - "/bin/sh"
       - "-c"

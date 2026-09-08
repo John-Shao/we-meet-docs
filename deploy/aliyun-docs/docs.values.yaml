@@ -26,6 +26,9 @@ image:
 
 backend:
   replicas: 1
+  # 管理员按需通过 create-superuser.sh 创建，部署时不提交缺少凭据的任务。
+  createsuperuser:
+    enabled: false
   envVars:
     # ---- Django 核心 ----
     DJANGO_CONFIGURATION: Production
