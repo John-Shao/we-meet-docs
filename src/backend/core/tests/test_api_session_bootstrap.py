@@ -145,9 +145,9 @@ def test_api_session_from_ticket_uses_sub_without_claiming_email_invitations():
 
 
 @override_settings(SERVER_TO_SERVER_API_TOKENS=["DummyToken"])
-def test_api_session_from_ticket_keeps_existing_profile():
-    """An existing Docs profile wins over whatever display name we-meet sent."""
-    user = factories.UserFactory(sub="user-sub", full_name="Docs Name")
+def test_api_session_from_ticket_refreshes_existing_name():
+    """Trusted Meet profile updates repair stale names without replacing the identity."""
+    user = factories.UserFactory(sub="user-sub", full_name="1000")
     ticket = _mint(APIClient(), full_name="Meet Name", email=user.email).json()[
         "ticket"
     ]
@@ -155,7 +155,7 @@ def test_api_session_from_ticket_keeps_existing_profile():
     APIClient().get(f"{REDEEM_URL}?ticket={ticket}")
 
     user.refresh_from_db()
-    assert user.full_name == "Docs Name"
+    assert user.full_name == "Meet Name"
 
 
 def test_session_bootstrap_ticket_is_not_stored_in_clear():

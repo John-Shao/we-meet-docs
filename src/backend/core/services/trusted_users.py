@@ -8,6 +8,19 @@ from core import models
 from core.validators import sub_validator
 
 
+def _sync_names(user, data):
+    """Refresh names from Meet; incomplete payloads must not erase existing names."""
+    changed = []
+    for field in ("full_name", "short_name"):
+        value = str(data.get(field) or "").strip()[:100]
+        if value and value != getattr(user, field):
+            setattr(user, field, value)
+            changed.append(field)
+    if changed:
+        user.save(update_fields=[*changed, "updated_at"])
+    return user
+
+
 def ensure_trusted_user(data):
     """Email is optional profile data, not an account lookup or provisioning requirement."""
     sub = str(data.get("sub") or "").strip()
@@ -16,10 +29,7 @@ def ensure_trusted_user(data):
     sub_validator(sub)
     user = models.User.objects.filter(sub=sub).first()
     if user:
-        if not user.full_name and data.get("full_name"):
-            user.full_name = str(data["full_name"])[:100]
-            user.save(update_fields=["full_name", "updated_at"])
-        return user
+        return _sync_names(user, data)
     try:
         with transaction.atomic():
             return models.User.objects.create(
@@ -36,5 +46,5 @@ def ensure_trusted_user(data):
     except (IntegrityError, ValidationError):
         user = models.User.objects.filter(sub=sub).first()
         if user:
-            return user
+            return _sync_names(user, data)
         raise

@@ -151,6 +151,8 @@ class User(AbstractBaseUser, BaseModel, auth_models.PermissionsMixin):
     )
 
     full_name = models.CharField(_("full name"), max_length=100, null=True, blank=True)
+    # Names on managed identities are a projection of the Meet directory.
+    meet_profile_synced_at = models.DateTimeField(null=True, blank=True, editable=False)
     short_name = models.CharField(
         _("short name"), max_length=100, null=True, blank=True
     )
@@ -220,7 +222,21 @@ class User(AbstractBaseUser, BaseModel, auth_models.PermissionsMixin):
         If it's a new user, give its user access to the documents they were invited to.
         """
         is_adding = self._state.adding
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            if not is_adding:
+                current = (
+                    type(self)
+                    .objects.select_for_update()
+                    .filter(pk=self.pk)
+                    .values("full_name", "short_name", "meet_profile_synced_at")
+                    .first()
+                )
+                if current and current["meet_profile_synced_at"]:
+                    # A stale OIDC/session object must not overwrite a newer directory
+                    # snapshot (including the marker itself during a full save).
+                    for field, value in current.items():
+                        setattr(self, field, value)
+            super().save(*args, **kwargs)
 
         if is_adding:
             self._handle_onboarding_documents_access()

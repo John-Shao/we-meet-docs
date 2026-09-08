@@ -62,6 +62,40 @@ def test_new_member_is_visible_before_first_login(setup, full_name):
         assert row["user"]["short_name"] == full_name
 
 
+@pytest.mark.parametrize("existing_role", [None, "editor"])
+def test_inviting_renamed_user_refreshes_member_name(setup, existing_role):
+    """A directory rename is reflected even when the Docs identity already exists."""
+    client, doc, owner = setup
+    member = factories.UserFactory(sub="renamed-member", full_name="1000", email=None)
+    if existing_role:
+        models.DocumentAccess.objects.create(
+            document=doc, user=member, role=existing_role
+        )
+    response = client.post(
+        URL,
+        {
+            "doc_id": str(doc.id),
+            "actor_sub": owner.sub,
+            "role": "reader",
+            "users": [{"sub": member.sub, "full_name": "John"}],
+        },
+        format="json",
+    )
+    assert response.status_code == 200
+    assert response.json()["results"] == [
+        {"sub": member.sub, "status": "existing" if existing_role else "added"}
+    ]
+    client.credentials()
+    client.force_login(owner)
+    response = client.get(f"/api/v1.0/documents/{doc.id}/accesses/")
+    assert response.status_code == 200
+    rows = [row for row in response.json() if row["user"]["id"] == str(member.id)]
+    assert len(rows) == 1
+    assert rows[0]["user"]["full_name"] == "John"
+    assert rows[0]["role"] == (existing_role or "reader")
+    assert models.User.objects.filter(sub=member.sub).count() == 1
+
+
 @pytest.mark.parametrize("role", ["reader", "commenter", "editor"])
 def test_no_email_grant_login_and_retry(setup, role):
     client, doc, owner = setup

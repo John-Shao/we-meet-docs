@@ -404,6 +404,26 @@ class UserViewSet(
             }
         )
 
+    @drf.decorators.action(
+        authentication_classes=[authentication.ServerToServerAuthentication],
+        detail=False,
+        methods=["get", "post"],
+        permission_classes=[],
+        url_path="directory-profiles",
+    )
+    def directory_profiles(self, request):
+        """Read identity cursors / apply authoritative Meet name snapshots."""
+        from core.services.directory_profiles import (  # noqa: PLC0415
+            list_profiles,
+            sync_profiles,
+        )
+
+        return drf.response.Response(
+            list_profiles(request.query_params)
+            if request.method == "GET"
+            else sync_profiles(request.data)
+        )
+
 
 class ReconciliationConfirmView(APIView):
     """API endpoint to confirm user reconciliation emails.
