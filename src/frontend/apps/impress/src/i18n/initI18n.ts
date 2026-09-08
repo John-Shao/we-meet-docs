@@ -3,7 +3,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
 
 import { fallbackLng } from './config';
-import resources from './translations.json';
+import resources from './resources';
 
 // Add an initialization guard
 let isInitialized = false;

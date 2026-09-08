@@ -47,17 +47,15 @@ describe('integration testing on i18n package', () => {
     expect(fs.existsSync('./locales/tests/fr/translations.json')).toBeTruthy();
 
     // Execute format-deploy command
-    const output = './locales/tests/translations.json';
+    const output = './locales/tests/output';
     execSync(`node ./format-deploy.mjs --app=tests --output=${output}`);
-    const json = JSON.parse(fs.readFileSync(output, 'utf8'));
-    expect(json).toEqual({
-      en: {
-        translation: { test: 'My test' },
-      },
-      fr: {
-        translation: { test: 'Mon test' },
-      },
-    });
+    expect(fs.readdirSync(output).sort()).toEqual(['en.json', 'fr.json']);
+    expect(
+      JSON.parse(fs.readFileSync(path.join(output, 'en.json'), 'utf8')),
+    ).toEqual({ test: 'My test' });
+    expect(
+      JSON.parse(fs.readFileSync(path.join(output, 'fr.json'), 'utf8')),
+    ).toEqual({ test: 'Mon test' });
   });
 
   test('cmd format-deploy throws an error when translation file is not found', () => {
@@ -69,7 +67,7 @@ describe('integration testing on i18n package', () => {
     fs.mkdirSync('./locales/tests/en/', { recursive: true });
 
     // Execute format-deploy command
-    const output = './locales/tests/translations.json';
+    const output = './locales/tests/output';
 
     const cmd = () => {
       execSync(`node ./format-deploy.mjs --app=tests --output=${output}`, {
@@ -80,6 +78,7 @@ describe('integration testing on i18n package', () => {
     expect(cmd).toThrow(
       `Error: File locales${path.sep}tests${path.sep}en${path.sep}translations.json not found!`,
     );
+    expect(fs.existsSync(output)).toBeFalsy();
   });
 
   test('cmd format-deploy throws an error when no translation to deploy', () => {
@@ -91,7 +90,7 @@ describe('integration testing on i18n package', () => {
     fs.mkdirSync('./locales/tests/', { recursive: true });
 
     // Execute format-deploy command
-    const output = './locales/tests/translations.json';
+    const output = './locales/tests/output';
 
     const cmd = () => {
       execSync(`node ./format-deploy.mjs --app=tests --output=${output}`, {
@@ -100,5 +99,62 @@ describe('integration testing on i18n package', () => {
     };
 
     expect(cmd).toThrow('Error: No translation to deploy');
+    expect(fs.existsSync(output)).toBeFalsy();
+  });
+
+  test('cmd rebuild-translations reads the selected flat dictionary', () => {
+    fs.rmSync('./locales/tests', { recursive: true, force: true });
+    const output = './locales/tests/output';
+    fs.mkdirSync(output, { recursive: true });
+    fs.writeFileSync(
+      './locales/tests/translations-skeleton.json',
+      JSON.stringify({
+        greeting: { message: '', description: 'Greeting' },
+        missing: { message: '', description: 'Missing translation' },
+      }),
+      'utf8',
+    );
+    fs.writeFileSync(
+      path.join(output, 'fr.json'),
+      JSON.stringify({ greeting: 'Bonjour {{name}}' }),
+      'utf8',
+    );
+    fs.writeFileSync(
+      path.join(output, 'en.json'),
+      JSON.stringify({ greeting: 'Hello {{name}}' }),
+      'utf8',
+    );
+
+    execSync(
+      `node ./rebuild-translations.mjs --app=tests --language=fr --output=${output}`,
+    );
+
+    expect(
+      JSON.parse(
+        fs.readFileSync('./locales/tests/translations-rebuild.json', 'utf8'),
+      ),
+    ).toEqual({
+      greeting: { message: 'Bonjour {{name}}', description: 'Greeting' },
+      missing: { message: '', description: 'Missing translation' },
+    });
+  });
+
+  test('cmd rebuild-translations reports a missing locale file', () => {
+    fs.rmSync('./locales/tests', { recursive: true, force: true });
+    fs.mkdirSync('./locales/tests', { recursive: true });
+    fs.writeFileSync(
+      './locales/tests/translations-skeleton.json',
+      '{}',
+      'utf8',
+    );
+
+    expect(() =>
+      execSync(
+        'node ./rebuild-translations.mjs --app=tests --language=fr --output=./locales/tests/output',
+        { stdio: 'pipe' },
+      ),
+    ).toThrow(
+      `Error: File locales${path.sep}tests${path.sep}output${path.sep}fr.json not found!`,
+    );
   });
 });

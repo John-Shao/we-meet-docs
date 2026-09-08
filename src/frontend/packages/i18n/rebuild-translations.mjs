@@ -27,20 +27,21 @@ if (!fs.existsSync(pathSkeletonFile)) {
   throw new Error(`File ${pathSkeletonFile} not found!`);
 }
 
-// Get the translated file
-if (!fs.existsSync(output)) {
-  throw new Error(`File ${output} not found!`);
+// Read the requested language's flat dictionary from the output directory.
+const pathTranslateFile = path.join(output, `${language}.json`);
+if (!fs.existsSync(pathTranslateFile)) {
+  throw new Error(`File ${pathTranslateFile} not found!`);
 }
 
 const jsonSkel = JSON.parse(fs.readFileSync(pathSkeletonFile, 'utf8'));
-const jsonTrans = JSON.parse(fs.readFileSync(output, 'utf8'));
+const jsonTrans = JSON.parse(fs.readFileSync(pathTranslateFile, 'utf8'));
 
 // Transform the json file to the format expected by i18next
 const jsonRebuild = jsonSkel;
 Object.keys(jsonSkel)
   .sort()
   .forEach((key) => {
-    jsonRebuild[key]['message'] = jsonTrans[language]['translation'][key] || '';
+    jsonRebuild[key]['message'] = jsonTrans[key] || '';
   });
 
 // Write the file to the output
