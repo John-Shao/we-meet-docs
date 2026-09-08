@@ -13,17 +13,16 @@ export interface OnboardingStepIconProps {
 }
 
 export const OnboardingStepIcon = ({
-  size = '32px',
-  colorToken = 'gray-550',
+  size = 'var(--wm-control-height-compact)',
+  colorToken,
   color: colorCss,
   children,
 }: PropsWithChildren<OnboardingStepIconProps>) => {
   const { colorsTokens } = useCunninghamTheme();
   const color =
     colorCss ??
-    colorsTokens[colorToken] ??
-    colorsTokens['gray-550'] ??
-    'currentColor';
+    (colorToken ? colorsTokens[colorToken] : undefined) ??
+    'var(--wm-icon-secondary)';
 
   return (
     <Box
@@ -37,8 +36,8 @@ export const OnboardingStepIcon = ({
         color: ${color};
 
         svg {
-          width: 24px;
-          height: 24px;
+          width: var(--wm-icon-medium);
+          height: var(--wm-icon-medium);
           display: block;
         }
       `}

@@ -1,6 +1,7 @@
 /* Shared chrome styles. Apply wm-ui to UI regions, never the editor content root. */
 .wm-ui,
 .c__dropdown-menu,
+.c__modal:has(.c__onboarding-modal),
 .c__modal:has(.wm-modal-header) {
   --c--contextuals--content--semantic--neutral--primary: var(--wm-text-primary);
   --c--contextuals--content--semantic--neutral--secondary: var(

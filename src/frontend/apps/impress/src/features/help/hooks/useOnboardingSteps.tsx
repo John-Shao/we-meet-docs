@@ -3,7 +3,6 @@ import Image from 'next/image';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { useConfig } from '@/core';
-import { useCunninghamTheme } from '@/cunningham';
 
 import DragIndicatorIcon from '../assets/drag_indicator.svg';
 import FileShareIcon from '../assets/file-share.svg';
@@ -20,10 +19,7 @@ export const useOnboardingSteps = () => {
   const { data: config } = useConfig();
   const readyTemplateUrl =
     config?.theme_customization?.onboarding?.ready_template_url;
-  const { contextualTokens, colorsTokens } = useCunninghamTheme();
-  const activeColor =
-    contextualTokens.content.semantic.brand.tertiary ??
-    colorsTokens['brand-600'];
+  const activeColor = 'var(--wm-action-selected-on-container)';
 
   return {
     steps: [

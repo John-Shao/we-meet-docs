@@ -1,7 +1,7 @@
 import { Button, Modal, ModalSize } from '@gouvfr-lasuite/cunningham-react';
 import { useTranslation } from 'react-i18next';
 
-import { Box, Icon, Text } from '@/components';
+import { Box, ModalHeader, Text } from '@/components';
 
 interface ModalConfirmDownloadUnsafeProps {
   onClose: () => void;
@@ -17,6 +17,7 @@ export const ModalConfirmDownloadUnsafe = ({
   return (
     <Modal
       isOpen
+      hideCloseButton
       closeOnClickOutside
       onClose={() => onClose()}
       aria-label={t('Warning')}
@@ -47,18 +48,12 @@ export const ModalConfirmDownloadUnsafe = ({
       }
       size={ModalSize.SMALL}
       title={
-        <Text
-          as="h2"
-          id="modal-confirm-download-unsafe-title"
-          $gap="0.7rem"
-          $size="h6"
-          $align="flex-start"
-          $direction="row"
-          $margin="0"
-        >
-          <Icon iconName="warning" $theme="warning" />
-          {t('Warning')}
-        </Text>
+        <ModalHeader
+          title={t('Warning')}
+          titleId="modal-confirm-download-unsafe-title"
+          closeLabel={t('Close')}
+          onClose={onClose}
+        />
       }
     >
       <Box className="--docs--modal-confirm-download-unsafe">

@@ -127,7 +127,7 @@ export const VersionList = ({
       >
         {versions?.length === 0 && (
           <Box $align="center" $margin="large">
-            <Text $size="h6" $weight="bold">
+            <Text $size="sm" $variation="secondary">
               {t('No versions')}
             </Text>
           </Box>
