@@ -1,6 +1,7 @@
 import { Button, useModal } from '@gouvfr-lasuite/cunningham-react';
 import { useTreeContext } from '@gouvfr-lasuite/ui-kit';
 import dynamic from 'next/dynamic';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import SharedSVG from '@/assets/icons/ui-kit/shared.svg';
@@ -34,6 +35,7 @@ export const DocShareButton = ({
   const { addLastFocus, restoreFocus } = useFocusStore();
   const treeContext = useTreeContext<Doc>();
   const modalShare = useModal();
+  const [modalPage, setModalPage] = useState<'share' | 'members'>('share');
   const { data: accesses } = useDocAccesses(
     {
       docId: doc.id,
@@ -60,6 +62,7 @@ export const DocShareButton = ({
           variant={hasAccesses ? 'secondary' : 'tertiary'}
           onClick={(e) => {
             addLastFocus(e.currentTarget);
+            setModalPage(hasAccesses ? 'members' : 'share');
             modalShare.open();
           }}
           disabled={isDisabled}
@@ -81,6 +84,7 @@ export const DocShareButton = ({
             restoreFocus();
           }}
           doc={doc}
+          initialPage={modalPage}
           isRootDoc={treeContext?.root?.id === doc.id}
         />
       )}
