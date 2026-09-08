@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { createGlobalStyle } from 'styled-components';
 import { useDebouncedCallback } from 'use-debounce';
 
-import { Box, ButtonCloseModal, Text } from '@/components';
+import { Box, Text } from '@/components';
 import { QuickSearch, QuickSearchGroup } from '@/components/quick-search';
 import { useConfig } from '@/core';
 import { Doc } from '@/docs/doc-management';
@@ -16,6 +16,7 @@ import { useDocAccesses, useUsers } from '../api';
 import { useDocAccessRefreshBridge } from '../hooks/useDocAccessRefreshBridge';
 
 import { DocInheritedShareContent } from './DocInheritedShareContent';
+import { DocModalHeader } from './DocModalHeader';
 import { QuickSearchGroupAccessRequest } from './DocShareAccessRequest';
 import { DocShareAddMemberList } from './DocShareAddMemberList';
 import { QuickSearchGroupInvitation } from './DocShareInvitation';
@@ -98,17 +99,12 @@ export function DocMembersModal({
       hideCloseButton
       aria-label={t(inviting ? 'Invite members' : 'Members and permissions')}
       title={
-        <Box $direction="row" $justify="space-between" $align="center">
-          <Box>
-            <Text as="h1" $size="20px" $weight="600" $margin="0">
-              {t(inviting ? 'Invite members' : 'Members and permissions')}
-            </Text>
-            <Text $size="sm" $variation="secondary">
-              {doc.title || t('Untitled document')}
-            </Text>
-          </Box>
-          <ButtonCloseModal onClick={close} aria-label={t('Close')} />
-        </Box>
+        <DocModalHeader
+          title={t(inviting ? 'Invite members' : 'Members and permissions')}
+          documentTitle={doc.title}
+          onClose={close}
+          closeLabel={t('Close')}
+        />
       }
     >
       <MembersStyle />

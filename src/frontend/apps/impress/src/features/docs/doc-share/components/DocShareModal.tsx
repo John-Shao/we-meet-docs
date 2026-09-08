@@ -3,7 +3,6 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createGlobalStyle } from 'styled-components';
 
-import { Box, ButtonCloseModal, Text } from '@/components';
 import { Doc, useDoc } from '@/docs/doc-management';
 import { useEmbedPlatform, useHostFeature } from '@/hooks/useEmbedShell';
 import { sendToHost } from '@/hooks/useIsEmbedded';
@@ -12,6 +11,7 @@ import { useDocAccessRefreshBridge } from '../hooks/useDocAccessRefreshBridge';
 
 import { DocLinkSharePanel } from './DocLinkSharePanel';
 import { DocMembersModal } from './DocMembersModal';
+import { DocModalHeader } from './DocModalHeader';
 
 const ShareStyle = createGlobalStyle`
   .doc-sharing-layout { display: flex; flex-direction: column; min-height: 0; max-height: min(72dvh, 640px); font-size: 14px; line-height: 1.5; }
@@ -85,20 +85,12 @@ export function DocShareModal({
       aria-label={t('Share the document')}
       hideCloseButton
       title={
-        <Box $direction="row" $justify="space-between" $align="center">
-          <Box>
-            <Text as="h1" $size="20px" $weight="600" $margin="0">
-              {t('Share the document')}
-            </Text>
-            <Text $size="sm" $variation="secondary">
-              {doc.title || t('Untitled document')}
-            </Text>
-          </Box>
-          <ButtonCloseModal
-            onClick={close}
-            aria-label={t('Close the share modal')}
-          />
-        </Box>
+        <DocModalHeader
+          title={t('Share the document')}
+          documentTitle={doc.title}
+          onClose={close}
+          closeLabel={t('Close the share modal')}
+        />
       }
     >
       <ShareStyle />
