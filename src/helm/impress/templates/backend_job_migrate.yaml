@@ -4,7 +4,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ $fullName }}-migrate
+  name: {{ $fullName }}-migrate{{ if .Values.backend.migrate.useReleaseRevision }}-{{ .Release.Revision }}{{ end }}
   namespace: {{ .Release.Namespace | quote }}
   annotations:
     argocd.argoproj.io/sync-options: Replace=true,Force=true

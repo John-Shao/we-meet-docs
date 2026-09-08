@@ -277,9 +277,11 @@ backend:
     targetPort: 8000
     annotations: {}
 
+  ## @param backend.migrate.useReleaseRevision Append the Helm release revision to create a fresh migration Job on every upgrade
   ## @param backend.migrate.command backend migrate command
   ## @param backend.migrate.restartPolicy backend migrate job restart policy
   migrate:
+    useReleaseRevision: false
     command:
       - /bin/sh
       - "-c"

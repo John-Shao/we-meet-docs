@@ -121,6 +121,8 @@ backend:
 
   # 迁移 job（照 example：等 DB 就绪再 migrate）
   migrate:
+    # 每次 Helm 发布创建独立任务，避免旧 Job 的不可变模板阻止切换镜像。
+    useReleaseRevision: true
     command:
       - "/bin/sh"
       - "-c"

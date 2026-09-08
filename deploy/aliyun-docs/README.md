@@ -94,10 +94,26 @@ bash deploy/aliyun-docs/deploy-impress.sh --skip-git-pull --dry-run
   兼容原有 `TAG=xxx bash ...` 用法；禁止 `latest`。部署脚本不构建镜像。
 - Helm 使用 `--wait --wait-for-jobs` 等待就绪和迁移任务完成，再逐个等待本次 release
   的 Deployment 完成滚动更新，最后打印就绪副本数和镜像。只有全部通过才显示“更新完成”。
+- 阿里云开启 `backend.migrate.useReleaseRevision`，迁移任务命名为
+  `impress-docs-backend-migrate-<Helm revision>`。即使上一次发布留下了镜像拉取失败的
+  迁移 Job，下一次发布也会创建新任务，不会尝试修改旧 Job 的不可变 Pod 模板。
 - 默认等待时限为 `10m`，可用 `--timeout` / `TIMEOUT` 调整（Helm 和每次 rollout 分别计时）。
   失败或超时返回非零退出码，并打印 Pod 状态和最近事件，方便定位镜像拉取、Pod 创建等问题。
 - 原有额外 Helm 参数（如 `--set`、`-f`）仍可传入；命名空间、镜像 tag 和等待参数由脚本统一设置。
   切换集群应设置 `KUBECONFIG` 和当前 context，让 Helm 与 kubectl 使用同一个集群。
+
+### 从旧版固定名称迁移任务恢复
+
+若旧版部署遗留 `impress-docs-backend-migrate`，且它因未构建的镜像卡在
+`ImagePullBackOff`，可删除该失败任务后重试已存在的镜像版本：
+
+```bash
+kubectl -n docs delete job impress-docs-backend-migrate --ignore-not-found --wait=true
+bash deploy/aliyun-docs/deploy-impress.sh --tag b5a4c2b3
+```
+
+此处仅适用于已确认未启动迁移进程的失败 Job；正在运行数据库迁移时应先等待其完成。
+代码 SHA 不代表镜像已构建，指定的三个镜像 tag 必须已经推送到镜像仓库。
 
 ## Django 管理员账号
 
