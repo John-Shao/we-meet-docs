@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { css } from 'styled-components';
 
 import { Box, Text } from '@/components';
@@ -21,7 +22,9 @@ export const SearchUserRow = ({
   alwaysShowRight = false,
   isInvitation = false,
 }: Props) => {
-  const hasFullName = !!user.full_name;
+  const { t } = useTranslation();
+  const name =
+    user.full_name || user.short_name || user.email || t('Unknown user');
   const { spacingsTokens, colorsTokens } = useCunninghamTheme();
 
   return (
@@ -36,7 +39,7 @@ export const SearchUserRow = ({
           className="--docs--search-user-row"
         >
           <UserAvatar
-            fullName={user.full_name || user.email}
+            fullName={name}
             background={isInvitation ? colorsTokens['gray-400'] : undefined}
           />
           <Box $direction="column">
@@ -47,20 +50,22 @@ export const SearchUserRow = ({
                 line-break: anywhere;
               `}
             >
-              {hasFullName ? user.full_name : user.email}
+              {name}
             </Text>
-            {hasFullName && (
-              <Text
-                $size="xs"
-                $margin={{ top: '-2px' }}
-                $variation="secondary"
-                $css={css`
-                  line-break: anywhere;
-                `}
-              >
-                {user.email}
-              </Text>
-            )}
+            {user.email &&
+              name !== user.email &&
+              !user.email.endsWith('@phone.we-meet.online') && (
+                <Text
+                  $size="xs"
+                  $margin={{ top: '-2px' }}
+                  $variation="secondary"
+                  $css={css`
+                    line-break: anywhere;
+                  `}
+                >
+                  {user.email}
+                </Text>
+              )}
           </Box>
         </Box>
       }

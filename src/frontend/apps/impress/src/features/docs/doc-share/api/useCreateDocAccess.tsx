@@ -62,10 +62,10 @@ export function useCreateDocAccess() {
       void queryClient.invalidateQueries({
         queryKey: [KEY_LIST_DOC],
       });
-      void queryClient.resetQueries({
+      void queryClient.invalidateQueries({
         queryKey: [KEY_LIST_USER],
       });
-      void queryClient.resetQueries({
+      void queryClient.invalidateQueries({
         queryKey: [KEY_LIST_DOC_ACCESSES],
       });
 

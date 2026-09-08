@@ -115,7 +115,12 @@ const DOCS_FEATURES = [
 ] as const;
 
 /** 宿主可能宣告的能力(docs 会消费的那些)。 */
-export type HostFeature = 'global-search' | 'shell-nav' | 'route-sync';
+export type HostFeature =
+  | 'global-search'
+  | 'shell-nav'
+  | 'route-sync'
+  | 'docs-sharing-v2'
+  | 'docs-member-picker';
 
 /**
  * 当前是被哪一端内嵌的;独立访问 docs 时返回 null。
@@ -196,7 +201,7 @@ export const useHostFeature = (feature: HostFeature): boolean => {
     return false;
   }
   if (handshake === 'idle' || handshake === 'pending') {
-    return true;
+    return feature !== 'docs-sharing-v2' && feature !== 'docs-member-picker';
   }
   if (handshake === 'timeout') {
     return false;

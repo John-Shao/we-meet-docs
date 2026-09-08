@@ -16,7 +16,7 @@ export const DocShareAddMemberListItem = ({ user, onRemoveUser }: Props) => {
   return (
     <Box
       className="--docs--doc-share-add-member-list-item"
-      data-testid={`doc-share-add-member-${user.email}`}
+      data-testid={`doc-share-add-member-${user.id}`}
       $radius={spacingsTokens['3xs']}
       $direction="row"
       $height="fit-content"
@@ -39,12 +39,12 @@ export const DocShareAddMemberListItem = ({ user, onRemoveUser }: Props) => {
           line-break: anywhere;
         `}
       >
-        {user.full_name || user.email}
+        {user.full_name || user.short_name || t('Unknown user')}
       </Text>
       <BoxButton
         onClick={() => onRemoveUser?.(user)}
         aria-label={t('Remove {{name}} from the invite list', {
-          name: user.full_name || user.email,
+          name: user.full_name || user.short_name || t('Unknown user'),
         })}
         $withThemeInherited
       >

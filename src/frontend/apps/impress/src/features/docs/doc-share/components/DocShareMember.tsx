@@ -62,7 +62,7 @@ export const DocShareMemberItem = ({
   return (
     <Box
       $width="100%"
-      data-testid={`doc-share-member-row-${access.user.email}`}
+      data-testid={`doc-share-member-row-${access.user.id}`}
       className="--docs--doc-share-member-item"
     >
       <SearchUserRow
@@ -80,7 +80,10 @@ export const DocShareMemberItem = ({
               access={access}
               doc={doc}
               ariaLabel={t('Change role for {{name}}', {
-                name: access.user.full_name || access.user.email,
+                name:
+                  access.user.full_name ||
+                  access.user.short_name ||
+                  t('Unknown user'),
               })}
             />
           </Box>

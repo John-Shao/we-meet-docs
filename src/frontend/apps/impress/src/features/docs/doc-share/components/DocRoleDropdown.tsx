@@ -77,7 +77,7 @@ export const DocRoleDropdown = ({
    * We display a message to indicate that there is a higher role
    */
   const topMessage = useMemo(() => {
-    if (!canUpdate || !rolesAllowed || rolesAllowed.length === 0) {
+    if (!access || !canUpdate || !rolesAllowed || rolesAllowed.length === 0) {
       return message;
     }
 
@@ -90,10 +90,13 @@ export const DocRoleDropdown = ({
     }
 
     return message;
-  }, [canUpdate, rolesAllowed, translatedRoles, message, t]);
+  }, [access, canUpdate, rolesAllowed, translatedRoles, message, t]);
 
-  const roles: DropdownMenuOption[] = Object.keys(translatedRoles).map(
-    (key, index) => {
+  const roles: DropdownMenuOption[] = Object.keys(translatedRoles)
+    .filter(
+      (key) => access || !rolesAllowed || rolesAllowed.includes(key as Role),
+    )
+    .map((key, index) => {
       const isLast = index === Object.keys(translatedRoles).length - 1;
       const isRoleAllowed = rolesAllowed?.includes(key as Role) ?? true;
 
@@ -104,8 +107,7 @@ export const DocRoleDropdown = ({
         showSeparator: isLast,
         disabled: (isLastOwner && key !== 'owner') || !isRoleAllowed,
       };
-    },
-  );
+    });
 
   if (!canUpdate) {
     return (
@@ -135,11 +137,15 @@ export const DocRoleDropdown = ({
       testId="doc-role-dropdown"
       options={[
         ...roles,
-        {
-          label: t('Remove access'),
-          disabled: !access?.abilities.destroy,
-          callback: onRemove,
-        },
+        ...(access
+          ? [
+              {
+                label: t('Remove access'),
+                disabled: !access.abilities.destroy,
+                callback: onRemove,
+              },
+            ]
+          : []),
       ]}
       buttonCss={css`
         &:hover {

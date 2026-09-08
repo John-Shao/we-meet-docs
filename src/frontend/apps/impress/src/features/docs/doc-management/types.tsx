@@ -23,6 +23,7 @@ export interface Access {
 
 export enum Role {
   READER = 'reader',
+  COMMENTER = 'commenter',
   EDITOR = 'editor',
   ADMIN = 'administrator',
   OWNER = 'owner',
@@ -30,6 +31,7 @@ export enum Role {
 
 export const RoleImportance = {
   [Role.READER]: 1,
+  [Role.COMMENTER]: 1.5,
   [Role.EDITOR]: 2,
   [Role.ADMIN]: 3,
   [Role.OWNER]: 4,

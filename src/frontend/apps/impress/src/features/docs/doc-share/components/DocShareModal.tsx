@@ -1,403 +1,253 @@
-import { Modal, ModalSize } from '@gouvfr-lasuite/cunningham-react';
-import { announce } from '@react-aria/live-announcer';
-import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Modal, ModalSize } from '@gouvfr-lasuite/cunningham-react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createGlobalStyle, css } from 'styled-components';
-import { useDebouncedCallback } from 'use-debounce';
+import { createGlobalStyle } from 'styled-components';
 
-import { Box, ButtonCloseModal, HorizontalSeparator, Text } from '@/components';
-import {
-  QuickSearch,
-  QuickSearchData,
-  QuickSearchGroup,
-} from '@/components/quick-search/';
-import { useConfig } from '@/core';
-import { Doc } from '@/docs/doc-management';
-import { User } from '@/features/auth';
-import { useResponsiveStore } from '@/stores';
-import { isValidEmail } from '@/utils';
+import { Box, ButtonCloseModal, Text } from '@/components';
+import { Doc, useDoc } from '@/docs/doc-management';
+import { useEmbedPlatform, useHostFeature } from '@/hooks/useEmbedShell';
+import { sendToHost } from '@/hooks/useIsEmbedded';
 
-import {
-  KEY_LIST_DOC_ACCESSES,
-  KEY_LIST_DOC_ACCESS_REQUESTS,
-  KEY_LIST_DOC_INVITATIONS,
-  KEY_LIST_USER,
-  useDocAccesses,
-  useUsers,
-} from '../api';
 import { useDocAccessRefreshBridge } from '../hooks/useDocAccessRefreshBridge';
 
-import { DocInheritedShareContent } from './DocInheritedShareContent';
-import {
-  ButtonAccessRequest,
-  QuickSearchGroupAccessRequest,
-} from './DocShareAccessRequest';
-import { DocShareAddMemberList } from './DocShareAddMemberList';
-import {
-  DocShareModalInviteUserRow,
-  QuickSearchGroupInvitation,
-} from './DocShareInvitation';
-import { QuickSearchGroupMember } from './DocShareMember';
-import { DocShareModalFooter } from './DocShareModalFooter';
+import { DocLinkSharePanel } from './DocLinkSharePanel';
+import { DocMembersModal } from './DocMembersModal';
 
-const ShareModalStyle = createGlobalStyle`
-  .--docs--doc-share-modal [cmdk-item] {
-    cursor: auto;
-  }
-  .c__modal__title {
-    padding-bottom: 0 !important;
-  }
+const ShareStyle = createGlobalStyle`
+  .doc-sharing-layout { display: flex; flex-direction: column; min-height: 0; max-height: min(72dvh, 640px); font-size: 14px; line-height: 1.5; }
+  .doc-sharing-tabs { display: flex; gap: 8px; padding: 12px 24px; border-bottom: 1px solid var(--c--contextuals--border--surface--primary); }
+  .doc-sharing-scroll { overflow-y: auto; min-height: 0; padding: 16px 24px; }
+  .doc-sharing-footer { display: flex; flex-shrink: 0; justify-content: space-between; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--c--contextuals--border--surface--primary); }
+  .doc-sharing-options { padding: 0; border: 0; margin: 0 0 24px; }
+  .doc-sharing-options legend { font-weight: 600; margin-bottom: 12px; }
+  .doc-sharing-option { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; cursor: pointer; }
+  .doc-sharing-option input { margin-top: 4px; accent-color: var(--c--contextuals--content--semantic--brand--primary); }
+  .doc-sharing-option small { display: block; margin-top: 4px; color: var(--c--contextuals--content--semantic--neutral--secondary); line-height: 1.5; }
+  .doc-sharing-hint { color: var(--c--contextuals--content--semantic--neutral--secondary); line-height: 1.5; }
+  .doc-sharing-url { box-sizing: border-box; width: 100%; padding: 12px; color: inherit; background: transparent; border: 1px solid var(--c--contextuals--border--surface--primary); border-radius: 8px; }
 `;
 
-type Props = {
+export function DocShareModal({
+  doc: snapshot,
+  onClose,
+  isRootDoc = true,
+  initialPage = 'share',
+}: {
   doc: Doc;
-  isRootDoc?: boolean;
   onClose: () => void;
-};
-
-export const DocShareModal = ({ doc, onClose, isRootDoc = true }: Props) => {
+  isRootDoc?: boolean;
+  initialPage?: 'share' | 'members';
+}) {
   const { t } = useTranslation();
-  const selectedUsersRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
-  const { data: config } = useConfig();
-  const API_USERS_SEARCH_QUERY_MIN_LENGTH =
-    config?.API_USERS_SEARCH_QUERY_MIN_LENGTH || 5;
-
-  const { isLargeScreen } = useResponsiveStore();
-
-  /**
-   * The modal content height is calculated based on the viewport height.
-   * The formula is:
-   * 100dvh - 2em - 12px - 34px
-   * - 34px is the height of the modal title in mobile
-   * - 2em is the padding of the modal content
-   * - 12px is the padding of the modal footer
-   * - 690px is the height of the content in desktop
-   * This ensures that the modal content is always visible and does not overflow.
-   */
-  const modalContentHeight = isLargeScreen
-    ? 'min(690px, calc(100dvh - 2em - 12px - 34px))'
-    : `calc(100dvh - 34px)`;
-  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
-  const [userQuery, setUserQuery] = useState('');
-  const [inputValue, setInputValue] = useState('');
-
-  const [listHeight, setListHeight] = useState<string>('400px');
-  const canShare = doc.abilities.accesses_manage && isRootDoc;
-  const canViewAccesses = doc.abilities.accesses_view;
-  const showMemberSection = inputValue === '' && selectedUsers.length === 0;
-  const showFooter = selectedUsers.length === 0 && !inputValue;
-
-  const onSelect = (user: User) => {
-    setSelectedUsers((prev) => [...prev, user]);
-    setUserQuery('');
-    setInputValue('');
-
-    const userName = user.full_name || user.email;
-    announce(
-      t(
-        '{{name}} added to invite list. Add more members or press Tab to select role and invite.',
-        {
-          name: userName,
-        },
-      ),
-      'polite',
-    );
+  const canChat = useHostFeature('docs-sharing-v2');
+  const hasLegacyHost = useHostFeature('route-sync');
+  const platform = useEmbedPlatform();
+  const [page, setPage] = useState(initialPage);
+  const [tab, setTab] = useState<'chat' | 'link'>('link');
+  const touchedTab = useRef(false);
+  const savingRef = useRef(false);
+  const [saving, setSaving] = useState(false);
+  const close = () => {
+    if (!savingRef.current) {
+      onClose();
+    }
   };
-
-  const { data: membersQuery } = useDocAccesses({
-    docId: doc.id,
-  });
-
-  const searchUsersQuery = useUsers(
-    { query: userQuery, docId: doc.id },
-    {
-      enabled: userQuery?.length >= API_USERS_SEARCH_QUERY_MIN_LENGTH,
-      queryKey: [KEY_LIST_USER, { query: userQuery }],
-    },
+  const [role, setRole] = useState<'reader' | 'editor'>('reader');
+  const query = useDoc(
+    { id: snapshot.id },
+    { queryKey: ['doc', { id: snapshot.id }], refetchOnMount: 'always' },
   );
-
-  const onFilter = useDebouncedCallback((str: string) => {
-    setUserQuery(str);
-  }, 300);
-
-  const onRemoveUser = (row: User) => {
-    setSelectedUsers((prevState) => {
-      const index = prevState.findIndex((value) => value.id === row.id);
-      if (index < 0) {
-        return prevState;
-      }
-      const newArray = [...prevState];
-      newArray.splice(index, 1);
-
-      const userName = row.full_name || row.email;
-      announce(
-        t('{{name}} removed from invite list', {
-          name: userName,
-        }),
-        'polite',
-      );
-
-      return newArray;
-    });
-  };
-
-  const handleRef = (node: HTMLDivElement) => {
-    const inputHeight = canShare ? 70 : 0;
-    const marginTop = 11;
-    const footerHeight = node?.clientHeight ?? 0;
-    const selectedUsersHeight = selectedUsersRef.current?.clientHeight ?? 0;
-    const height = `calc(${modalContentHeight} - ${footerHeight}px - ${selectedUsersHeight}px - ${inputHeight}px - ${marginTop}px)`;
-
-    setListHeight(height);
-  };
-
-  const inheritedAccesses = useMemo(() => {
-    return (
-      membersQuery?.filter((access) => access.document.id !== doc.id) ?? []
-    );
-  }, [membersQuery, doc.id]);
-
-  const showInheritedShareContent =
-    inheritedAccesses.length > 0 && showMemberSection && !isRootDoc;
-
-  // 「分享到聊天」在 docs 之外授了权 —— 宿主端授权成功后回发消息,这里同步刷新
-  // 成员列表(否则弹窗一直停在分享前的「与 N 位用户分享」)。
+  const doc = query.data || snapshot;
   useDocAccessRefreshBridge(doc.id);
-
-  // Invalidate relevant queries to ensure fresh data on modal open
   useEffect(() => {
-    [
-      KEY_LIST_DOC_INVITATIONS,
-      KEY_LIST_DOC_ACCESS_REQUESTS,
-      KEY_LIST_DOC_ACCESSES,
-    ].forEach((key) => {
-      void queryClient.invalidateQueries({
-        queryKey: [key],
-      });
-    });
-  }, [queryClient]);
-
+    if (!touchedTab.current && canChat) {
+      setTab('chat');
+    }
+    if (!canChat) {
+      setTab('link');
+    }
+  }, [canChat]);
+  if (page === 'members') {
+    return <DocMembersModal doc={doc} isRootDoc={isRootDoc} onClose={close} />;
+  }
+  const membersEntry = doc.abilities.accesses_view ? (
+    <Button
+      variant="tertiary"
+      disabled={saving}
+      onClick={() => setPage('members')}
+    >
+      {t('Members and permissions')}
+    </Button>
+  ) : (
+    <span />
+  );
+  const activeTab = canChat ? tab : 'link';
   return (
-    <>
-      <Modal
-        isOpen
-        closeOnClickOutside
-        data-testid="doc-share-modal"
-        aria-label={t('Share the document')}
-        size={isLargeScreen ? ModalSize.LARGE : ModalSize.FULL}
-        aria-modal="true"
-        onClose={onClose}
-        title={
-          <Box $direction="row" $justify="space-between" $align="center">
-            <Text
-              as="h1"
-              id="doc-share-modal-title"
-              $align="flex-start"
-              $size="small"
-              $weight="600"
-              $margin="0"
-            >
+    <Modal
+      isOpen
+      onClose={close}
+      closeOnClickOutside
+      size={ModalSize.MEDIUM}
+      aria-label={t('Share the document')}
+      hideCloseButton
+      title={
+        <Box $direction="row" $justify="space-between" $align="center">
+          <Box>
+            <Text as="h1" $size="20px" $weight="600" $margin="0">
               {t('Share the document')}
             </Text>
-            <ButtonCloseModal
-              aria-label={t('Close the share modal')}
-              onClick={onClose}
-            />
+            <Text $size="sm" $variation="secondary">
+              {doc.title || t('Untitled document')}
+            </Text>
           </Box>
-        }
-        hideCloseButton
-      >
-        <ShareModalStyle />
-        <Box
-          $height="auto"
-          $maxHeight={canViewAccesses ? modalContentHeight : 'none'}
-          $overflow="hidden"
-          className="--docs--doc-share-modal noPadding "
-          $justify="space-between"
-        >
-          <Box
-            $flex={1}
-            $css={css`
-              [cmdk-list] {
-                overflow-y: auto;
-                height: ${listHeight};
-              }
-            `}
-          >
-            <Box ref={selectedUsersRef}>
-              {canShare && selectedUsers.length > 0 && (
-                <Box $padding={{ horizontal: 'base' }} $margin={{ top: '12x' }}>
-                  <DocShareAddMemberList
-                    doc={doc}
-                    selectedUsers={selectedUsers}
-                    onRemoveUser={onRemoveUser}
-                    afterInvite={() => {
-                      setUserQuery('');
-                      setInputValue('');
-                      setSelectedUsers([]);
-                    }}
-                  />
-                </Box>
-              )}
-              {!canViewAccesses && (
-                <HorizontalSeparator $margin={{ vertical: 'sm' }} />
-              )}
-            </Box>
-
-            <Box data-testid="doc-share-quick-search">
-              {!canViewAccesses && (
-                <Box
-                  $height={listHeight}
-                  $align="center"
-                  $justify="center"
-                  $gap="1rem"
-                >
-                  <Text
-                    $maxWidth="320px"
-                    $textAlign="center"
-                    $variation="secondary"
-                    $size="sm"
-                    as="p"
-                  >
-                    {t(
-                      'You can view this document but need additional access to see its members or modify settings.',
-                    )}
-                  </Text>
-                  <ButtonAccessRequest
-                    docId={doc.id}
-                    variant="secondary"
-                    size="small"
-                  />
-                </Box>
-              )}
-              {canViewAccesses && (
-                <QuickSearch
-                  label={t('Search results')}
-                  onFilter={(str) => {
-                    setInputValue(str);
-                    onFilter(str);
-                  }}
-                  inputValue={inputValue}
-                  showInput={canShare}
-                  loading={searchUsersQuery.isLoading}
-                  placeholder={t('Type a name or email')}
-                >
-                  {showInheritedShareContent && (
-                    <DocInheritedShareContent
-                      rawAccesses={
-                        membersQuery?.filter(
-                          (access) => access.document.id !== doc.id,
-                        ) ?? []
-                      }
-                    />
-                  )}
-                  {showMemberSection && isRootDoc && (
-                    <Box $padding={{ top: 'base' }}>
-                      <QuickSearchGroupAccessRequest doc={doc} />
-                      <QuickSearchGroupInvitation doc={doc} />
-                      <QuickSearchGroupMember doc={doc} />
-                    </Box>
-                  )}
-
-                  {!showMemberSection && canShare && (
-                    <QuickSearchInviteInputSection
-                      searchUsersRawData={searchUsersQuery.data}
-                      onSelect={onSelect}
-                      userQuery={userQuery}
-                      minLength={API_USERS_SEARCH_QUERY_MIN_LENGTH}
-                    />
-                  )}
-                </QuickSearch>
-              )}
-            </Box>
-          </Box>
-
-          <Box ref={handleRef}>
-            {showFooter && <DocShareModalFooter doc={doc} onClose={onClose} />}
-          </Box>
+          <ButtonCloseModal
+            onClick={close}
+            aria-label={t('Close the share modal')}
+          />
         </Box>
-      </Modal>
-    </>
-  );
-};
-
-interface QuickSearchInviteInputSectionProps {
-  onSelect: (usr: User) => void;
-  searchUsersRawData: User[] | undefined;
-  userQuery: string;
-  minLength: number;
-}
-
-const QuickSearchInviteInputSection = ({
-  onSelect,
-  searchUsersRawData,
-  userQuery,
-  minLength,
-}: QuickSearchInviteInputSectionProps) => {
-  const { t } = useTranslation();
-  const hint = useMemo(() => {
-    if (userQuery.length < minLength) {
-      return t('Type at least {{minLength}} characters to display user names', {
-        minLength,
-      });
-    }
-    if (isValidEmail(userQuery)) {
-      return t('Choose the email');
-    }
-    if (!searchUsersRawData?.length) {
-      return t('No results. Type a full email address to invite someone.');
-    }
-
-    return t('Choose a user');
-  }, [minLength, searchUsersRawData?.length, t, userQuery]);
-
-  useEffect(() => {
-    announce(hint, 'polite');
-  }, [hint]);
-
-  const searchUserData: QuickSearchData<User> = useMemo(() => {
-    const users = searchUsersRawData || [];
-    const isEmail = isValidEmail(userQuery);
-    const newUser: User = {
-      id: userQuery,
-      full_name: '',
-      email: userQuery,
-      short_name: '',
-      language: '',
-      is_first_connection: false,
-    };
-
-    const hasEmailInUsers = users.some(
-      (user) => user.email.toLowerCase() === userQuery.toLowerCase(),
-    );
-
-    return {
-      groupName: hint,
-      elements: users,
-      endActions:
-        isEmail && !hasEmailInUsers
-          ? [
-              {
-                content: <DocShareModalInviteUserRow user={newUser} />,
-                onSelect: () => void onSelect(newUser),
-              },
-            ]
-          : undefined,
-    };
-  }, [searchUsersRawData, userQuery, hint, onSelect]);
-
-  return (
-    <Box
-      aria-label={t('List search user result card')}
-      $padding={{ horizontal: 'base', bottom: '3xs', top: 'base' }}
+      }
     >
-      <QuickSearchGroup
-        group={searchUserData}
-        onSelect={onSelect}
-        renderElement={(user) => <DocShareModalInviteUserRow user={user} />}
-      />
-    </Box>
+      <ShareStyle />
+      <div className="doc-sharing-layout" data-testid="doc-share-modal">
+        {canChat && (
+          <div
+            className="doc-sharing-tabs"
+            role="tablist"
+            aria-label={t('Sharing method')}
+            onKeyDown={(event) => {
+              if (
+                !saving &&
+                (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
+              ) {
+                event.preventDefault();
+                touchedTab.current = true;
+                setTab(activeTab === 'chat' ? 'link' : 'chat');
+                const buttons =
+                  event.currentTarget.querySelectorAll<HTMLButtonElement>(
+                    '[role="tab"]',
+                  );
+                buttons[activeTab === 'chat' ? 1 : 0]?.focus();
+              }
+            }}
+          >
+            {(['chat', 'link'] as const).map((value) => (
+              <Button
+                key={value}
+                role="tab"
+                aria-selected={activeTab === value}
+                tabIndex={activeTab === value ? 0 : -1}
+                variant={activeTab === value ? 'primary' : 'tertiary'}
+                onClick={() => {
+                  touchedTab.current = true;
+                  setTab(value);
+                }}
+              >
+                {value === 'chat' ? t('Share to chat') : t('Link sharing')}
+              </Button>
+            ))}
+          </div>
+        )}
+        {query.isPending ? (
+          <div className="doc-sharing-scroll" role="status">
+            {t('Loading…')}
+          </div>
+        ) : query.isError ? (
+          <div className="doc-sharing-scroll">
+            <p role="alert">{t('Could not load document permissions.')}</p>
+            <Button onClick={() => void query.refetch()}>{t('Retry')}</Button>
+          </div>
+        ) : (
+          <>
+            <div
+              hidden={activeTab !== 'link'}
+              className={
+                activeTab === 'link' ? 'doc-sharing-layout' : undefined
+              }
+            >
+              <DocLinkSharePanel
+                doc={doc}
+                footerStart={membersEntry}
+                onBusyChange={(value) => {
+                  savingRef.current = value;
+                  setSaving(value);
+                }}
+              />
+            </div>
+            <div hidden={activeTab !== 'chat'}>
+              <div className="doc-sharing-scroll">
+                <p>
+                  {t(
+                    'Choose a conversation or colleagues to send this document card.',
+                  )}
+                </p>
+                {doc.abilities.accesses_manage ? (
+                  <fieldset className="doc-sharing-options">
+                    <legend>{t('Grant recipients access')}</legend>
+                    {(['reader', 'editor'] as const).map((value) => (
+                      <label key={value} className="doc-sharing-option">
+                        <input
+                          type="radio"
+                          name="chat-share-role"
+                          checked={role === value}
+                          onChange={() => setRole(value)}
+                        />
+                        <span>
+                          {value === 'reader' ? t('Can read') : t('Can edit')}
+                        </span>
+                      </label>
+                    ))}
+                  </fieldset>
+                ) : (
+                  <p className="doc-sharing-hint">
+                    {t(
+                      'Sending a card does not change permissions because you cannot manage this document.',
+                    )}
+                  </p>
+                )}
+                <p className="doc-sharing-hint">
+                  {t('Chat sharing does not change the link access scope.')}
+                </p>
+              </div>
+              <div className="doc-sharing-footer">
+                {membersEntry}
+                <Button
+                  disabled={!doc.abilities.retrieve}
+                  onClick={() =>
+                    sendToHost({
+                      type: 'wemeet-share-doc',
+                      docId: doc.id,
+                      title: doc.title,
+                      url: `${window.location.origin}/docs/${doc.id}/`,
+                      role,
+                      canManage: doc.abilities.accesses_manage,
+                    })
+                  }
+                >
+                  {t('Choose chats')}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+        {!canChat &&
+          (platform === 'app' || (platform === 'web' && hasLegacyHost)) && (
+            <div className="doc-sharing-footer">
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  sendToHost({
+                    type: 'wemeet-share-doc',
+                    docId: doc.id,
+                    title: doc.title,
+                    url: `${window.location.origin}/docs/${doc.id}/`,
+                  })
+                }
+              >
+                {t('Share to chat')}
+              </Button>
+            </div>
+          )}
+      </div>
+    </Modal>
   );
-};
+}

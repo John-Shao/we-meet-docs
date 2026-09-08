@@ -106,6 +106,7 @@ export const DocToolBox = ({ doc }: DocToolBoxProps) => {
   const [isModalRemoveOpen, setIsModalRemoveOpen] = useState(false);
   const [isModalExportOpen, setIsModalExportOpen] = useState(false);
   const [isModalShareOpen, setIsModalShareOpen] = useState(false);
+  const [sharePage, setSharePage] = useState<'share' | 'members'>('share');
   const [isModalHistoryOpen, setIsModalHistoryOpen] = useState(false);
   const openedVersion = useRef<string | undefined>(undefined);
   const requestedVersion =
@@ -178,9 +179,19 @@ export const DocToolBox = ({ doc }: DocToolBoxProps) => {
       label: t('Share'),
       icon: <SharedSVG width={24} height={24} aria-hidden="true" />,
       callback: () => {
+        setSharePage('share');
         setIsModalShareOpen(true);
       },
       isHidden: !isTopRoot || !authenticated,
+    },
+    {
+      label: t('Members and permissions'),
+      icon: <SharedSVG width={24} height={24} aria-hidden="true" />,
+      callback: () => {
+        setSharePage('members');
+        setIsModalShareOpen(true);
+      },
+      isHidden: !authenticated || !doc.abilities.accesses_view,
     },
     {
       label: t('Download'),
@@ -313,6 +324,7 @@ export const DocToolBox = ({ doc }: DocToolBoxProps) => {
       )}
       {isModalShareOpen && (
         <DocShareModal
+          initialPage={sharePage}
           onClose={() => {
             setIsModalShareOpen(false);
             restoreFocus();
