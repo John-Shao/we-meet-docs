@@ -56,6 +56,7 @@
 }
 
 .--docs--ai-menu .bn-combobox {
+  box-sizing: border-box;
   overflow: hidden;
   border: 1px solid var(--wm-border-subtle);
   border-radius: var(--wm-radius-card);
@@ -111,10 +112,17 @@
 }
 
 .--docs--ai-menu .bn-combobox-items {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   max-height: min(320px, 40dvh);
   overflow: auto;
+  border: 0;
   border-top: 1px solid var(--wm-border-subtle);
+  border-radius: 0;
   background: var(--wm-surface-default);
+  box-shadow: none;
 }
 
 #ai-suggestion-menu .bn-suggestion-menu-item-small {

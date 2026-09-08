@@ -70,6 +70,7 @@ yarn check-we-meet-ui
 
 ## 验证
 
+- 边界走查：长操作标题不能挤出关闭按钮，菜单不能被触发器撑出窄屏；侧栏长评论由外层滚动，AI 建议列表与提示框等宽。菜单有隐藏或禁用项时，验证选中项定位、方向键循环、Home/End 和单次确认回调。
 - 运行 `yarn check-we-meet-ui`、`yarn check-we-meet-tokens`、TypeScript、ESLint、Prettier 和修改样式的 Stylelint 检查。
 - 回归链接保存/复制、成员授权和主题切换的现有测试。
 - 回归菜单键盘导航、禁用项跳过、工具栏菜单项和列表日期显示；检查浅色、深色及窄屏下的长名称、菜单定位和选中状态。

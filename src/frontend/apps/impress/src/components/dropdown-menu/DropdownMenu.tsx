@@ -74,6 +74,12 @@ export const DropdownMenu = ({
   const isSingleSelectable = options.some(
     (option) => option.isSelected !== undefined,
   );
+  const selectedIndex = options.findIndex(
+    (option) =>
+      option.show !== false &&
+      !option.disabled &&
+      (option.isSelected || selectedValues?.includes(option.value ?? '')),
+  );
 
   const onOpenChange = useCallback(
     (isOpen: boolean) => {
@@ -95,16 +101,13 @@ export const DropdownMenu = ({
 
   // Focus selected menu item when menu opens
   useEffect(() => {
-    if (isOpen && menuItemRefs.current.length > 0) {
-      const selectedIndex = options.findIndex((option) => option.isSelected);
-      if (selectedIndex !== -1) {
-        setFocusedIndex(selectedIndex);
-        setTimeout(() => {
-          menuItemRefs.current[selectedIndex]?.focus();
-        }, 0);
-      }
+    if (isOpen && selectedIndex !== -1) {
+      const timer = setTimeout(() => {
+        menuItemRefs.current[selectedIndex]?.focus();
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [isOpen, options]);
+  }, [isOpen, selectedIndex]);
 
   const triggerOption = useCallback(
     (option: DropdownMenuOption) => {
@@ -153,7 +156,7 @@ export const DropdownMenu = ({
     >
       <Box
         $maxWidth="320px"
-        $minWidth={`${blockButtonRef.current?.clientWidth}px`}
+        $minWidth={`min(${blockButtonRef.current?.clientWidth ?? 0}px, 320px, calc(100vw - 32px))`}
         className="wm-menu"
         role="menu"
         aria-label={label}
@@ -200,6 +203,7 @@ export const DropdownMenu = ({
                 data-testid={option.testId}
                 $direction="row"
                 disabled={isDisabled}
+                onFocus={() => setFocusedIndex(index)}
                 $hasTransition={false}
                 onClick={(event) => {
                   event.preventDefault();

@@ -30,34 +30,47 @@ export const useDropdownKeyboardNav = ({
           option.show !== false && !option.disabled ? index : -1,
         )
         .filter((index) => index !== -1);
+      const position = enabledIndices.indexOf(focusedIndex);
+
+      const focusItem = (index: number | undefined) => {
+        if (index !== undefined) {
+          setFocusedIndex(index);
+          menuItemRefs.current[index]?.focus();
+        }
+      };
 
       switch (event.key) {
         case 'ArrowDown': {
           event.preventDefault();
-          const nextIndex =
-            focusedIndex < enabledIndices.length - 1 ? focusedIndex + 1 : 0;
-          const nextEnabledIndex = enabledIndices[nextIndex];
-          setFocusedIndex(nextIndex);
-          menuItemRefs.current[nextEnabledIndex]?.focus();
+          focusItem(enabledIndices[(position + 1) % enabledIndices.length]);
           break;
         }
 
         case 'ArrowUp': {
           event.preventDefault();
-          const prevIndex =
-            focusedIndex > 0 ? focusedIndex - 1 : enabledIndices.length - 1;
-          const prevEnabledIndex = enabledIndices[prevIndex];
-          setFocusedIndex(prevIndex);
-          menuItemRefs.current[prevEnabledIndex]?.focus();
+          focusItem(
+            enabledIndices[
+              position > 0 ? position - 1 : enabledIndices.length - 1
+            ],
+          );
           break;
         }
+
+        case 'Home':
+          event.preventDefault();
+          focusItem(enabledIndices[0]);
+          break;
+
+        case 'End':
+          event.preventDefault();
+          focusItem(enabledIndices.at(-1));
+          break;
 
         case 'Enter':
         case ' ': {
           event.preventDefault();
-          if (focusedIndex >= 0 && focusedIndex < enabledIndices.length) {
-            const selectedOptionIndex = enabledIndices[focusedIndex];
-            const selectedOption = options[selectedOptionIndex];
+          if (position !== -1) {
+            const selectedOption = options[focusedIndex];
             if (selectedOption && selectedOption.callback) {
               onOpenChange(false);
               void selectedOption.callback();

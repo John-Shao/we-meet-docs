@@ -353,6 +353,7 @@ export const DocsCommentsStyle = createGlobalStyle<{
         max-width: 100%;
         width: 100%;
         min-width: 0;
+        max-height: none;
         overflow: visible;
         padding: var(--c--globals--spacings--xxs) var(--c--globals--spacings--xxxs);
         border: none;
@@ -364,7 +365,6 @@ export const DocsCommentsStyle = createGlobalStyle<{
           border: none;
           box-shadow: inset 3px 0 var(--wm-border-focus);
           background: var(--wm-surface-muted);
-          max-height: none;
         }
 
         &:hover {

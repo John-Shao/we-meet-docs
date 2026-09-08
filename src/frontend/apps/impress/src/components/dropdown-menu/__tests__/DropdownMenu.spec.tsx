@@ -27,6 +27,54 @@ const selectableOptions: DropdownMenuOption[] = [
 ];
 
 describe('<DropdownMenu />', () => {
+  test('navigates from the selected item past hidden and disabled options', async () => {
+    const user = userEvent.setup();
+    const callback = vi.fn();
+    render(
+      <DropdownMenu
+        label="Permissions"
+        opened
+        options={[
+          { label: 'Hidden', show: false },
+          { label: 'Unavailable', disabled: true },
+          { label: 'Reader', isSelected: true },
+          { label: 'Editor', isSelected: false, callback },
+        ]}
+      >
+        Reader
+      </DropdownMenu>,
+      { wrapper: AppWrapper },
+    );
+
+    const reader = screen.getByRole('menuitemradio', { name: 'Reader' });
+    const editor = screen.getByRole('menuitemradio', { name: 'Editor' });
+    await waitFor(() => expect(reader).toHaveFocus());
+    await user.keyboard('{ArrowDown}');
+    expect(editor).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
+    expect(reader).toHaveFocus();
+    await user.keyboard('{ArrowUp}');
+    expect(editor).toHaveFocus();
+    await user.keyboard('{Home}');
+    expect(reader).toHaveFocus();
+    await user.keyboard('{End}{Enter}');
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
+
+  test('continues keyboard navigation from the item focused directly', async () => {
+    const user = userEvent.setup();
+    render(
+      <DropdownMenu options={baseOptions} label="Languages" opened>
+        Languages
+      </DropdownMenu>,
+      { wrapper: AppWrapper },
+    );
+
+    screen.getByRole('menuitem', { name: 'Français' }).focus();
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'Deutsch' })).toHaveFocus();
+  });
+
   test('renders menuitem role when options have no selection', async () => {
     render(
       <DropdownMenu options={baseOptions} label="Options" opened>
