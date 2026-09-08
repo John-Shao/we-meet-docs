@@ -22,35 +22,31 @@ export const DocsCommentsStyle = createGlobalStyle<{
           .bn-thread-mark:not([data-orphan='true']) {
             background-color: color-mix(
               in srgb,
-              var(--c--contextuals--background--palette--yellow--tertiary) 40%,
+              var(--wm-status-warning-container) 40%,
               transparent
             );
-            border-bottom: 2px solid
-              var(--c--contextuals--background--palette--yellow--secondary);
+            border-bottom: 2px solid var(--wm-status-warning-default);
 
-            mix-blend-mode: multiply;
+            mix-blend-mode: normal;
 
             transition:
               background-color var(--c--globals--transitions--duration),
               border-bottom-color var(--c--globals--transitions--duration);
 
             &:has(.bn-thread-mark-selected) {
-              background-color: var(
-                --c--contextuals--background--palette--yellow--tertiary
-              );
+              background-color: var(--wm-status-warning-container);
             }
           }
 
           .bn-thread-mark[data-orphan='true']:has(> .bn-thread-mark-selected) {
             background-color: color-mix(
               in srgb,
-              var(--c--contextuals--background--palette--blue-1--tertiary) 40%,
+              var(--wm-action-selected-container) 40%,
               transparent
             );
-            border-bottom: 2px solid
-              var(--c--contextuals--background--palette--blue-1--secondary);
+            border-bottom: 2px solid var(--wm-border-focus);
 
-            mix-blend-mode: multiply;
+            mix-blend-mode: normal;
 
             transition:
               background-color var(--c--globals--transitions--duration),
@@ -64,39 +60,61 @@ export const DocsCommentsStyle = createGlobalStyle<{
     }
 
     em-emoji-picker {
-      box-shadow: 0px 6px 18px 0px #00001229;
+      box-shadow: var(--wm-shadow-overlay);
       min-height: 420px;
     }
 
     // Thread modal
     .bn-thread {
-      width: 100%;
-      min-width: calc(min(400px, 90vw));
-      max-width: calc(min(400px, 90vw));
-      max-height: calc(min(500px, 60vh));
+      box-sizing: border-box;
+      width: min(400px, calc(100vw - 32px));
+      min-width: 0;
+      max-width: calc(100vw - 32px);
+      border: 1px solid var(--wm-border-subtle);
+      border-radius: var(--wm-radius-card);
+      background: var(--wm-surface-default);
+      color: var(--wm-text-primary);
+      font: var(--wm-font-body-medium);
+      max-height: min(500px, 60dvh);
       padding: var(--c--globals--spacings--xxs) var(--c--globals--spacings--xxxs);
-      box-shadow: 0px 6px 18px 0px #00001229;
-      margin-left: 20px;
-      margin-right: 20px;
+      box-shadow: var(--wm-shadow-overlay);
+      margin: 0;
       gap: 0;
       overflow: auto;
 
       .bn-default-styles {
-        font-family: var(--c--globals--font--families--base);
+        font-family: var(--wm-font-family);
+      }
+
+      .bn-container {
+        height: auto;
+        background: transparent;
+      }
+
+      .bn-editor {
+        background: transparent;
+      }
+
+      .bn-editor[contenteditable='true'] {
+        box-sizing: border-box;
+        min-height: var(--wm-control-height-compact);
+        padding: var(--wm-space-xs) var(--wm-space-sm);
+        border: 1px solid var(--wm-border-default);
+        border-radius: var(--wm-radius-control);
+      }
+
+      .bn-comment-actions button {
+        border-radius: var(--wm-radius-control);
+        font: var(--wm-font-label-large);
       }
 
       .bn-block {
-        font-size: 14px;
+        font-size: var(--wm-font-size-body-medium);
       }
 
       .bn-inline-content:has(> .ProseMirror-trailingBreak:only-child):before {
         font-style: normal;
-        font-size: 14px;
-      }
-
-      // Remove tooltip
-      *[role='tooltip'] {
-        display: none;
+        font-size: var(--wm-font-size-body-medium);
       }
 
       & .bn-thread-comments {
@@ -105,6 +123,7 @@ export const DocsCommentsStyle = createGlobalStyle<{
 
       .bn-thread-comment {
         padding: 8px;
+        min-width: 0;
         flex-wrap: nowrap;
         gap: 0px;
         flex-direction: column;
@@ -117,7 +136,7 @@ export const DocsCommentsStyle = createGlobalStyle<{
         & .bn-editor {
           padding-left: var(--c--globals--spacings--lg);
           .bn-inline-content {
-            color: var(--c--globals--colors--gray-700);
+            color: var(--wm-text-primary);
           }
         }
 
@@ -128,9 +147,9 @@ export const DocsCommentsStyle = createGlobalStyle<{
             padding: var(--c--globals--spacings--0)
               var(--c--globals--spacings--st);
             background: none;
-            border: 1px solid var(--c--contextuals--border--semantic--neutral--tertiary);
+            border: 1px solid var(--wm-border-default);
             border-radius: var(--c--globals--spacings--st);
-            height: var(--c--globals--spacings--md);
+            height: var(--wm-control-height-compact);
           }
         }
 
@@ -144,13 +163,13 @@ export const DocsCommentsStyle = createGlobalStyle<{
                渐变会几乎看不见,盖不住底下的评论文字。 */
             background: linear-gradient(
               to left,
-              var(--c--contextuals--background--surface--primary) 90%,
+              var(--wm-surface-default) 90%,
               transparent 100%
             );
           }
 
           .bn-menu-dropdown {
-            box-shadow: 0px 0px 6px 0px #0000911a;
+            box-shadow: var(--wm-shadow-overlay);
           }
         }
 
@@ -160,8 +179,17 @@ export const DocsCommentsStyle = createGlobalStyle<{
           max-width: 100%;
           gap: 0.5rem;
 
+          & > .mantine-Text-root {
+            min-width: 0;
+            overflow-wrap: anywhere;
+            color: var(--wm-text-primary);
+            font: var(--wm-font-label-large);
+          }
+
           // Date
           span.mantine-focus-auto {
+            color: var(--wm-text-secondary);
+            font: var(--wm-font-body-small);
             font-weight: 400;
             margin-left: var(--c--globals--spacings--2xs) !important;
           }
@@ -172,22 +200,22 @@ export const DocsCommentsStyle = createGlobalStyle<{
 
             .mantine-Button-root {
               background-color: transparent;
-              height: var(--c--globals--spacings--md);
-              width: var(--c--globals--spacings--md);
+              height: var(--wm-control-height-compact);
+              width: var(--wm-control-height-compact);
               padding: var(--c--globals--spacings--0);
 
               &:hover {
-                background-color: var(--c--globals--colors--gray-100);
+                background-color: var(--wm-surface-muted);
               }
             }
 
             button[role='menuitem'] svg {
-              color: var(--c--globals--colors--gray-600);
+              color: var(--wm-icon-secondary);
             }
           }
 
           & svg {
-            color: var(--c--contextuals--background--semantic--brand--primary);
+            color: var(--wm-action-primary-background);
           }
         }
 
@@ -196,34 +224,27 @@ export const DocsCommentsStyle = createGlobalStyle<{
           margin-top: var(--c--globals--spacings--2xs);
           .bn-comment-actions {
             flex-direction: row-reverse;
+            flex-wrap: wrap;
             background: none;
             border: none;
             gap: 0.4rem !important;
 
             & > button {
-              height: var(--c--globals--spacings--md);
+              height: var(--wm-control-height-compact);
               padding-inline: var(--c--globals--spacings--st);
-              border: 1px solid
-                var(--c--contextuals--background--semantic--brand--primary);
-              background: var(
-                --c--contextuals--background--semantic--brand--primary
-              );
-              color: var(
-                --c--contextuals--content--semantic--brand--on-brand
-              );
+              border: 1px solid var(--wm-action-primary-background);
+              background: var(--wm-action-primary-background);
+              color: var(--wm-action-primary-foreground);
 
               &:hover {
-                background-color: var(--c--contextuals--background--semantic--brand--primary);
+                background-color: var(--wm-action-primary-background);
               }
 
               &:last-child {
                 /* 线框按钮的底(原值 white),要不透明面色而非 5% 叠加色。 */
-                background: var(--c--contextuals--background--surface--primary);
-                border: 1px solid
-                  var(--c--contextuals--border--surface--primary);
-                color: var(
-                  --c--contextuals--background--semantic--brand--primary
-                );
+                background: var(--wm-surface-default);
+                border: 1px solid var(--wm-border-subtle);
+                color: var(--wm-action-primary-background);
               }
             }
           }
@@ -235,17 +256,20 @@ export const DocsCommentsStyle = createGlobalStyle<{
       &:has(> .bn-comment-editor + .bn-comment-actions-wrapper) {
         padding: 0.5rem 8px;
         flex-direction: row;
-        gap: 10px;
+        flex-wrap: wrap;
+        gap: var(--wm-space-sm);
 
         .bn-container.bn-comment-editor {
           min-width: 0;
+          flex: 1 1 calc(100% - var(--wm-icon-button-default) - var(--wm-space-sm));
         }
 
         &::before {
           content: '';
-          width: 26px;
-          height: 26px;
-          flex: 0 0 26px;
+          width: var(--wm-icon-button-default);
+          height: var(--wm-icon-button-default);
+          flex: 0 0 var(--wm-icon-button-default);
+          border-radius: var(--wm-radius-control);
           background-image: ${({ currentUserAvatarUrl }) =>
             currentUserAvatarUrl ? `url("${currentUserAvatarUrl}")` : 'none'};
           background-position: center;
@@ -254,7 +278,7 @@ export const DocsCommentsStyle = createGlobalStyle<{
         }
 
         & .bn-block-content:has(.ProseMirror-trailingBreak:only-child):after {
-          color: var(--c--contextuals--content--semantic--neutral--tertiary);
+          color: var(--wm-text-secondary);
           font-style: normal;
         }
       }
@@ -263,29 +287,23 @@ export const DocsCommentsStyle = createGlobalStyle<{
       .bn-thread-composer .bn-comment-actions-wrapper,
       &:not(.selected) .bn-comment-actions-wrapper {
         flex-basis: fit-content;
+        margin-inline-start: auto;
 
         .bn-action-toolbar.bn-comment-actions {
           border: none;
           background-color: transparent;
 
           button {
-            font-size: 0;
-            background: var(
-              --c--contextuals--background--semantic--brand--primary
-            );
-            width: var(--c--globals--spacings--md);
-            height: var(--c--globals--spacings--md);
-            padding: var(--c--globals--spacings--0);
+            font: var(--wm-font-label-large);
+            color: var(--wm-action-primary-foreground);
+            background: var(--wm-action-primary-background);
+            width: auto;
+            height: var(--wm-control-height-compact);
+            padding: var(--wm-space-xs) var(--wm-space-sm);
 
             &:disabled {
-              background: var(--c--globals--colors--gray-300);
-            }
-
-            & .mantine-Button-label::before {
-              content: 'arrow_upward_alt';
-              font-family: 'Material Symbols Outlined Variable', sans-serif;
-              font-size: 18px;
-              color: var(--c--contextuals--content--semantic--brand--on-brand);
+              background: var(--wm-surface-muted);
+              color: var(--wm-text-disabled);
             }
           }
         }
@@ -316,7 +334,7 @@ export const DocsCommentsStyle = createGlobalStyle<{
 
     .bn-editor[contenteditable="false"]{
       &:focus-visible {
-        outline: 2px solid var(--c--globals--colors--brand-400);
+        outline: 2px solid var(--wm-border-focus);
         outline-offset: -2px;
       }
     }
@@ -327,7 +345,7 @@ export const DocsCommentsStyle = createGlobalStyle<{
       min-height: 100%;
 
       .bn-thread-expand-prompt p {
-        font-size: var(--c--globals--font--sizes--xs);
+        font-size: var(--wm-font-size-body-small);
       }
 
       .bn-thread {
@@ -339,16 +357,18 @@ export const DocsCommentsStyle = createGlobalStyle<{
         padding: var(--c--globals--spacings--xxs) var(--c--globals--spacings--xxxs);
         border: none;
         border-radius: 0;
-        border-bottom: 1px solid var(--c--contextuals--border--surface--primary);
+        box-shadow: none;
+        border-bottom: 1px solid var(--wm-border-subtle);
 
         &.selected {
           border: none;
-          background: var(--c--contextuals--background--semantic--neutral--tertiary);
+          box-shadow: inset 3px 0 var(--wm-border-focus);
+          background: var(--wm-surface-muted);
           max-height: none;
         }
 
         &:hover {
-          background: var(--c--contextuals--background--semantic--neutral--tertiary);
+          background: var(--wm-surface-muted);
         }
 
         & .bn-header-text {
@@ -369,13 +389,13 @@ export const DocsCommentsStyle = createGlobalStyle<{
             & > .mantine-Group-root:first-child {
               background: linear-gradient(
                 to left,
-                var(--c--contextuals--background--semantic--neutral--tertiary) 90%,
+                var(--wm-surface-muted) 90%,
                 rgba(255, 255, 255, 0) 100%
               );
             }
 
             .bn-menu-dropdown {
-              box-shadow: 0px 0px 6px 0px #0000911a;
+              box-shadow: var(--wm-shadow-overlay);
             }
           }
         }

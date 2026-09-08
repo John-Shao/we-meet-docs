@@ -24,27 +24,27 @@ interface PresenterFloatingBarProps {
 
 const barCss = css`
   position: fixed;
-  bottom: 1.5rem;
+  bottom: max(var(--wm-space-xl), env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   z-index: 1;
   flex-direction: row !important;
   align-items: center;
-  gap: 0.25rem;
-  padding: var(--c--globals--spacings--3xs, 4px);
+  gap: var(--wm-space-xs);
+  padding: var(--wm-space-xs);
   border-radius: var(--wm-radius-card);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  color: var(--c--contextuals--content--semantic--neutral--secondary);
-  border: 1px solid var(--c--contextuals--border--surface--primary);
-  background: var(--c--contextuals--background--surface--primary);
+  color: var(--wm-text-secondary);
+  border: 1px solid var(--wm-border-subtle);
+  background: var(--wm-surface-default);
   box-shadow: var(--wm-shadow-raised);
 `;
 
 const separatorCss = css`
   width: 1px;
   height: 1.25rem;
-  background: var(--c--theme--colors--greyscale-200, #e5e5e5);
+  background: var(--wm-border-default);
   margin: 0 0.25rem;
 `;
 
@@ -78,6 +78,7 @@ export const PresenterFloatingBar = ({
 
   return (
     <Box
+      className="wm-presenter-controls wm-ui"
       ref={barRef}
       $direction="row"
       $align="center"

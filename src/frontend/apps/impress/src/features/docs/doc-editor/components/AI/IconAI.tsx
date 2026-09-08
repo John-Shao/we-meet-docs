@@ -57,16 +57,16 @@ export const IconAI = ({
   return (
     <Icon
       $css={css`
-        border: 1px solid var(--c--globals--colors--gray-100);
-        color: var(--c--globals--colors--gray-700);
+        border: 1px solid var(--wm-border-subtle);
+        color: var(--wm-icon-secondary);
         transition: all 0.1s ease-in;
-        box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.05);
+        box-shadow: var(--wm-shadow-raised);
         ${isHighlighted &&
         css`
-          background-color: var(--c--globals--colors--brand-450);
-          border: 1px solid var(--c--globals--colors--brand-350);
-          color: #ffffff;
-          box-shadow: 0 1px 4px 0 rgba(88, 88, 225, 0.25);
+          background-color: var(--wm-action-primary-background);
+          border: 1px solid var(--wm-border-focus);
+          color: var(--wm-action-primary-foreground);
+          box-shadow: var(--wm-shadow-raised);
         `}
         ${$css}
       `}

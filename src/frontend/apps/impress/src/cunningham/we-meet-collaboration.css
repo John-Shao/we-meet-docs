@@ -1,0 +1,137 @@
+﻿/* Collaboration chrome only: document and presentation content keep their typography. */
+.--docs--right-panel.wm-ui {
+  box-sizing: border-box;
+  min-width: 0;
+  color: var(--wm-text-primary);
+  background: var(--wm-surface-default);
+  border-color: var(--wm-border-subtle);
+}
+
+.wm-ui .wm-support-panel {
+  min-height: 0;
+}
+
+.wm-ui .wm-panel-header {
+  flex-shrink: 0;
+  min-height: var(--wm-control-height-large);
+  padding: var(--wm-space-sm) var(--wm-space-md);
+  gap: var(--wm-space-sm);
+  border-bottom: 1px solid var(--wm-border-subtle);
+}
+
+.wm-ui .wm-panel-header h2 {
+  margin: 0;
+  color: var(--wm-text-primary);
+  font: var(--wm-font-title-medium);
+}
+
+.wm-ui .wm-panel-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.wm-ui .wm-panel-scroll ul {
+  padding: var(--wm-space-sm);
+  gap: var(--wm-space-xs);
+}
+
+.wm-ui .--docs--table-content-heading {
+  box-sizing: border-box;
+  min-height: var(--wm-control-height-compact);
+  padding-block: var(--wm-space-xs);
+  padding-inline-end: var(--wm-space-sm);
+  border-radius: var(--wm-radius-control);
+}
+
+.wm-presenter-controls.wm-ui {
+  box-sizing: border-box;
+  max-width: calc(100vw - 32px);
+}
+
+.--docs--ai-menu.wm-ui {
+  max-width: min(500px, calc(100vw - 32px));
+  color: var(--wm-text-primary);
+  font: var(--wm-font-body-medium);
+}
+
+.--docs--ai-menu .bn-combobox {
+  overflow: hidden;
+  border: 1px solid var(--wm-border-subtle);
+  border-radius: var(--wm-radius-card);
+  background: var(--wm-surface-default);
+  box-shadow: var(--wm-shadow-overlay);
+}
+
+.--docs--ai-menu .mantine-TextInput-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--wm-surface-default);
+}
+
+.--docs--ai-menu .mantine-TextInput-section[data-position='left'] {
+  margin-inline: var(--wm-space-sm);
+}
+
+.--docs--ai-menu .mantine-TextInput-section[data-position='right'] {
+  position: relative;
+  inset-inline-end: var(--wm-space-sm);
+  flex-shrink: 0;
+  width: auto;
+}
+
+.--docs--ai-menu input[name='ai-prompt'] {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+  height: var(--wm-control-height-large);
+  padding-inline: var(--wm-control-height-default) var(--wm-space-sm);
+  color: var(--wm-text-primary);
+  background: transparent;
+  border: 0;
+  border-radius: var(--wm-radius-control);
+  font: var(--wm-font-body-medium);
+}
+
+.--docs--ai-menu input[name='ai-prompt']::placeholder {
+  color: var(--wm-text-secondary);
+}
+
+.--docs--ai-menu input[name='ai-prompt']:disabled {
+  color: var(--wm-text-disabled);
+  background: var(--wm-surface-muted);
+}
+
+.--docs--ai-menu .bn-combobox:focus-within {
+  border-color: var(--wm-border-focus);
+}
+
+.--docs--ai-menu[data-status='error'] .bn-combobox {
+  border-color: var(--wm-status-danger-default);
+}
+
+.--docs--ai-menu .bn-combobox-items {
+  max-height: min(320px, 40dvh);
+  overflow: auto;
+  border-top: 1px solid var(--wm-border-subtle);
+  background: var(--wm-surface-default);
+}
+
+#ai-suggestion-menu .bn-suggestion-menu-item-small {
+  min-height: var(--wm-control-height-compact);
+  font: var(--wm-font-body-medium);
+}
+
+#ai-suggestion-menu
+  .bn-mt-suggestion-menu-item-section[data-position='left']
+  svg {
+  width: var(--wm-icon-medium);
+  height: var(--wm-icon-medium);
+}
+
+.bn-root .bn-thread button:focus-visible,
+.bn-root .bn-thread [contenteditable='true']:focus-visible,
+.--docs--ai-menu button:focus-visible {
+  outline: 2px solid var(--wm-border-focus);
+  outline-offset: -2px;
+}

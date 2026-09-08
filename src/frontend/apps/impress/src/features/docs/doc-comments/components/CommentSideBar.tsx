@@ -6,7 +6,6 @@ import {
 import { DropdownMenu } from '@gouvfr-lasuite/ui-kit';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { css } from 'styled-components';
 
 import CommentsIcon from '@/assets/icons/ui-kit/bubble-text.svg';
 import SortingResolvedSVG from '@/assets/icons/ui-kit/filter-notification.svg';
@@ -40,14 +39,8 @@ export const CommentSideBar = ({ onClose }: CommentSideBarProps) => {
   }, [setThreadsSidebarTarget]);
 
   return (
-    <Box $height="inherit">
-      <Box
-        $padding={{ vertical: 'base', horizontal: 'sm' }}
-        $css={css`
-          border-bottom: 1px solid
-            var(--c--contextuals--border--surface--primary);
-        `}
-      >
+    <Box className="wm-support-panel" $height="inherit">
+      <Box className="wm-panel-header">
         <Box $direction="row" $align="center" $justify="space-between">
           <Box $direction="row" $align="center" $gap="2xs">
             <Text as="h2" $weight="bold" $size="16px" $margin="0">

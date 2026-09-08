@@ -86,14 +86,8 @@ export const TableContentSideBar = ({ onClose }: TableContentSideBarProps) => {
   }, [headings]);
 
   return (
-    <Box $height="inherit">
-      <Box
-        $padding={{ vertical: 'base', horizontal: 'sm' }}
-        $css={css`
-          border-bottom: 1px solid
-            var(--c--contextuals--border--surface--primary);
-        `}
-      >
+    <Box className="wm-support-panel" $height="inherit">
+      <Box className="wm-panel-header">
         <Box $direction="row" $align="center" $justify="space-between">
           <Text
             as="h2"
@@ -113,6 +107,7 @@ export const TableContentSideBar = ({ onClose }: TableContentSideBarProps) => {
       {editor && headings && headings.length > 0 && (
         <Box
           as="nav"
+          className="wm-panel-scroll"
           aria-labelledby="toc-heading"
           $css={css`
             overflow-y: auto;

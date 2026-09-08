@@ -1,19 +1,11 @@
-import { useState } from 'react';
 import { css } from 'styled-components';
 
 import { Box, Text } from '@/components';
-import { useCunninghamTheme } from '@/cunningham';
 import { DocsBlockNoteEditor } from '@/docs/doc-editor/types';
 import { getMainContentElement } from '@/layouts/utils';
 import { useResponsiveStore } from '@/stores';
 
 const SCROLL_MARGIN_TOP = 50;
-
-const leftPaddingMap: { [key: number]: string } = {
-  3: '1.5rem',
-  2: '0.9rem',
-  1: 'xs',
-};
 
 export type HeadingsHighlight = {
   headingId: string;
@@ -35,10 +27,7 @@ export const Heading = ({
   level,
   text,
 }: HeadingProps) => {
-  const [isHover, setIsHover] = useState(isHighlight);
-  const { colorsTokens } = useCunninghamTheme();
   const { isMobile } = useResponsiveStore();
-  const isActive = isHighlight || isHover;
 
   return (
     <Box
@@ -47,8 +36,6 @@ export const Heading = ({
       className="--docs--table-content-heading"
       $width="100%"
       $minHeight="var(--c--globals--spacings--lg)"
-      onMouseOver={() => setIsHover(true)}
-      onMouseLeave={() => setIsHover(false)}
       onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
         // With mobile the focus open the keyboard and the scroll is not working
         e.preventDefault();
@@ -82,11 +69,7 @@ export const Heading = ({
         }
       }}
       $radius="var(--c--globals--spacings--st)"
-      $background={
-        isActive
-          ? 'var(--c--contextuals--background--semantic--overlay--primary)'
-          : 'none'
-      }
+      $background={isHighlight ? 'var(--wm-action-selected-container)' : 'none'}
       $justify="center"
       $padding="none"
       $margin="none"
@@ -95,11 +78,23 @@ export const Heading = ({
         text-align: left;
         display: flex;
         text-decoration: none;
-        color: inherit;
+        padding-inline-start: calc(
+          var(--wm-space-sm) + ${Math.max(0, Math.min(level, 6) - 1)} *
+            var(--wm-space-md)
+        );
+        color: ${isHighlight
+          ? 'var(--wm-action-selected-on-container)'
+          : 'var(--wm-text-primary)'};
+        &:hover {
+          background: var(--wm-surface-muted);
+        }
+        &[aria-current]:hover {
+          background: var(--wm-action-selected-container);
+        }
         cursor: pointer;
         &:focus-visible {
           outline: none;
-          box-shadow: 0 0 0 2px ${colorsTokens['brand-400']};
+          box-shadow: 0 0 0 2px var(--wm-border-focus);
           border-radius: var(--c--globals--spacings--st);
         }
       `}
@@ -107,8 +102,8 @@ export const Heading = ({
     >
       <Text
         $size="sm"
-        $padding={{ left: leftPaddingMap[level], vertical: 'xs' }}
-        $weight={isHighlight ? '700' : '500'}
+        $weight={isHighlight ? '500' : '400'}
+        $withThemeInherited
         $css="overflow-wrap: break-word;"
         $hasTransition
       >

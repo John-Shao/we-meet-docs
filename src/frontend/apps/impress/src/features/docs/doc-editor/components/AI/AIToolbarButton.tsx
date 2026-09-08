@@ -30,7 +30,7 @@ import { IconAI } from './IconAI';
 export const AIToolbarButton = () => {
   const { t } = useTranslation();
   const Components = useComponentsContext();
-  const { spacingsTokens, colorsTokens } = useCunninghamTheme();
+  const { spacingsTokens } = useCunninghamTheme();
   const editor = useBlockNoteEditor<
     DocsBlockSchema,
     DocsInlineContentSchema,
@@ -67,11 +67,10 @@ export const AIToolbarButton = () => {
           padding-inline: 0;
           transition: all 0.1s ease-in;
           & .mantine-Button-label {
-            padding-inline: ${spacingsTokens['2xs']};
+            padding-inline: var(--wm-space-xs);
           }
-          &:hover,
           &:hover {
-            background-color: ${colorsTokens['gray-050']};
+            background-color: var(--wm-surface-muted);
           }
         }
       `}

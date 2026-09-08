@@ -72,10 +72,10 @@ export const RightPanel = () => {
       as="aside"
       ref={panelRef}
       tabIndex={-1}
-      className="--docs--right-panel"
+      className="--docs--right-panel wm-ui"
       aria-label={panelLabel}
       inert={!isPanelOpen}
-      $width="300px"
+      $width={isMobile ? 'min(320px, 100vw)' : '300px'}
       $height="100dvh"
       $position={isMobile ? 'absolute' : 'sticky'}
       $zIndex={25}

@@ -20,7 +20,6 @@ import '@blocknote/xl-ai/style.css';
 import { Button } from '@gouvfr-lasuite/cunningham-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { createGlobalStyle } from 'styled-components';
 
 import { Box } from '@/components/Box';
 import { Icon } from '@/components/Icon';
@@ -34,30 +33,6 @@ import {
 } from '../../types';
 
 import { IconAI } from './IconAI';
-
-const AIMenuStyle = createGlobalStyle`
-  #ai-suggestion-menu .bn-suggestion-menu-item-small .bn-mt-suggestion-menu-item-section[data-position=left] svg {
-    height: 18px;
-    width: 18px;
-  }
-  .--docs--ai-menu {
-    input[name="ai-prompt"]{
-      padding-inline-start: 3rem;
-    }
-    .mantine-TextInput-wrapper {
-      display: flex
-    }
-    .mantine-TextInput-section[data-position="left"] {
-      margin-inline: 0.75rem;
-    }
-    .mantine-TextInput-section[data-position="right"] {
-      inset-inline-end: var(--c--globals--spacings--sm);
-      position: relative;
-      flex-shrink: 0;
-      width: auto;
-    }
-  }
-`;
 
 export type AIMenuProps = {
   items?: (
@@ -281,8 +256,12 @@ export const AIMenu = (props: AIMenuProps) => {
   }, [ai]);
 
   return (
-    <Box className="--docs--ai-menu" $width="100%" $maxWidth="500px">
-      <AIMenuStyle />
+    <Box
+      className="--docs--ai-menu wm-ui"
+      data-status={aiResponseStatus}
+      $width="100%"
+      $maxWidth="500px"
+    >
       <span className="sr-only" aria-live={ariaLiveMode} aria-atomic="true">
         {ariaLiveMessage}
       </span>
