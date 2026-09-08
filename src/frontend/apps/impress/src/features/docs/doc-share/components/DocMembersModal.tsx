@@ -24,9 +24,9 @@ import { QuickSearchGroupMember } from './DocShareMember';
 import { SearchUserRow } from './SearchUserRow';
 
 const MembersStyle = createGlobalStyle`
-  .doc-members-layout { display: flex; flex-direction: column; max-height: 72dvh; min-height: 0; font-size: 14px; line-height: 1.5; }
-  .doc-members-scroll { overflow-y: auto; min-height: 0; padding: 0 24px 16px; }
-  .doc-members-layout [cmdk-list] { max-height: 48dvh; overflow-y: auto; }
+  .doc-members-layout { display: flex; flex-direction: column; min-height: 0; font: var(--wm-font-body-medium); }
+  .doc-members-scroll { overflow-y: auto; min-height: 0; padding: var(--wm-space-lg); }
+  .doc-members-layout [cmdk-list] { max-height: none; overflow: visible; }
   .doc-members-layout [cmdk-item] { min-height: 48px; cursor: auto; }
   .doc-members-layout [cmdk-input] { margin-bottom: 12px; }
   .doc-members-footer { padding: 16px 24px; display: flex; justify-content: flex-end; border-top: 1px solid var(--c--contextuals--border--surface--primary); }
@@ -108,7 +108,10 @@ export function DocMembersModal({
       }
     >
       <MembersStyle />
-      <div className="doc-members-layout" data-testid="doc-members-modal">
+      <div
+        className="doc-members-layout wm-modal-edge"
+        data-testid="doc-members-modal"
+      >
         <div className="doc-members-scroll">
           {members.isPending ? (
             <p role="status">{t('Loading...')}</p>
@@ -209,7 +212,7 @@ export function DocMembersModal({
           )}
         </div>
         {canInvite && (
-          <div className="doc-members-footer">
+          <div className="doc-members-footer wm-modal-footer">
             <Button
               disabled={busy || members.isPending || members.isError}
               variant={inviting ? 'tertiary' : 'primary'}

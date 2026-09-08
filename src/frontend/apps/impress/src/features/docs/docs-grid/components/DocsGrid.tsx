@@ -71,9 +71,9 @@ export const DocsGrid = ({
 
   const loading = isFetching || isLoading;
   /**
-   * 遮罩只给「屏幕上还没有内容」的等待用。它是盖满列表的半透明层 + 锁滚动,
+   * 遮罩只给首次加载或导入等待用，范围限定在列表内。
    * 挂在 `isFetching` 上的话,LIVE_LIST_REFETCH 的每次后台重取(30s 轮询、
-   * 切回前台)都会闪一次转圈并抢走滚动 —— 静默更新的意义就没了。
+   * 切回前台)都会闪一次转圈，干扰静默更新。
    */
   const showOverlay = isLoading || isImportPending;
   const hasDocs = data?.pages.some((page) => page.results.length > 0);
@@ -86,7 +86,8 @@ export const DocsGrid = ({
 
   return (
     <Box
-      className="--docs--doc-grid"
+      className="--docs--doc-grid wm-ui"
+      aria-busy={showOverlay}
       $position="relative"
       $padding={{ horizontal: 'sm' }}
       $width="100%"
@@ -100,6 +101,8 @@ export const DocsGrid = ({
       <DocShareModalHost />
       <Card
         data-testid="docs-grid"
+        data-dragging={isDragOver || undefined}
+        data-loading={showOverlay && !hasDocs ? true : undefined}
         $width="100%"
         $css={css`
           border: 1px solid var(--c--contextuals--border--surface--primary);
@@ -119,14 +122,15 @@ export const DocsGrid = ({
       >
         <DocGridTitleBar target={target} />
         {!hasDocs && !showOverlay && (
-          <Box $padding={{ vertical: 'sm' }} $align="center" $justify="center">
-            <Text $size="sm" $weight="700">
+          <Box className="wm-grid-state" $align="center" $justify="center">
+            <Text $size="sm" $variation="secondary">
               {t('No documents found')}
             </Text>
           </Box>
         )}
         {hasDocs && (
           <Box
+            className="wm-grid-content"
             $gap="6px"
             $padding={{ vertical: 'sm', horizontal: isDesktop ? 'md' : 'xs' }}
           >
@@ -202,6 +206,7 @@ const DocGridTitleBar = ({ target }: { target: DocDefaultFilter }) => {
 
   return (
     <Box
+      className="wm-grid-titlebar"
       $direction="row"
       $padding={{
         vertical: 'sm',

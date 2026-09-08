@@ -3,7 +3,7 @@ import { t } from 'i18next';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Box, BoxButton, Card, Icon, Text } from '@/components';
+import { Box, BoxButton, Card, Icon, ModalHeader, Text } from '@/components';
 import { useCunninghamTheme } from '@/cunningham';
 
 export const AlertNetwork = () => {
@@ -70,6 +70,7 @@ interface AlertNetworkModalProps {
 export const AlertNetworkModal = ({ onClose }: AlertNetworkModalProps) => {
   return (
     <Modal
+      hideCloseButton
       isOpen
       closeOnClickOutside
       onClose={() => onClose()}
@@ -88,9 +89,11 @@ export const AlertNetworkModal = ({ onClose }: AlertNetworkModalProps) => {
       }
       size={ModalSize.MEDIUM}
       title={
-        <Text $size="h6" as="h6" $margin={{ all: '0' }} $align="flex-start">
-          {t("Why you can't edit the document?")}
-        </Text>
+        <ModalHeader
+          title={t("Why you can't edit the document?")}
+          onClose={onClose}
+          closeLabel={t('Close')}
+        />
       }
     >
       <Box className="--docs--modal-alert-network" $margin={{ top: 'md' }}>

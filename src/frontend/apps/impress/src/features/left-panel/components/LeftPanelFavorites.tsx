@@ -77,7 +77,7 @@ type LeftPanelFavoriteItemProps = {
 };
 
 export const LeftPanelFavoriteItem = ({ doc }: LeftPanelFavoriteItemProps) => {
-  const { colorsTokens, spacingsTokens } = useCunninghamTheme();
+  const { spacingsTokens } = useCunninghamTheme();
   const { isLargeScreen } = useResponsiveStore();
   const { t } = useTranslation();
 
@@ -103,7 +103,7 @@ export const LeftPanelFavoriteItem = ({ doc }: LeftPanelFavoriteItemProps) => {
         }
         &:focus-within {
           cursor: pointer;
-          box-shadow: 0 0 0 2px ${colorsTokens['brand-400']} !important;
+          box-shadow: 0 0 0 2px var(--wm-border-focus) !important;
           .pinned-actions {
             opacity: 1;
           }

@@ -33,7 +33,7 @@ export const LeftPanel = ({ isResizable }: { isResizable?: boolean }) => {
       )}
       <Box
         as="nav"
-        className="--docs--left-panel"
+        className="--docs--left-panel wm-ui"
         data-testid="left-panel"
         aria-label={t('Left panel')}
         $width={

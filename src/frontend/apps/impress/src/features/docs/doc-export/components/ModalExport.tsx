@@ -24,7 +24,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { css } from 'styled-components';
 
-import { Box, ButtonCloseModal, Text } from '@/components';
+import { Box, ModalHeader, Text } from '@/components';
 import { useMediaUrl } from '@/core';
 import { useEditorStore } from '@/docs/doc-editor/stores/useEditorStore';
 import { Doc, useTrans } from '@/docs/doc-management';
@@ -243,7 +243,6 @@ export const ModalExport = ({ onClose, doc }: ModalExportProps) => {
           <Button
             aria-label={t('Cancel the download')}
             variant="secondary"
-            fullWidth
             onClick={() => onClose()}
           >
             {t('Cancel')}
@@ -252,7 +251,6 @@ export const ModalExport = ({ onClose, doc }: ModalExportProps) => {
             data-testid="doc-export-download-button"
             aria-label={downloadButtonAriaLabel}
             variant="primary"
-            fullWidth
             onClick={() => void onSubmit()}
             disabled={isExporting}
           >
@@ -262,25 +260,14 @@ export const ModalExport = ({ onClose, doc }: ModalExportProps) => {
       }
       size={ModalSize.MEDIUM}
       title={
-        <>
-          <Text
-            as="h1"
-            $margin="0"
-            id="modal-export-title"
-            $size="h6"
-            $align="flex-start"
-            data-testid="modal-export-title"
-          >
-            {t('Export')}
-          </Text>
-          <Box $position="absolute" $css="top: 4px; right: 4px;">
-            <ButtonCloseModal
-              aria-label={t('Close the download modal')}
-              onClick={() => onClose()}
-              disabled={isExporting}
-            />
-          </Box>
-        </>
+        <ModalHeader
+          title={t('Export')}
+          titleId="modal-export-title"
+          titleTestId="modal-export-title"
+          onClose={onClose}
+          closeLabel={t('Close the download modal')}
+          closeDisabled={isExporting}
+        />
       }
     >
       <Box
@@ -300,8 +287,9 @@ export const ModalExport = ({ onClose, doc }: ModalExportProps) => {
         </Text>
         <Box ref={selectRef}>
           <Select
-            clearable={false}
+            variant="classic"
             fullWidth
+            clearable={false}
             label={t('Format')}
             options={formatOptions}
             value={format}

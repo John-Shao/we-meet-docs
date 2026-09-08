@@ -46,7 +46,7 @@ export const FloatingBar = ({
   return (
     <Box
       as="header"
-      className="--docs--floating-bar"
+      className="--docs--floating-bar wm-ui"
       data-testid="floating-bar"
       $direction="row"
       $justify="space-between"

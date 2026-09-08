@@ -1,0 +1,113 @@
+/* Shared chrome styles. Apply wm-ui to UI regions, never the editor content root. */
+.wm-ui,
+.c__dropdown-menu,
+.c__modal:has(.wm-modal-header) {
+  --c--contextuals--content--semantic--neutral--primary: var(--wm-text-primary);
+  --c--contextuals--content--semantic--neutral--secondary: var(
+    --wm-text-secondary
+  );
+  --c--contextuals--content--semantic--neutral--tertiary: var(
+    --wm-text-secondary
+  );
+  --c--contextuals--content--semantic--disabled--primary: var(
+    --wm-text-disabled
+  );
+  --c--contextuals--background--surface--primary: var(--wm-surface-default);
+  --c--contextuals--background--surface--secondary: var(--wm-surface-canvas);
+  --c--contextuals--background--semantic--contextual--primary: var(
+    --wm-surface-muted
+  );
+  --c--contextuals--background--semantic--disabled--primary: var(
+    --wm-surface-muted
+  );
+  --c--contextuals--border--surface--primary: var(--wm-border-subtle);
+  --c--contextuals--border--semantic--neutral--tertiary: var(
+    --wm-border-default
+  );
+  --c--contextuals--border--semantic--brand--primary: var(--wm-border-focus);
+  --c--contextuals--background--semantic--brand--primary: var(
+    --wm-action-primary-background
+  );
+  --c--contextuals--background--semantic--brand--primary-hover: var(
+    --wm-action-primary-hover
+  );
+  --c--contextuals--content--semantic--brand--on-brand: var(
+    --wm-action-primary-foreground
+  );
+  --c--contextuals--content--semantic--brand--primary: var(--wm-text-link);
+  --c--contextuals--content--semantic--brand--tertiary: var(--wm-text-link);
+  --c--components--modal--content-font-size: var(--wm-font-size-body-medium);
+  --c--components--modal--content-font-weight: var(
+    --wm-font-weight-body-medium
+  );
+  --c--components--modal--content-color: var(--wm-text-primary);
+  --c--components--forms-input--font-size: var(--wm-font-size-body-medium);
+  --c--components--forms-select--font-size: var(--wm-font-size-body-medium);
+  --c--components--forms-input--color: var(--wm-text-primary);
+  --c--components--forms-select--color: var(--wm-text-primary);
+  --c--components--forms-input--border-color: var(--wm-border-default);
+  --c--components--forms-input--border-color--hover: var(--wm-border-strong);
+  --c--components--forms-input--border-color--focus: var(--wm-border-focus);
+  --c--components--forms-select--border-color: var(--wm-border-default);
+  --c--components--forms-select--border-color--hover: var(--wm-border-strong);
+  --c--components--forms-select--border-color--focus: var(--wm-border-focus);
+  --c--components--forms-input--background-color: var(--wm-surface-default);
+  --c--components--forms-select--background-color: var(--wm-surface-default);
+
+  color: var(--wm-text-primary);
+  font: var(--wm-font-body-medium);
+  letter-spacing: var(--wm-tracking-body-medium);
+
+  & .c__button {
+    gap: var(--wm-space-sm);
+    font: var(--wm-font-label-large);
+    letter-spacing: var(--wm-tracking-label-large);
+  }
+
+  & .c__button--medium {
+    min-height: var(--wm-control-height-default);
+    height: auto;
+    padding: var(--wm-space-sm) var(--wm-space-lg);
+  }
+
+  & .c__button--small {
+    min-height: var(--wm-control-height-compact);
+    height: auto;
+  }
+
+  & .c__button--brand--secondary:not(:disabled) {
+    border: 1px solid var(--wm-border-default);
+    background: transparent;
+    color: var(--wm-text-primary);
+  }
+
+  & .c__button--brand--secondary:hover:not(:disabled) {
+    background: var(--wm-surface-muted);
+  }
+
+  & .c__button:focus-visible {
+    outline: 2px solid var(--wm-border-focus);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  & .c__button--brand--primary:active:not(:disabled) {
+    background: var(--wm-action-primary-pressed);
+  }
+
+  & .c__button--error--primary:not(:disabled) {
+    background: var(--wm-status-danger-default);
+    color: var(--wm-status-danger-on-default);
+  }
+
+  & .c__button--error--primary:hover:not(:disabled) {
+    filter: brightness(0.94);
+  }
+
+  & input,
+  & select,
+  & textarea {
+    font: var(--wm-font-body-medium);
+    accent-color: var(--wm-action-primary-background);
+  }
+}

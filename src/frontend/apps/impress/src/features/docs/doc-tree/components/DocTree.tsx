@@ -349,7 +349,7 @@ export const DocTree = ({ currentDoc }: DocTreeProps) => {
 
             &:focus-visible {
               outline: none !important;
-              box-shadow: 0 0 0 2px var(--c--globals--colors--brand-500) !important;
+              box-shadow: 0 0 0 2px var(--wm-border-focus) !important;
               border-radius: var(--c--globals--spacings--st);
             }
 

@@ -14,17 +14,17 @@ import { DocMembersModal } from './DocMembersModal';
 import { DocModalHeader } from './DocModalHeader';
 
 const ShareStyle = createGlobalStyle`
-  .doc-sharing-layout { display: flex; flex-direction: column; min-height: 0; max-height: min(72dvh, 640px); font-size: 14px; line-height: 1.5; }
-  .doc-sharing-tabs { display: flex; flex-shrink: 0; align-items: center; gap: 4px; padding: 12px 24px 0; border-bottom: 1px solid var(--c--contextuals--border--surface--primary); }
+  .doc-sharing-layout { display: flex; flex-direction: column; min-height: 0; font: var(--wm-font-body-medium); }
+  .doc-sharing-tabs { display: flex; flex-shrink: 0; align-items: center; gap: 4px; padding: var(--wm-space-md) var(--wm-space-lg) 0; border-bottom: 1px solid var(--c--contextuals--border--surface--primary); }
   .doc-sharing-tab { display: inline-flex; align-items: center; justify-content: center; min-width: 5rem; min-height: var(--wm-control-height-compact); padding: 6px 12px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--c--contextuals--content--semantic--neutral--secondary); font: inherit; font-size: var(--c--globals--font--sizes--sm); font-weight: var(--c--globals--font--weights--medium); line-height: 1.428571; letter-spacing: 0.1px; cursor: pointer; transition: color 150ms, border-color 150ms, background-color 150ms; }
   .doc-sharing-tab:hover:not(:disabled) { background: var(--c--contextuals--background--surface--secondary); color: var(--c--contextuals--content--semantic--neutral--primary); }
   .doc-sharing-tab[aria-selected='true'] { border-bottom-color: var(--c--contextuals--border--semantic--brand--primary); color: var(--c--contextuals--content--semantic--brand--primary); }
   .doc-sharing-tab:focus-visible { outline: 2px solid var(--c--contextuals--border--semantic--brand--primary); outline-offset: -2px; }
   .doc-sharing-tab:disabled { color: var(--c--contextuals--content--semantic--neutral--tertiary); cursor: default; }
-  .doc-sharing-scroll { overflow-y: auto; min-height: 0; padding: 16px 24px; }
-  .doc-sharing-footer { display: flex; flex-shrink: 0; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--c--contextuals--border--surface--primary); }
+  .doc-sharing-scroll { overflow-y: auto; min-height: 0; padding: var(--wm-space-lg); }
+  .doc-sharing-footer { display: flex; flex-shrink: 0; justify-content: flex-end; gap: 12px; padding: var(--wm-space-lg); border-top: 1px solid var(--c--contextuals--border--surface--primary); }
   .doc-sharing-options { padding: 0; border: 0; margin: 0 0 24px; }
-  .doc-sharing-options legend { font-weight: 600; margin-bottom: 12px; }
+  .doc-sharing-options legend { font: var(--wm-font-title-small); margin-bottom: var(--wm-space-md); }
   .doc-sharing-option { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; cursor: pointer; }
   .doc-sharing-option input { margin-top: 4px; accent-color: var(--c--contextuals--content--semantic--brand--primary); }
   .doc-sharing-option small { display: block; margin-top: 4px; color: var(--c--contextuals--content--semantic--neutral--secondary); line-height: 1.5; }
@@ -94,7 +94,10 @@ export function DocShareModal({
       }
     >
       <ShareStyle />
-      <div className="doc-sharing-layout" data-testid="doc-share-modal">
+      <div
+        className="doc-sharing-layout wm-modal-edge"
+        data-testid="doc-share-modal"
+      >
         {canChat && (
           <div
             className="doc-sharing-tabs"
@@ -184,6 +187,9 @@ export function DocShareModal({
               role={canChat ? 'tabpanel' : undefined}
               aria-labelledby={canChat ? `${tabsId}-chat-tab` : undefined}
               hidden={activeTab !== 'chat'}
+              className={
+                activeTab === 'chat' ? 'doc-sharing-layout' : undefined
+              }
             >
               <div className="doc-sharing-scroll">
                 <p>
@@ -219,7 +225,7 @@ export function DocShareModal({
                   {t('Chat sharing does not change the link access scope.')}
                 </p>
               </div>
-              <div className="doc-sharing-footer">
+              <div className="doc-sharing-footer wm-modal-footer">
                 <Button
                   disabled={!doc.abilities.retrieve}
                   onClick={() =>
@@ -241,7 +247,7 @@ export function DocShareModal({
         )}
         {!canChat &&
           (platform === 'app' || (platform === 'web' && hasLegacyHost)) && (
-            <div className="doc-sharing-footer">
+            <div className="doc-sharing-footer wm-modal-footer">
               <Button
                 variant="secondary"
                 onClick={() =>

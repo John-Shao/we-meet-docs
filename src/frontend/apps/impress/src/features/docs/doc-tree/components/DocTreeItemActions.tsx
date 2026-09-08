@@ -150,6 +150,7 @@ export const DocTreeItemActions = ({
     },
     {
       label: t('Delete'),
+      variant: 'danger',
       isDisabled: !doc.abilities.destroy,
       icon: <Icon iconName="delete" $size="24px" />,
       callback: deleteModal.open,

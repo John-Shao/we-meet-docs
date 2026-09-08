@@ -248,6 +248,7 @@ export const DocToolBox = ({ doc }: DocToolBoxProps) => {
     },
     {
       label: t('Delete'),
+      variant: 'danger',
       icon: <DeleteSVG width={24} height={24} aria-hidden="true" />,
       callback: () => {
         setIsModalRemoveOpen(true);

@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { createGlobalStyle } from 'styled-components';
 import { useDebouncedCallback } from 'use-debounce';
 
-import { Box, ButtonCloseModal, Text } from '@/components';
+import { Box, ModalHeader, Text } from '@/components';
 import { QuickSearch } from '@/components/quick-search';
 import { Doc, useDocUtils } from '@/docs/doc-management';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -22,14 +22,7 @@ import { DocSearchContent } from './DocSearchContent';
 import { DocSearchFilters } from './DocSearchFilters';
 
 const ModalStyle = createGlobalStyle`
-  .c__modal__scroller {
-    overflow: inherit ;
-
-    &:has(.quick-search-container) > div.c__modal__title {
-      padding-top: var(--c--globals--spacings--sm);
-      padding-bottom: var(--c--globals--spacings--xs);
-      padding-inline: var(--c--globals--spacings--base);
-    }
+  .c__modal__scroller:has(.--docs--doc-search-modal) {
     .quick-search-input {
       padding: var(--c--globals--spacings--xxs) var(--c--globals--spacings--base);
     }
@@ -94,35 +87,25 @@ const DocSearchModalGlobal = ({
       aria-labelledby="doc-search-modal-title"
       aria-describedby="doc-search-modal-description"
       title={
-        <>
-          <Text
-            as="h2"
-            $margin="0"
-            $size="s"
-            $align="flex-start"
-            id="doc-search-modal-title"
-          >
-            {t('Search for a document')}
-          </Text>
+        <ModalHeader
+          title={t('Search for a document')}
+          titleId="doc-search-modal-title"
+          onClose={modalProps.onClose}
+          closeLabel={t('Close the search modal')}
+        >
           <Text id="doc-search-modal-description" className="sr-only">
             {t(
               'Search documents by name, navigate using arrows, and select a result with Enter.',
             )}
           </Text>
-          <Box $position="absolute" $css="top: 4px; right: 4px;">
-            <ButtonCloseModal
-              aria-label={t('Close the search modal')}
-              onClick={modalProps.onClose}
-            />
-          </Box>
-        </>
+        </ModalHeader>
       }
     >
       <ModalStyle />
       <Box
         $direction="column"
         $justify="space-between"
-        className="--docs--doc-search-modal"
+        className="--docs--doc-search-modal wm-modal-edge"
         $padding={{ bottom: 'base' }}
       >
         <QuickSearch

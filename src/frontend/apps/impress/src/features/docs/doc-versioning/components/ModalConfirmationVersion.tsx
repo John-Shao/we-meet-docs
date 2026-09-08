@@ -6,9 +6,8 @@ import {
   useToastProvider,
 } from '@gouvfr-lasuite/cunningham-react';
 import { useTranslation } from 'react-i18next';
-import { createGlobalStyle } from 'styled-components';
 
-import { Box, Text } from '@/components';
+import { Box, ModalHeader, Text } from '@/components';
 import { useThreadStore } from '@/docs/doc-comments/stores/useThreadStore';
 import { trackEditorRestore } from '@/docs/doc-editor/nativeSaveTasks';
 import { Doc, base64ToYDoc, useProviderStore } from '@/docs/doc-management/';
@@ -18,12 +17,6 @@ import { useDocVersion } from '../api';
 import { KEY_LIST_DOC_VERSIONS } from '../api/useDocVersions';
 import { Versions } from '../types';
 import { revertUpdate } from '../utils';
-
-const ModalStyle = createGlobalStyle`
-  .c__modal__title {
-    margin-bottom: var(--c--globals--spacings--sm);
-  }
-`;
 
 interface ModalConfirmationVersionProps {
   docId: Doc['id'];
@@ -82,6 +75,7 @@ export const ModalConfirmationVersion = ({
 
   return (
     <Modal
+      hideCloseButton
       isOpen
       closeOnClickOutside={!isPending}
       onClose={() => {
@@ -96,7 +90,6 @@ export const ModalConfirmationVersion = ({
             aria-label={`${t('Cancel')} - ${t('Warning')}`}
             variant="secondary"
             disabled={isPending}
-            fullWidth
             autoFocus
             onClick={() => onClose()}
           >
@@ -106,7 +99,6 @@ export const ModalConfirmationVersion = ({
             aria-label={t('Restore')}
             color="error"
             disabled={isPending}
-            fullWidth
             onClick={() => {
               if (!version?.content) {
                 return;
@@ -126,18 +118,15 @@ export const ModalConfirmationVersion = ({
       }
       size={ModalSize.MEDIUM}
       title={
-        <Text
-          as="h1"
-          $margin="0"
-          id="modal-confirmation-version-title"
-          $size="h6"
-          $align="flex-start"
-        >
-          {t('Restoring an older version')}
-        </Text>
+        <ModalHeader
+          title={t('Restoring an older version')}
+          titleId="modal-confirmation-version-title"
+          onClose={onClose}
+          closeLabel={t('Close')}
+          closeDisabled={isPending}
+        />
       }
     >
-      <ModalStyle />
       <Box
         className="--docs--modal-confirmation-version"
         data-restore-pending={isPending || isError ? 'true' : undefined}

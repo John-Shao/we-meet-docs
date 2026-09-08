@@ -14,6 +14,8 @@
     "build:ci": "cp .env.development .env.local && yarn build",
     "build-theme": "cunningham -g css,ts -o src/cunningham --utility-classes && yarn prettier && yarn stylelint --fix",
     "check-we-meet-tokens": "node scripts/check-we-meet-token-alignment.mjs",
+    "sync-we-meet-ui": "node scripts/sync-we-meet-ui.mjs --write",
+    "check-we-meet-ui": "node scripts/sync-we-meet-ui.mjs",
     "start": "npx -y serve@latest out",
     "lint": "tsc --noEmit && eslint .",
     "lint:verbose": "cross-env DEBUG=\"eslint:cli-engine,eslint:linter\" eslint .",

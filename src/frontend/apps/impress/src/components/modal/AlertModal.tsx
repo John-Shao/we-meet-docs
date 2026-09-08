@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { Box } from '../Box';
 import { Text } from '../Text';
 
+import { ModalHeader } from './ModalHeader';
+
 export type AlertModalProps = {
   description: ReactNode;
   isOpen: boolean;
@@ -37,28 +39,26 @@ export const AlertModal = ({
 
   return (
     <Modal
+      hideCloseButton
       closeOnClickOutside
       isOpen={isOpen}
       size={ModalSize.MEDIUM}
       onClose={onClose}
       aria-label={title}
       title={
-        <Text
-          $size="h6"
-          as="h1"
-          $margin="0"
-          id="alert-modal-title"
-          $align="flex-start"
-        >
-          {title}
-        </Text>
+        <ModalHeader
+          title={title}
+          titleId="alert-modal-title"
+          onClose={onClose}
+          closeLabel={t('Close')}
+          closeDisabled={props.preventClose}
+        />
       }
       rightActions={
         <Box $direction="row" $gap="small">
           <Button
             aria-label={`${t('Cancel')} - ${title}`}
             variant="secondary"
-            fullWidth
             autoFocus
             onClick={onClose}
           >

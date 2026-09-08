@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Text } from '@/components';
 import { useConfig } from '@/core/config/api/useConfig';
 import { useLeftPanelStore } from '@/features/left-panel/stores/useLeftPanelStore';
 import ArrowDownIcon from '@/icons/arrow-drop-down.svg';
@@ -43,14 +42,13 @@ export const NewDocButton = ({ onClose }: NewDocButtonProps) => {
         }}
         icon={<PlusIcon aria-hidden="true" width={24} height={24} />}
         style={{
-          borderRadius: isDropdownEnabled ? '4px 0 0 4px' : '4px',
-          borderRight:
-            '1px solid var(--c--contextuals--background--palette--brand--primary)',
+          borderRadius: isDropdownEnabled
+            ? 'var(--wm-radius-control) 0 0 var(--wm-radius-control)'
+            : 'var(--wm-radius-control)',
+          borderRight: '1px solid var(--wm-action-primary-hover)',
         }}
       >
-        <Text $withThemeInherited $size="md" $weight="500">
-          {t('New')}
-        </Text>
+        {t('New')}
       </Button>
       {isDropdownEnabled && <DropdownArrow />}
     </>
@@ -122,6 +120,7 @@ export function DropdownArrow() {
         onOpenChange={setIsMenuOpen}
       >
         <Button
+          className="wm-new-doc-arrow"
           aria-label={t('Open new document options')}
           color="brand"
           variant="primary"
@@ -135,7 +134,12 @@ export function DropdownArrow() {
           }
           onClick={!isImportPending ? toggleMenu : undefined}
           aria-disabled={isImportPending}
-          style={{ borderRadius: '0 4px 4px 0', width: '30px' }}
+          style={{
+            borderRadius:
+              '0 var(--wm-radius-control) var(--wm-radius-control) 0',
+            width: 'var(--wm-control-height-compact)',
+            height: 'var(--wm-control-height-default)',
+          }}
         />
       </DropdownMenu>
       <input {...getInputProps()} />

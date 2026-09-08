@@ -71,6 +71,7 @@ export const DocsGridItem = ({ doc, dragMode = false }: DocsGridItemProps) => {
           }
         `}
         className="--docs--doc-grid-item"
+        data-dragging={dragMode || undefined}
         aria-label={t('Open document: {{title}}', {
           title: doc.title || untitledDocument,
         })}
@@ -97,6 +98,7 @@ export const DocsGridItem = ({ doc, dragMode = false }: DocsGridItemProps) => {
         </Box>
 
         <Box
+          className="wm-grid-metadata"
           $flex={flexRight}
           $direction="row"
           $align="center"
@@ -118,7 +120,12 @@ export const DocsGridItem = ({ doc, dragMode = false }: DocsGridItemProps) => {
             />
           </StyledLink>
 
-          <Box $direction="row" $align="center" $gap={spacingsTokens.lg}>
+          <Box
+            className="wm-grid-actions"
+            $direction="row"
+            $align="center"
+            $gap={spacingsTokens.lg}
+          >
             {isDesktop && (
               <DocsGridItemSharedButton doc={doc} disabled={isInTrashbin} />
             )}
@@ -250,6 +257,7 @@ export const DocsGridItemDate = ({
 
   return (
     <Text
+      className="wm-grid-date"
       $size="xs"
       $layer="background"
       $theme="neutral"

@@ -41,7 +41,7 @@ const StyledButton = styled(Button)<StyledButtonProps>`
     );
   }
   &:focus-visible {
-    box-shadow: 0 0 0 2px var(--c--globals--colors--brand-400);
+    box-shadow: 0 0 0 2px var(--wm-border-focus);
     background-color: var(
       --c--contextuals--background--semantic--brand--tertiary-hover
     );
@@ -109,7 +109,7 @@ export const DropButton = ({
         triggerRef={triggerRef}
         isOpen={isLocalOpen}
         onOpenChange={onOpenChangeHandler}
-        className="--docs--drop-button-popover"
+        className="--docs--drop-button-popover wm-ui"
       >
         {children}
       </StyledPopover>

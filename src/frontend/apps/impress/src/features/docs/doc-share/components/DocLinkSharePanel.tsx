@@ -201,7 +201,7 @@ export function DocLinkSharePanel({
           />
         )}
       </div>
-      <div className="doc-sharing-footer">
+      <div className="doc-sharing-footer wm-modal-footer">
         <Button
           onClick={() => void saveAndCopy()}
           disabled={

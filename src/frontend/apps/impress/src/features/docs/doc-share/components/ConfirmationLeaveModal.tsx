@@ -2,21 +2,15 @@ import { Button, Modal, ModalSize } from '@gouvfr-lasuite/cunningham-react';
 import { useRouter } from 'next/router';
 import { useMemo } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { createGlobalStyle, css } from 'styled-components';
+import { css } from 'styled-components';
 
-import { Box, ButtonCloseModal, Text } from '@/components';
+import { ModalHeader, Text } from '@/components';
 import { useAuth } from '@/features/auth';
 
 import { Doc } from '../../doc-management';
 import { useDeleteDocAccess, useDocAccesses } from '../api';
 import { useLeaveDoc } from '../api/useLeaveDoc';
 import { useWhoAmI } from '../hooks/useWhoAmI';
-
-const ModalStyle = createGlobalStyle`
-  .c__modal__footer {
-    margin-top: 0;
-  }
-`;
 
 interface ConfirmationLeaveModalProps {
   doc: Doc;
@@ -70,26 +64,14 @@ export const ConfirmationLeaveModal = ({
       }
       size={ModalSize.MEDIUM}
       title={
-        <>
-          <Text
-            $size="h6"
-            as="h2"
-            id="modal-leave-doc-title"
-            $margin="0"
-            $align="flex-start"
-          >
-            {t('Leave a doc')}
-          </Text>
-          <Box $position="absolute" $css="top: 4px; right: 4px;">
-            <ButtonCloseModal
-              aria-label={t('Close the leave modal')}
-              onClick={onClose}
-            />
-          </Box>
-        </>
+        <ModalHeader
+          title={t('Leave a doc')}
+          titleId="modal-leave-doc-title"
+          onClose={onClose}
+          closeLabel={t('Close the leave modal')}
+        />
       }
     >
-      <ModalStyle />
       <Text
         id="modal-leave-doc-desc"
         className="--docs--modal-leave-doc"
@@ -175,7 +157,6 @@ const ButtonsLeaveDoc = ({
       <Button
         aria-label={t('Cancel leaving the document')}
         variant="secondary"
-        fullWidth
         autoFocus
         onClick={onClose}
         disabled={isPending}
@@ -185,7 +166,6 @@ const ButtonsLeaveDoc = ({
       <Button
         aria-label={t('Confirm leaving the document')}
         color="error"
-        fullWidth
         onClick={leave}
         disabled={isPending}
       >

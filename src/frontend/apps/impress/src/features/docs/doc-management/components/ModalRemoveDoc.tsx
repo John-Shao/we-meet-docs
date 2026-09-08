@@ -9,7 +9,7 @@ import {
 import { useEffect, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
-import { Box, ButtonCloseModal, Text, TextErrors } from '@/components';
+import { Box, ModalHeader, Text, TextErrors } from '@/components';
 import { useConfig } from '@/core';
 import { KEY_LIST_DOC_TRASHBIN } from '@/docs/docs-grid';
 import { useKeyboardAction } from '@/hooks';
@@ -94,7 +94,6 @@ export const ModalRemoveDoc = ({
             ref={cancelButtonRef}
             aria-label={t('Cancel the deletion')}
             variant="secondary"
-            fullWidth
             autoFocus
             onClick={handleClose}
             onKeyDown={handleCloseKeyDown}
@@ -104,7 +103,6 @@ export const ModalRemoveDoc = ({
           <Button
             aria-label={t('Delete document')}
             color="error"
-            fullWidth
             onClick={handleDelete}
             onKeyDown={handleDeleteKeyDown}
           >
@@ -114,24 +112,12 @@ export const ModalRemoveDoc = ({
       }
       size={ModalSize.MEDIUM}
       title={
-        <>
-          <Text
-            $size="h6"
-            as="h1"
-            id="modal-remove-doc-title"
-            $margin="0"
-            $align="flex-start"
-          >
-            {t('Delete a doc')}
-          </Text>
-          <Box $position="absolute" $css="top: 4px; right: 4px;">
-            <ButtonCloseModal
-              aria-label={t('Close the delete modal')}
-              onClick={handleClose}
-              onKeyDown={handleCloseKeyDown}
-            />
-          </Box>
-        </>
+        <ModalHeader
+          title={t('Delete a doc')}
+          titleId="modal-remove-doc-title"
+          onClose={handleClose}
+          closeLabel={t('Close the delete modal')}
+        />
       }
     >
       <Box className="--docs--modal-remove-doc">

@@ -10,6 +10,7 @@ vi.mock('next/router', async () => ({
   useRouter: () => ({
     push: vi.fn(),
     pathname: '/docs/doc-1',
+    query: {},
   }),
 }));
 

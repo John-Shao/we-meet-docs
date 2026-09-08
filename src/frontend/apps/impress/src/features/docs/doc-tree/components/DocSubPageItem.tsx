@@ -216,7 +216,7 @@ const DocSubPageItemContent = (props: TreeViewNodeProps<Doc>) => {
         }
       }}
       $css={css`
-        background-color: var(--c--contextuals--background--surface--primary);
+        background-color: transparent;
         text-align: left;
         display: block;
         width: 100%;
@@ -242,9 +242,7 @@ const DocSubPageItemContent = (props: TreeViewNodeProps<Doc>) => {
           box-shadow: none !important;
         }
         &:hover {
-          background-color: var(
-            --c--contextuals--background--semantic--gray--tertiary
-          );
+          background-color: var(--wm-surface-muted);
           .light-doc-item-actions {
             display: flex;
           }
@@ -276,7 +274,7 @@ const DocSubPageItemContent = (props: TreeViewNodeProps<Doc>) => {
             tabIndex: -1,
             $css: css`
               &:focus-visible {
-                outline: 2px solid var(--c--globals--colors--brand-500);
+                outline: 2px solid var(--wm-border-focus);
                 outline-offset: var(--c--globals--spacings--4xs);
               }
             `,
@@ -291,7 +289,7 @@ const DocSubPageItemContent = (props: TreeViewNodeProps<Doc>) => {
           $width="100%"
           $overflow="hidden"
         >
-          <Text $css={ItemTextCss} $size="sm">
+          <Text className="wm-tree-title" $css={ItemTextCss} $size="sm">
             {displayTitle}
           </Text>
           {doc.nb_accesses_direct >= 1 && (

@@ -15,7 +15,7 @@ export const LeftPanelTargetFilters = () => {
   const searchParams = useSearchParams();
   const { isMobile } = useResponsiveStore();
   const { closePanel } = useLeftPanelStore();
-  const { colorsTokens, spacingsTokens } = useCunninghamTheme();
+  const { spacingsTokens } = useCunninghamTheme();
 
   const target =
     (searchParams.get('target') as DocDefaultFilter) ??
@@ -69,6 +69,7 @@ export const LeftPanelTargetFilters = () => {
 
         return (
           <StyledLink
+            className="wm-nav-link"
             key={query.label}
             href={href}
             aria-label={query.label}
@@ -98,7 +99,7 @@ export const LeftPanelTargetFilters = () => {
               }
               &:focus-visible {
                 outline: none !important;
-                box-shadow: 0 0 0 2px ${colorsTokens['brand-400']} !important;
+                box-shadow: 0 0 0 2px var(--wm-border-focus) !important;
                 border-radius: var(--wm-radius-control);
               }
             `}

@@ -1,0 +1,185 @@
+/* Only dialogs opting into ModalHeader use this UI contract. Editor typography is independent. */
+.c__modal:has(.wm-modal-header) {
+  max-height: min(80dvh, calc(100dvh - 2rem));
+  overflow: hidden;
+  background: var(--wm-surface-default);
+
+  & > .c__modal__scroller {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  & > .c__modal__scroller > .c__modal__title {
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+  }
+
+  & > .c__modal__scroller > .c__modal__content {
+    min-height: 0;
+    padding: var(--wm-space-lg);
+    overflow: auto;
+    font: inherit;
+  }
+
+  & > .c__modal__scroller > .c__modal__content:has(.wm-modal-edge) {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+
+  &
+    > .c__modal__scroller
+    > .c__modal__content:has(.doc-sharing-layout, .doc-members-layout) {
+    overflow: hidden;
+  }
+
+  & .c__modal__footer,
+  & .wm-modal-footer {
+    display: flex;
+    flex: 0 0 auto;
+    flex-flow: row wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--wm-space-sm);
+    padding: var(--wm-space-md) var(--wm-space-lg);
+    margin: 0;
+    border-top: 1px solid var(--wm-border-subtle);
+    background: var(--wm-surface-default);
+  }
+
+  & .c__modal__footer > div {
+    flex-flow: row wrap;
+    gap: var(--wm-space-sm);
+    width: auto;
+    max-width: 100%;
+  }
+
+  & .c__modal__footer .c__button,
+  & .wm-modal-footer .c__button {
+    flex: 0 1 auto;
+    width: auto;
+    white-space: normal;
+  }
+
+  & small,
+  & .doc-sharing-hint {
+    font: var(--wm-font-body-small);
+    letter-spacing: var(--wm-tracking-body-small);
+    color: var(--wm-text-secondary);
+  }
+
+  & .c__input__wrapper--classic,
+  & .c__select--classic:not(.c__select--multiline) .c__select__wrapper {
+    height: var(--wm-control-height-compact);
+    background: var(--wm-surface-default);
+  }
+
+  & .c__input__label,
+  & .c__select__label {
+    margin-bottom: var(--wm-space-xs);
+    font: var(--wm-font-body-medium);
+  }
+
+  & .c__input__wrapper--disabled,
+  & .c__select--disabled .c__select__wrapper {
+    background: var(--wm-surface-muted);
+  }
+
+  & .c__field__footer {
+    padding-inline: 0;
+    font: var(--wm-font-body-small);
+  }
+
+  & .quick-search-container [cmdk-root] {
+    border-radius: 0;
+    background: var(--wm-surface-default);
+  }
+
+  & .quick-search-input {
+    padding: var(--wm-space-sm) var(--wm-space-lg);
+  }
+
+  & .quick-search-input [cmdk-input] {
+    min-height: var(--wm-control-height-compact);
+    font: var(--wm-font-body-medium);
+  }
+
+  & .quick-search-container [cmdk-group-heading] {
+    color: var(--wm-text-secondary);
+    font: var(--wm-font-title-small);
+  }
+
+  & .doc-sharing-option input[type='radio'] {
+    flex: 0 0 auto;
+    width: var(--wm-selection-control-compact);
+    height: var(--wm-selection-control-compact);
+    margin: 1px 0 0;
+  }
+}
+
+.wm-modal-edge {
+  min-height: 0;
+}
+
+.wm-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wm-space-md);
+  min-width: 0;
+  padding: var(--wm-space-md) var(--wm-space-lg);
+  border-bottom: 1px solid var(--wm-border-subtle);
+}
+
+.wm-modal-heading {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--wm-space-xs);
+  min-width: 0;
+  margin: 0;
+  color: var(--wm-text-primary);
+  font: var(--wm-font-title-medium);
+  letter-spacing: var(--wm-tracking-title-medium);
+}
+
+.wm-modal-title,
+.wm-modal-document-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wm-modal-heading:has(.wm-modal-document-title) .wm-modal-title {
+  flex-shrink: 0;
+}
+
+.wm-modal-document-title {
+  color: var(--wm-text-secondary);
+  font: var(--wm-font-body-medium);
+  letter-spacing: var(--wm-tracking-body-medium);
+}
+
+.c__modal .wm-modal-header > .c__button {
+  flex: 0 0 auto;
+  width: var(--wm-icon-button-default);
+  height: var(--wm-icon-button-default);
+  min-height: var(--wm-icon-button-default);
+  padding: 0;
+  color: var(--wm-icon-secondary);
+
+  & svg {
+    width: var(--wm-icon-medium);
+    height: var(--wm-icon-medium);
+  }
+}
+
+.c__modal--full:has(.wm-modal-header) {
+  height: 100dvh;
+  max-height: 100dvh;
+}

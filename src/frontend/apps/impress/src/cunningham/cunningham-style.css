@@ -1,5 +1,9 @@
 @import url('@gouvfr-lasuite/ui-kit/style');
 @import url('./cunningham-tokens.css');
+@import url('./we-meet-ui-tokens.css');
+@import url('./we-meet-ui.css');
+@import url('./we-meet-dialogs.css');
+@import url('./we-meet-pages.css');
 
 :root {
   /**

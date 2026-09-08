@@ -65,7 +65,7 @@ export const DropdownMenu = ({
   selectedValues,
   testId,
 }: PropsWithChildren<DropdownMenuProps>) => {
-  const { spacingsTokens, colorsTokens } = useCunninghamTheme();
+  const { spacingsTokens } = useCunninghamTheme();
   const keyboardAction = useKeyboardAction();
   const [isOpen, setIsOpen] = useState(opened ?? false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -138,7 +138,7 @@ export const DropdownMenu = ({
               $css={
                 arrowCss ??
                 css`
-                  color: var(--c--globals--colors--brand-600);
+                  color: var(--wm-text-link);
                 `
               }
               iconName={isOpen ? 'arrow_drop_up' : 'arrow_drop_down'}
@@ -154,6 +154,7 @@ export const DropdownMenu = ({
       <Box
         $maxWidth="320px"
         $minWidth={`${blockButtonRef.current?.clientWidth}px`}
+        className="wm-menu"
         role="menu"
         aria-label={label}
       >
@@ -175,7 +176,6 @@ export const DropdownMenu = ({
             return;
           }
           const isDisabled = option.disabled !== undefined && option.disabled;
-          const isFocused = index === focusedIndex;
           const isSelected =
             option.isSelected === true ||
             (selectedValues?.includes(option.value ?? '') ?? false);
@@ -193,6 +193,8 @@ export const DropdownMenu = ({
                 ref={(el) => {
                   menuItemRefs.current[index] = el;
                 }}
+                className="wm-menu-item"
+                data-danger={option.danger || undefined}
                 role={itemRole}
                 aria-checked={itemRole === 'menuitem' ? undefined : isSelected}
                 data-testid={option.testId}
@@ -208,52 +210,14 @@ export const DropdownMenu = ({
                 $align="center"
                 $justify="space-between"
                 $background="var(--c--contextuals--background--surface--primary)"
-                $color={colorsTokens['brand-600']}
+                $color="var(--wm-text-primary)"
                 $padding={{ vertical: 'xs', horizontal: 'base' }}
                 $width="100%"
                 $gap={spacingsTokens['base']}
                 $css={css`
                   border: none;
-                  ${index === 0 &&
-                  css`
-                    border-top-left-radius: 4px;
-                    border-top-right-radius: 4px;
-                  `}
-                  ${index === options.length - 1 &&
-                  css`
-                    border-bottom-left-radius: var(--c--globals--spacings--st);
-                    border-bottom-right-radius: var(--c--globals--spacings--st);
-                  `}
-                  font-size: var(--c--globals--font--sizes--sm);
-                  color: var(--c--globals--colors--gray-1000);
-                  font-weight: var(--c--globals--font--weights--medium);
-                  cursor: ${isDisabled ? 'not-allowed' : 'pointer'};
+                  cursor: ${isDisabled ? 'default' : 'pointer'};
                   user-select: none;
-
-                  &:hover {
-                    background-color: var(
-                      --c--contextuals--background--semantic--contextual--primary
-                    );
-                  }
-
-                  &:focus-visible {
-                    outline: 2px solid var(--c--globals--colors--brand-400);
-                    outline-offset: -2px;
-                    background-color: var(
-                      --c--contextuals--background--semantic--contextual--primary
-                    );
-                  }
-
-                  /**
-                  * TODO: This part seems to have a problem with DocToolBox
-                  */
-                  /* ${isFocused &&
-                  css`
-                    outline-offset: -2px;
-                    background-color: var(
-                      --c--contextuals--background--semantic--contextual--primary
-                    );
-                  `} */
                 `}
               >
                 <Box
@@ -263,6 +227,7 @@ export const DropdownMenu = ({
                 >
                   {option.icon && typeof option.icon === 'string' && (
                     <Icon
+                      className="wm-menu-icon"
                       $size="20px"
                       $theme="neutral"
                       $variation={isDisabled ? 'tertiary' : 'primary'}
@@ -273,13 +238,17 @@ export const DropdownMenu = ({
 
                   {option.icon && typeof option.icon !== 'string' && (
                     <Box
+                      className="wm-menu-icon"
                       $theme="neutral"
                       $variation={isDisabled ? 'tertiary' : 'primary'}
                     >
                       {option.icon}
                     </Box>
                   )}
-                  <Text $variation={isDisabled ? 'tertiary' : 'primary'}>
+                  <Text
+                    className="wm-menu-label"
+                    $variation={isDisabled ? 'tertiary' : 'primary'}
+                  >
                     <span lang={option.lang}>{option.label}</span>
                   </Text>
                 </Box>

@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { createGlobalStyle, css } from 'styled-components';
 import { useDebouncedCallback } from 'use-debounce';
 
-import { Box, ButtonCloseModal, Text } from '@/components';
+import { Box, ModalHeader } from '@/components';
 import { QuickSearch } from '@/components/quick-search';
 import { Doc, useMoveDoc, useTrans } from '@/docs/doc-management';
 import { DocSearchContent } from '@/docs/doc-search';
@@ -38,19 +38,19 @@ const ModalConfirmationMoveDoc = dynamic(
 );
 
 export const DocMoveModalStyle = createGlobalStyle`
-  .c__modal--full .c__modal__scroller {
+  .c__modal--full:has(.--docs--doc-move-modal) .c__modal__scroller {
     height: 100dvh;
   }
 
-  .c__modal--full .c__modal__content {
+  .c__modal--full:has(.--docs--doc-move-modal) .c__modal__content {
     flex-grow: 0;
   }
 
-  .c__modal--full .c__modal__footer {
+  .c__modal--full:has(.--docs--doc-move-modal) .c__modal__footer {
     flex-shrink: 0;
   }
 
-  .c__modal__scroller:has(.quick-search-container){
+  .c__modal__scroller:has(.--docs--doc-move-modal){
     display: flex;
     flex-direction: column;
 
@@ -58,11 +58,6 @@ export const DocMoveModalStyle = createGlobalStyle`
       overflow-y: auto;
     }
 
-    &:has(.quick-search-container) > div.c__modal__title {
-      padding-top: var(--c--globals--spacings--sm);
-      padding-bottom: var(--c--globals--spacings--xs);
-      padding-inline: var(--c--globals--spacings--base);
-    }
     .c__modal__footer {
       margin-top: 0rem;
       border-top: 1px solid var(--c--contextuals--border--surface--primary);
@@ -144,15 +139,10 @@ export const DocMoveModal = ({
         hideCloseButton
         aria-label={t('Move Modal')}
         rightActions={
-          <Box
-            $direction="row-reverse"
-            $padding={{ vertical: 'base', horizontal: 'md' }}
-            $gap="small"
-          >
+          <Box $direction="row-reverse" $gap="small">
             <Button
               aria-label={t('Move the document to the selected location')}
               variant="primary"
-              fullWidth
               onClick={() => {
                 if (!docSelected?.abilities.move) {
                   modalRequest.open();
@@ -173,7 +163,6 @@ export const DocMoveModal = ({
             <Button
               aria-label={t('Cancel the move')}
               variant="secondary"
-              fullWidth
               onClick={onClose}
             >
               {t('Cancel')}
@@ -181,23 +170,17 @@ export const DocMoveModal = ({
           </Box>
         }
         title={
-          <>
-            <Text as="h2" $margin="0" $size="s" $align="flex-start">
-              {t('Choose a new parent doc')}
-            </Text>
-            <Box $position="absolute" $css="top: 4px; right: 4px;">
-              <ButtonCloseModal
-                aria-label={t('Close the move modal')}
-                onClick={onClose}
-              />
-            </Box>
-          </>
+          <ModalHeader
+            title={t('Choose a new parent doc')}
+            onClose={onClose}
+            closeLabel={t('Close the move modal')}
+          />
         }
       >
         <Box
           $direction="column"
           $justify="space-between"
-          className="--docs--doc-move-modal"
+          className="--docs--doc-move-modal wm-modal-edge"
           onKeyDown={(e) => {
             // Close modal on Escape
             if (e.key === 'Escape') {
