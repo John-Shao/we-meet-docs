@@ -167,6 +167,9 @@ main:has(.wm-ui.--docs--doc-grid) {
   & .wm-nav-link > span,
   & .wm-nav-link > div {
     color: inherit;
+  }
+
+  & .wm-nav-label {
     font: inherit;
   }
 

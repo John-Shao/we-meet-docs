@@ -105,7 +105,9 @@ export const LeftPanelTargetFilters = () => {
             `}
           >
             {query.icon}
-            <Text $size="sm">{query.label}</Text>
+            <Text className="wm-nav-label" $size="sm">
+              {query.label}
+            </Text>
           </StyledLink>
         );
       })}

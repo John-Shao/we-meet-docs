@@ -16,6 +16,29 @@ test.describe('Left panel desktop', () => {
     await page.goto('/');
   });
 
+  test('keeps the navigation icon font separate from label typography', async ({
+    page,
+  }) => {
+    const icons = page
+      .getByLabel('Left panel')
+      .locator('.wm-nav-link .material-icons');
+    await expect(icons).toHaveText(['lock', 'group', 'delete']);
+    await page.evaluate(() => document.fonts.ready);
+
+    for (const icon of await icons.all()) {
+      await expect(icon).toHaveCSS('font-family', /Material Icons Outlined/);
+      const glyphFits = await icon.evaluate((element) => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        return (
+          range.getBoundingClientRect().width <=
+          element.getBoundingClientRect().width + 1
+        );
+      });
+      expect(glyphFits).toBe(true);
+    }
+  });
+
   test('checks all the elements are visible', async ({ page }) => {
     const leftPanel = page.getByLabel('Left panel');
 
