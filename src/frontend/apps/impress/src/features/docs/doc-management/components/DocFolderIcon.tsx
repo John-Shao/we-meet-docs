@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components';
 
-export const DocFolderIcon = ({ size = '32px' }: { size?: string }) => {
+export const DocFolderIcon = ({ size = '24px' }: { size?: string }) => {
   const { t } = useTranslation();
 
   return (
@@ -11,6 +11,7 @@ export const DocFolderIcon = ({ size = '32px' }: { size?: string }) => {
       $size={size}
       style={{
         flexShrink: 0,
+        lineHeight: 1,
         color: 'var(--c--contextuals--content--semantic--info--tertiary)',
       }}
       title={t('Contains subdocuments')}

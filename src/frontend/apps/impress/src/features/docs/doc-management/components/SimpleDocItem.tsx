@@ -70,6 +70,9 @@ export const SimpleDocItem = ({
       <Box
         $direction="row"
         $align="center"
+        $justify="center"
+        $width="32px"
+        $flex="0 0 32px"
         $css={css`
           background-color: transparent;
           filter: drop-shadow(0px 2px 2px rgba(0, 0, 0, 0.05));
@@ -104,15 +107,6 @@ export const SimpleDocItem = ({
       </Box>
       <Box $justify="center" $overflow="auto" $gap="4xs">
         <Box $direction="row" $align="center" $gap="3xs">
-          {hasChildren && isPinned && (
-            <Icon
-              iconName="push_pin"
-              $size="sm"
-              aria-hidden="true"
-              data-testid="doc-pinned-icon"
-              style={{ flexShrink: 0 }}
-            />
-          )}
           <Text
             $size="sm"
             $weight="500"
@@ -122,6 +116,15 @@ export const SimpleDocItem = ({
           >
             {docTitle}
           </Text>
+          {hasChildren && isPinned && (
+            <Icon
+              iconName="push_pin"
+              $size="sm"
+              aria-hidden="true"
+              data-testid="doc-pinned-icon"
+              style={{ flexShrink: 0 }}
+            />
+          )}
         </Box>
 
         {(showDate || breadcrumb) && (

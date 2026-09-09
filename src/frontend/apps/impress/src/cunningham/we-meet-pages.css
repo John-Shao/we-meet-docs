@@ -112,7 +112,9 @@ main:has(.wm-ui.--docs--doc-grid) {
   overflow: hidden;
 
   & > div:first-child {
-    flex: 0 0 auto;
+    flex: 0 0 var(--wm-icon-large);
+    width: var(--wm-icon-large);
+    justify-content: center;
     padding: 0;
     filter: none;
   }
@@ -125,6 +127,12 @@ main:has(.wm-ui.--docs--doc-grid) {
   & svg {
     width: var(--wm-icon-large);
     height: var(--wm-icon-large);
+  }
+
+  & [data-testid='doc-folder-icon'] {
+    width: var(--wm-icon-large);
+    height: var(--wm-icon-large);
+    font-size: var(--wm-icon-large);
   }
 
   & [data-testid='doc-title'] {
