@@ -299,6 +299,7 @@
   "Only document managers can change link settings.": "仅文档管理者可以修改链接设置。",
   "Could not save link settings. Nothing was copied. Please retry.": "链接设置保存失败，尚未复制链接，请重试。",
   "Link settings are saved. Select and copy the link below.": "链接设置已保存，请选中下方链接手动复制。",
+  "Contains subdocuments": "包含子文档",
   "Document link": "文档链接",
   "Save and copy link": "保存并复制链接",
   "AI is thinking": "AI 正在思考",

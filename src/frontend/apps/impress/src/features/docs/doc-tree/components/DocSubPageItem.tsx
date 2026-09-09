@@ -14,8 +14,10 @@ import { css } from 'styled-components';
 import { Box, Icon, StyledLink, Text } from '@/components';
 import {
   Doc,
+  DocFolderIcon,
   DocIcon,
   getEmojiAndTitle,
+  useDocUtils,
   useTrans,
 } from '@/docs/doc-management';
 import { useLeftPanelStore } from '@/features/left-panel';
@@ -100,6 +102,7 @@ const DocSubPageLoadMore = (props: TreeViewNodeProps<Doc>) => {
 
 const DocSubPageItemContent = (props: TreeViewNodeProps<Doc>) => {
   const doc = props.node.data.value as Doc;
+  const { hasChildren } = useDocUtils(doc);
   const treeContext = useTreeContext<Doc>();
   const { untitledDocument } = useTrans();
   const { node } = props;
@@ -258,14 +261,19 @@ const DocSubPageItemContent = (props: TreeViewNodeProps<Doc>) => {
       `}
     >
       <TreeViewItem {...props}>
+        {hasChildren && emoji && <DocFolderIcon size="16px" />}
         <DocIcon
           emoji={emoji}
           withEmojiPicker={doc.abilities.partial_update}
           defaultIcon={
-            <SubPageIcon
-              color="var(--c--contextuals--content--semantic--info--tertiary)"
-              style={{ flexShrink: 0 }}
-            />
+            hasChildren ? (
+              <DocFolderIcon size="16px" />
+            ) : (
+              <SubPageIcon
+                color="var(--c--contextuals--content--semantic--info--tertiary)"
+                style={{ flexShrink: 0 }}
+              />
+            )
           }
           $size="sm"
           docId={doc.id}

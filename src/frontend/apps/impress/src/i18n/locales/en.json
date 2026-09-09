@@ -41,6 +41,7 @@
   "Only document managers can change link settings.": "Only document managers can change link settings.",
   "Could not save link settings. Nothing was copied. Please retry.": "Could not save link settings. Nothing was copied. Please retry.",
   "Link settings are saved. Select and copy the link below.": "Link settings are saved. Select and copy the link below.",
+  "Contains subdocuments": "Contains subdocuments",
   "Document link": "Document link",
   "Save and copy link": "Save and copy link",
   "Invite {{count}} members_one": "Invite {{count}} member",

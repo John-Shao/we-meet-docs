@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { css } from 'styled-components';
 
 import ArrowSVG from '@/assets/icons/ui-kit/arrow-corner-down-right.svg';
-import { Box, Text } from '@/components';
+import { Box, Icon, Text } from '@/components';
 import { useCunninghamTheme } from '@/cunningham';
 import { useDate } from '@/hooks/useDate';
 import { useResponsiveStore } from '@/stores';
@@ -12,6 +12,8 @@ import PinnedDocumentIcon from '../assets/pinned-document.svg';
 import SimpleFileIcon from '../assets/simple-document.svg';
 import { useDocUtils, useTrans } from '../hooks';
 import { Doc } from '../types';
+
+import { DocFolderIcon } from './DocFolderIcon';
 
 const ItemTextCss = css`
   overflow: hidden;
@@ -41,7 +43,7 @@ export const SimpleDocItem = ({
   const { isSmallMobile } = useResponsiveStore();
   const { spacingsTokens } = useCunninghamTheme();
   const { untitledDocument } = useTrans();
-  const { isChild } = useDocUtils(doc);
+  const { isChild, hasChildren } = useDocUtils(doc);
   const { relativeDate, formatDate } = useDate();
   const docTitle = doc.title || untitledDocument;
   const docRelativeUpdate = relativeDate(doc.updated_at);
@@ -59,7 +61,11 @@ export const SimpleDocItem = ({
       $overflow="auto"
       $width="100%"
       className="--docs--simple-doc-item"
-      aria-label={itemAriaLabel}
+      aria-label={
+        hasChildren
+          ? `${itemAriaLabel}. ${t('Contains subdocuments')}`
+          : itemAriaLabel
+      }
     >
       <Box
         $direction="row"
@@ -72,7 +78,9 @@ export const SimpleDocItem = ({
         data-testid={isPinned ? `doc-pinned-${doc.id}` : undefined}
         aria-hidden="true"
       >
-        {isPinned ? (
+        {hasChildren ? (
+          <DocFolderIcon />
+        ) : isPinned ? (
           <PinnedDocumentIcon
             aria-hidden="true"
             data-testid="doc-pinned-icon"
@@ -95,15 +103,26 @@ export const SimpleDocItem = ({
         )}
       </Box>
       <Box $justify="center" $overflow="auto" $gap="4xs">
-        <Text
-          $size="sm"
-          $weight="500"
-          $css={ItemTextCss}
-          data-testid="doc-title"
-          title={docTitle}
-        >
-          {docTitle}
-        </Text>
+        <Box $direction="row" $align="center" $gap="3xs">
+          {hasChildren && isPinned && (
+            <Icon
+              iconName="push_pin"
+              $size="sm"
+              aria-hidden="true"
+              data-testid="doc-pinned-icon"
+              style={{ flexShrink: 0 }}
+            />
+          )}
+          <Text
+            $size="sm"
+            $weight="500"
+            $css={ItemTextCss}
+            data-testid="doc-title"
+            title={docTitle}
+          >
+            {docTitle}
+          </Text>
+        </Box>
 
         {(showDate || breadcrumb) && (
           <Box
