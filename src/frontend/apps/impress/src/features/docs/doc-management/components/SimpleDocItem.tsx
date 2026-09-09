@@ -28,6 +28,7 @@ type SimpleDocItemProps = {
   breadcrumb?: string;
   isPinned?: boolean;
   showDate?: boolean;
+  hasChildren?: boolean;
 };
 
 export const SimpleDocItem = ({
@@ -35,12 +36,14 @@ export const SimpleDocItem = ({
   isPinned = false,
   showDate = false,
   breadcrumb,
+  hasChildren: treeHasChildren,
 }: SimpleDocItemProps) => {
   const { t } = useTranslation();
   const { isSmallMobile } = useResponsiveStore();
   const { spacingsTokens } = useCunninghamTheme();
   const { untitledDocument } = useTrans();
-  const { hasChildren } = useDocUtils(doc);
+  const { hasChildren: storedHasChildren } = useDocUtils(doc);
+  const hasChildren = treeHasChildren ?? storedHasChildren;
   const { relativeDate, formatDate } = useDate();
   const docTitle = doc.title || untitledDocument;
   const docRelativeUpdate = relativeDate(doc.updated_at);

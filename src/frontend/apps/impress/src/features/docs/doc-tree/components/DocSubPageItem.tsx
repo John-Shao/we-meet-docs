@@ -17,13 +17,12 @@ import {
   DocIcon,
   DocTypeIcon,
   getEmojiAndTitle,
-  useDocUtils,
   useTrans,
 } from '@/docs/doc-management';
 import { useLeftPanelStore } from '@/features/left-panel';
 import { useResponsiveStore } from '@/stores';
 
-import { isDocNode } from '../utils';
+import { docTreeNodeHasChildren, isDocNode } from '../utils';
 
 import { DocTreeItemActions } from './DocTreeItemActions';
 
@@ -101,7 +100,7 @@ const DocSubPageLoadMore = (props: TreeViewNodeProps<Doc>) => {
 
 const DocSubPageItemContent = (props: TreeViewNodeProps<Doc>) => {
   const doc = props.node.data.value as Doc;
-  const { hasChildren } = useDocUtils(doc);
+  const hasChildren = docTreeNodeHasChildren(props.node.data);
   const treeContext = useTreeContext<Doc>();
   const { untitledDocument } = useTrans();
   const { node } = props;

@@ -34,7 +34,7 @@ import { useResponsiveStore } from '@/stores/useResponsiveStore';
 
 import { CLASS_DOC_TITLE } from '../../doc-header';
 import { KEY_DOC_TREE, useDocTree } from '../api/useDocTree';
-import { findIndexInTree, isDocNode } from '../utils';
+import { findIndexInTree, hasDocTreeChildren, isDocNode } from '../utils';
 
 import { DocSubPageItem } from './DocSubPageItem';
 import { DocTreeItemActions } from './DocTreeItemActions';
@@ -392,7 +392,11 @@ export const DocTree = ({ currentDoc }: DocTreeProps) => {
             tabIndex={-1} // avoid double tabstop
           >
             <Box $direction="row" $align="center" $width="100%">
-              <SimpleDocItem doc={treeContext.root} showDate={true} />
+              <SimpleDocItem
+                doc={treeContext.root}
+                showDate={true}
+                hasChildren={hasDocTreeChildren(treeContext.treeData.nodes)}
+              />
               <DocTreeItemActions
                 doc={treeContext.root}
                 onCreateSuccess={(createdDoc) => {
