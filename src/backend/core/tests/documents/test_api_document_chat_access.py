@@ -39,17 +39,41 @@ def share(settings):
         ("administrator", "administrator"),
     ],
 )
-def test_downgrade_preserves_independent_access(share, baseline, expected):
+@pytest.mark.parametrize("chat_role", ["reader", "commenter"])
+def test_downgrade_preserves_independent_access(share, baseline, expected, chat_role):
     client, body, doc, user = share
     if baseline:
         models.DocumentAccess.objects.create(document=doc, user=user, role=baseline)
     assert (
         client.post(URL, {**body, "role": "editor"}, format="json").status_code == 200
     )
-    response = client.post(URL, {**body, "role": "reader"}, format="json")
+    response = client.post(URL, {**body, "role": chat_role}, format="json")
     assert response.json()["complete"] is True
-    assert models.DocumentAccess.objects.get(document=doc, user=user).role == expected
-    assert client.post(URL, body, format="json").json()["role"] == "reader"
+    assert models.DocumentAccess.objects.get(
+        document=doc, user=user
+    ).role == models.RoleChoices.max(expected, chat_role)
+    assert client.post(URL, body, format="json").json()["role"] == chat_role
+
+
+def test_commenter_round_trip_and_document_abilities(share):
+    client, body, doc, user = share
+    models.Document.objects.filter(pk=doc.pk).update(link_reach="restricted")
+    for role in ("commenter", "editor", "commenter", "reader", "commenter"):
+        response = client.post(URL, {**body, "role": role}, format="json")
+        assert response.status_code == 200
+        assert response.json() == {
+            "scoped": True,
+            "role": role,
+            "complete": True,
+            "can_manage": True,
+        }
+        assert client.post(URL, body, format="json").json()["role"] == role
+        assert models.DocumentAccess.objects.get(document=doc, user=user).role == role
+        # Re-fetch to avoid any per-instance permission cache.
+        abilities = models.Document.objects.get(pk=doc.pk).get_abilities(user)
+        assert abilities["retrieve"] is True
+        assert abilities["comment"] is (role != "reader")
+        assert abilities["partial_update"] is (role == "editor")
 
 
 def test_other_chat_grant_is_preserved(share):

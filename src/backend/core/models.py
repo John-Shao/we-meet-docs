@@ -2073,7 +2073,8 @@ class DocumentChatShare(BaseModel):
     actor = models.ForeignKey(User, on_delete=models.CASCADE)
     cid = models.CharField(max_length=255)
     role = models.CharField(
-        max_length=20, choices=[("reader", "Reader"), ("editor", "Editor")]
+        max_length=20,
+        choices=[("reader", "Reader"), ("commenter", "Commenter"), ("editor", "Editor")],
     )
     complete = models.BooleanField(default=False)
 

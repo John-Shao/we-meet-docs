@@ -59,8 +59,8 @@ def chat_access(data):
     if not can_manage:
         raise PermissionDenied("Document access management permission required")
     role, users = data["role"], data.get("users")
-    if role not in ("reader", "editor") or not isinstance(users, list):
-        raise ValidationError("reader/editor role and users[] are required")
+    if role not in ("reader", "commenter", "editor") or not isinstance(users, list):
+        raise ValidationError("reader/commenter/editor role and users[] are required")
     share, _ = models.DocumentChatShare.objects.get_or_create(
         document=document, actor=actor, cid=cid, defaults={"role": role}
     )

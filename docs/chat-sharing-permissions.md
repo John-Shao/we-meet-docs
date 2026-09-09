@@ -1,10 +1,10 @@
 # 聊天分享授权协议
 
-Android 原生分享拆分为“分享到聊天”“链接分享”“成员与权限”。聊天卡片继续使用 `doc-card` v1。发送者可从卡片的“会话权限”入口调整阅读/编辑授权，不重发卡片。PC Web 页面不改，但实际权限与 Android 一致地由 Docs 后端计算。
+Android 原生分享拆分为“分享到聊天”“链接分享”“成员与权限”。聊天卡片继续使用 `doc-card` v1。发送者的卡片直接显示当前会话授权“可阅读 / 可评论 / 可编辑”，点击可调整授权，不重发卡片。尚无会话授权或查询失败时保留“会话权限”入口，不猜测权限。PC Web 页面不改，但实际权限与 Android 一致地由 Docs 后端计算。
 
 ## 可调整的聊天授权（当前协议）
 
-- Android 使用 Meet `POST /api/v1.0/im/doc-chat-access/`，请求 `{doc_id, cid}` 查询，附 `role: reader | editor` 保存。
+- Android 使用 Meet `POST /api/v1.0/im/doc-chat-access/`，请求 `{doc_id, cid}` 查询，附 `role: reader | commenter | editor` 保存。成功读取或保存后同步同一会话中的同文档卡片，返回会话时重新查询。
 - Meet 校验当前会话成员资格；修改时从 IM 读取成员名单，解析接收者身份，以登录用户的 `sub` 作为 `actor_sub`。客户端提交的操作者和成员名单均不可信，不转发。
 - Meet 调用 Docs S2S `POST /api/v1.0/documents/chat-access/`：`{doc_id, cid, actor_sub, role?, users?}`。Docs 查询要求可读取文档，修改还要求 `accesses_manage`，仅可编辑文档不足以转授权。
 - 响应 `{scoped: true, role, complete, can_manage}`；未建立聊天授权时 `role: null`。保存必须同时确认 `scoped`、匹配角色及 `complete: true`，否则保留草稿并允许重试，不能降级调用旧授权接口。
@@ -34,6 +34,6 @@ Android 原生分享拆分为“分享到聊天”“链接分享”“成员与
 
 ## 发布与验证
 
-依次部署 **Docs backend（执行 `0034_document_chat_permissions` 迁移）→ Meet backend → Android APK**。迁移新增字段和表，不更改现有授权角色；本次没有改动 Docs 前端。旧服务未升级时，新版 App 必须显示授权未完成，不能提示授权成功。
+依次部署 **Docs backend（执行至 `0036_documentchatshare_commenter` 迁移）→ Meet backend → Android APK**。`0036` 增加会话角色的评论选项，不更改已有授权；本次没有改动 Docs 前端。旧服务未升级时，新版 App 必须显示授权未完成，不能提示授权成功。
 
 测试覆盖阅读/编辑往返、独立权限和多个聊天来源、手动授权、邀请转换、已删除授权只读查询、操作者权限、会话资格、可信成员解析和旧服务响应拒绝；文档成员/邀请模型做了存储服务隔离的回归测试。模拟器验证旧卡片的入口和未部署时错误态，不向真实聊天发送测试消息。真实保存及收件人跨账号读写须在两个后端部署后联调。
