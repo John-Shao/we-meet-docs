@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
 import { FadeComponent } from '@/components/Effect';
-import { CardFloatingBar, FloatingBar } from '@/components/FloatingBar';
+import { FloatingBar } from '@/components/FloatingBar';
 import { DocSearchButtonModal } from '@/features/docs/doc-search/components/DocSearchButtonModal';
 import { LeftPanelCollapseButton } from '@/features/left-panel/components/LeftPanelCollapseButton';
 import { useLeftPanelStore } from '@/features/left-panel/stores/useLeftPanelStore';
@@ -16,8 +16,12 @@ export const HeaderFloatingBar = () => {
 
   const isVisible = (isTablet && !isPanelOpen) || isMobile;
 
+  if (!isTablet && !isMobile) {
+    return null;
+  }
+
   return (
-    <FloatingBar $align="center">
+    <FloatingBar $align="center" withBackdrop={false}>
       {isTablet && (
         <LeftPanelCollapseButton ariaLabel={t('Toggle left panel')} />
       )}
@@ -25,9 +29,7 @@ export const HeaderFloatingBar = () => {
         <HeaderIcon />
       </FadeComponent>
       <FadeComponent isVisible={isVisible}>
-        <CardFloatingBar>
-          <DocSearchButtonModal size="small" color="neutral" />
-        </CardFloatingBar>
+        <DocSearchButtonModal size="small" color="neutral" withFloatingCard />
       </FadeComponent>
     </FloatingBar>
   );

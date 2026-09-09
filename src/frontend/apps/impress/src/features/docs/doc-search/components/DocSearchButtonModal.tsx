@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useCallback, useState } from 'react';
 
 import SearchSVG from '@/assets/icons/ui-kit/zoom-rounded.svg';
+import { CardFloatingBar } from '@/components/FloatingBar';
 import { useDocStore } from '@/docs/doc-management';
 import { useAuth } from '@/features/auth';
 import { useCmdK } from '@/hooks/useCmdK';
@@ -21,7 +22,10 @@ const DocSearchModal = dynamic(
   { ssr: false },
 );
 
-export const DocSearchButtonModal = ({ ...props }: ButtonProps) => {
+export const DocSearchButtonModal = ({
+  withFloatingCard = false,
+  ...props
+}: ButtonProps & { withFloatingCard?: boolean }) => {
   const { currentDoc } = useDocStore();
   const { authenticated } = useAuth();
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
@@ -74,18 +78,22 @@ export const DocSearchButtonModal = ({ ...props }: ButtonProps) => {
     return null;
   }
 
+  const button = (
+    <Button
+      data-testid="search-docs-button"
+      onClick={handleClick}
+      size="medium"
+      color="brand"
+      variant="tertiary"
+      aria-label={t('Search docs')}
+      icon={<SearchSVG aria-hidden="true" width={24} height={24} />}
+      {...props}
+    />
+  );
+
   return (
     <>
-      <Button
-        data-testid="search-docs-button"
-        onClick={handleClick}
-        size="medium"
-        color="brand"
-        variant="tertiary"
-        aria-label={t('Search docs')}
-        icon={<SearchSVG aria-hidden="true" width={24} height={24} />}
-        {...props}
-      />
+      {withFloatingCard ? <CardFloatingBar>{button}</CardFloatingBar> : button}
       {isSearchModalOpen && (
         <DocSearchModal
           onClose={closeSearchModal}

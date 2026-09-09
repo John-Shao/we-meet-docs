@@ -33,6 +33,10 @@ const FLOATING_STYLES = css`
     -webkit-mask-image: linear-gradient(180deg, black 50%, transparent 100%);
   }
 
+  &[data-backdrop='false']::before {
+    content: none;
+  }
+
   > * {
     position: relative;
     z-index: 1;
@@ -41,13 +45,15 @@ const FLOATING_STYLES = css`
 
 export const FloatingBar = ({
   children,
+  withBackdrop = true,
   ...props
-}: PropsWithChildren<BoxType>) => {
+}: PropsWithChildren<BoxType & { withBackdrop?: boolean }>) => {
   return (
     <Box
       as="header"
       className="--docs--floating-bar wm-ui"
       data-testid="floating-bar"
+      data-backdrop={withBackdrop}
       $direction="row"
       $justify="space-between"
       $align="flex-start"
