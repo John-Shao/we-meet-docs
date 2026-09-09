@@ -7,7 +7,6 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { css } from 'styled-components';
 
-import DocIcon from '@/assets/icons/ui-kit/doc.svg';
 import ArrowIcon from '@/assets/icons/ui-kit/keyboard_return.svg';
 import {
   Box,
@@ -17,7 +16,12 @@ import {
   Text,
 } from '@/components';
 import { DocsBlockNoteEditor } from '@/docs/doc-editor/types';
-import { Doc, getEmojiAndTitle, useTrans } from '@/docs/doc-management';
+import {
+  Doc,
+  DocTypeIcon,
+  getEmojiAndTitle,
+  useTrans,
+} from '@/docs/doc-management';
 import { DocSearchContent } from '@/docs/doc-search';
 import { useDocSearchFilterStore } from '@/docs/doc-search/stores/useDocSearchFilterStore';
 import { useResponsiveStore } from '@/stores';
@@ -308,12 +312,7 @@ export const SearchPage = ({
                               {emoji ? (
                                 <Text $size="18px">{emoji}</Text>
                               ) : (
-                                <DocIcon
-                                  aria-hidden="true"
-                                  width="24px"
-                                  height="24px"
-                                  color="var(--c--contextuals--content--semantic--neutral--primary)"
-                                />
+                                <DocTypeIcon folder={doc.numchild > 0} />
                               )}
                             </Box>
 

@@ -7,13 +7,10 @@ import { useCunninghamTheme } from '@/cunningham';
 import { useDate } from '@/hooks/useDate';
 import { useResponsiveStore } from '@/stores';
 
-import ChildDocument from '../assets/child-document.svg';
-import PinnedDocumentIcon from '../assets/pinned-document.svg';
-import SimpleFileIcon from '../assets/simple-document.svg';
 import { useDocUtils, useTrans } from '../hooks';
 import { Doc } from '../types';
 
-import { DocFolderIcon } from './DocFolderIcon';
+import { DocTypeIcon } from './DocTypeIcon';
 
 const ItemTextCss = css`
   overflow: hidden;
@@ -43,7 +40,7 @@ export const SimpleDocItem = ({
   const { isSmallMobile } = useResponsiveStore();
   const { spacingsTokens } = useCunninghamTheme();
   const { untitledDocument } = useTrans();
-  const { isChild, hasChildren } = useDocUtils(doc);
+  const { hasChildren } = useDocUtils(doc);
   const { relativeDate, formatDate } = useDate();
   const docTitle = doc.title || untitledDocument;
   const docRelativeUpdate = relativeDate(doc.updated_at);
@@ -81,29 +78,7 @@ export const SimpleDocItem = ({
         data-testid={isPinned ? `doc-pinned-${doc.id}` : undefined}
         aria-hidden="true"
       >
-        {hasChildren ? (
-          <DocFolderIcon />
-        ) : isPinned ? (
-          <PinnedDocumentIcon
-            aria-hidden="true"
-            data-testid="doc-pinned-icon"
-            color="var(--c--contextuals--content--semantic--info--tertiary)"
-          />
-        ) : isChild ? (
-          <ChildDocument
-            aria-hidden="true"
-            data-testid="doc-child-icon"
-            color="var(--c--contextuals--content--semantic--info--tertiary)"
-          />
-        ) : (
-          <SimpleFileIcon
-            width="32px"
-            height="32px"
-            aria-hidden="true"
-            data-testid="doc-simple-icon"
-            color="var(--c--contextuals--content--semantic--info--tertiary)"
-          />
-        )}
+        <DocTypeIcon folder={hasChildren} />
       </Box>
       <Box $justify="center" $overflow="auto" $gap="4xs">
         <Box $direction="row" $align="center" $gap="3xs">
@@ -116,7 +91,7 @@ export const SimpleDocItem = ({
           >
             {docTitle}
           </Text>
-          {hasChildren && isPinned && (
+          {isPinned && (
             <Icon
               iconName="push_pin"
               $size="sm"

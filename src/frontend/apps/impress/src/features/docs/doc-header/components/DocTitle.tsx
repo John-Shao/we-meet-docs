@@ -7,6 +7,7 @@ import { useCunninghamTheme } from '@/cunningham';
 import {
   Doc,
   DocIcon,
+  DocTypeIcon,
   getEmojiAndTitle,
   useDocStore,
   useDocTitleUpdate,
@@ -14,7 +15,6 @@ import {
   useIsCollaborativeEditable,
   useTrans,
 } from '@/docs/doc-management';
-import SimpleFileIcon from '@/features/docs/doc-management/assets/simple-document.svg';
 import { useResponsiveStore } from '@/stores';
 
 export const CLASS_DOC_TITLE = '--docs--doc-title';
@@ -49,7 +49,6 @@ export const DocTitleText = () => {
 };
 
 const DocTitleEmojiPicker = ({ doc }: DocTitleProps) => {
-  const { t } = useTranslation();
   const { colorsTokens } = useCunninghamTheme();
   const { emoji } = getEmojiAndTitle(doc.title ?? '');
 
@@ -84,15 +83,7 @@ const DocTitleEmojiPicker = ({ doc }: DocTitleProps) => {
         title={doc.title}
         emoji={emoji}
         $size="23px"
-        defaultIcon={
-          <SimpleFileIcon
-            width="25px"
-            height="25px"
-            aria-hidden="true"
-            aria-label={t('Simple document icon')}
-            color={colorsTokens['brand-500']}
-          />
-        }
+        defaultIcon={<DocTypeIcon folder={doc.numchild > 0} />}
       />
     </Box>
   );

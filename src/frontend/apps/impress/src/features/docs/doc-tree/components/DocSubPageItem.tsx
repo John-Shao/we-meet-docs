@@ -14,8 +14,8 @@ import { css } from 'styled-components';
 import { Box, Icon, StyledLink, Text } from '@/components';
 import {
   Doc,
-  DocFolderIcon,
   DocIcon,
+  DocTypeIcon,
   getEmojiAndTitle,
   useDocUtils,
   useTrans,
@@ -25,7 +25,6 @@ import { useResponsiveStore } from '@/stores';
 
 import { isDocNode } from '../utils';
 
-import SubPageIcon from './../assets/sub-page-logo.svg';
 import { DocTreeItemActions } from './DocTreeItemActions';
 
 const ItemTextCss = css`
@@ -261,20 +260,11 @@ const DocSubPageItemContent = (props: TreeViewNodeProps<Doc>) => {
       `}
     >
       <TreeViewItem {...props}>
-        {hasChildren && emoji && <DocFolderIcon size="16px" />}
+        {hasChildren && emoji && <DocTypeIcon folder size="16px" />}
         <DocIcon
           emoji={emoji}
           withEmojiPicker={doc.abilities.partial_update}
-          defaultIcon={
-            hasChildren ? (
-              <DocFolderIcon size="16px" />
-            ) : (
-              <SubPageIcon
-                color="var(--c--contextuals--content--semantic--info--tertiary)"
-                style={{ flexShrink: 0 }}
-              />
-            )
-          }
+          defaultIcon={<DocTypeIcon folder={hasChildren} size="16px" />}
           $size="sm"
           docId={doc.id}
           title={doc.title}

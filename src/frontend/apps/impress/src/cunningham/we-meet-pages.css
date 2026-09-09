@@ -129,7 +129,7 @@ main:has(.wm-ui.--docs--doc-grid) {
     height: var(--wm-icon-large);
   }
 
-  & [data-testid='doc-folder-icon'] {
+  & .--docs--doc-type-icon {
     width: var(--wm-icon-large);
     height: var(--wm-icon-large);
     font-size: var(--wm-icon-large);
