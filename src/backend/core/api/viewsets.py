@@ -66,6 +66,10 @@ from core.services.converter_services import (
 from core.services.converter_services import (
     ValidationError as YProviderValidationError,
 )
+from core.services.document_creation import (
+    create_document_once,
+    lookup_document_creation,
+)
 from core.services.member_access import member_access
 from core.services.search_indexers import (
     get_document_indexer,
@@ -1005,7 +1009,15 @@ class DocumentViewSet(
         Create a document on behalf of a specified owner (pre-existing user or invited).
         """
 
-        # Deserialize and validate the data
+        key = request.headers.get("Idempotency-Key")
+        if key is not None:
+            key = drf.serializers.UUIDField().run_validation(key)
+            serializer = serializers.IdempotentServerCreateDocumentSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            result, code = create_document_once(serializer, key)
+            return drf_response.Response(result, status=code, headers={"Cache-Control": "private, no-store"})
+
+        # Deserialize and validate the data for legacy callers without a key.
         serializer = serializers.ServerCreateDocumentSerializer(data=request.data)
         if not serializer.is_valid():
             return drf_response.Response(
@@ -1017,6 +1029,18 @@ class DocumentViewSet(
         return drf_response.Response(
             {"id": str(document.id)}, status=status.HTTP_201_CREATED
         )
+
+    @drf.decorators.action(
+        authentication_classes=[authentication.ServerToServerAuthentication],
+        detail=False, methods=["get"], permission_classes=[],
+        url_path="create-for-owner-result",
+    )
+    def create_for_owner_result(self, request):
+        """Read the original outcome without creating users, documents or messages."""
+        key = drf.serializers.UUIDField().run_validation(request.headers.get("Idempotency-Key"))
+        sub = drf.serializers.CharField(max_length=255).run_validation(request.query_params.get("sub"))
+        result, code = lookup_document_creation(sub, key)
+        return drf_response.Response(result, status=code, headers={"Cache-Control": "private, no-store"})
 
     @drf.decorators.action(
         authentication_classes=[authentication.ServerToServerAuthentication],

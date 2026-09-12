@@ -504,7 +504,7 @@ class ServerCreateDocumentSerializer(serializers.Serializer):
         document.content = document_content
         document.save()
 
-        if email:
+        if email and not self.context.get("suppress_notifications", False):
             self._send_email_notification(document, validated_data, email, language)
         return document
 
@@ -519,6 +519,20 @@ class ServerCreateDocumentSerializer(serializers.Serializer):
             "title": subject,
         }
         document.send_email(subject, [email], context, language)
+
+
+class IdempotentServerCreateDocumentSerializer(ServerCreateDocumentSerializer):
+    """Bounded, explicit contract for callers using a durable idempotency key."""
+
+    title = serializers.CharField(max_length=255)
+    content = serializers.CharField(max_length=1000000)
+
+    def validate(self, attrs):
+        if set(self.initial_data) - set(self.fields):
+            raise serializers.ValidationError("Unsupported creation field.")
+        if len(attrs["content"].encode("utf-8")) > 2000000:
+            raise serializers.ValidationError({"content": "Content exceeds 2 MB."})
+        return attrs
 
 
 class ServerCreateTableDocumentSerializer(serializers.Serializer):

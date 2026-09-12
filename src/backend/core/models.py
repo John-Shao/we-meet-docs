@@ -16,6 +16,7 @@ from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.sites.models import Site
 from django.core.cache import cache
+from django.core.exceptions import ValidationError as ModelValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
@@ -106,6 +107,32 @@ class BaseModel(models.Model):
         """Call `full_clean` before saving."""
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class ServerDocumentCreation(BaseModel):
+    """Durable S2S creation receipt; deleting a document never frees its request key."""
+
+    owner_sub = models.CharField(max_length=255)
+    key = models.UUIDField()
+    request_hash = models.CharField(max_length=64)
+    document = models.ForeignKey(
+        "Document", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="server_creation_receipts",
+    )
+
+    class Meta:
+        constraints = [models.UniqueConstraint(
+            fields=["owner_sub", "key"], name="unique_server_document_creation",
+        )]
+
+    def __str__(self):
+        return f"ServerDocumentCreation({self.pk})"
+
+    def clean(self):
+        """Successful creation receipts cannot be rewritten by a later retry."""
+        super().clean()
+        if not self._state.adding:
+            raise ModelValidationError("Server document creation receipts are immutable.")
 
 
 class UserManager(auth_models.UserManager):
