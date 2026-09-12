@@ -1011,11 +1011,7 @@ class DocumentViewSet(
 
         key = request.headers.get("Idempotency-Key")
         if key is not None:
-            key = drf.serializers.UUIDField().run_validation(key)
-            serializer = serializers.IdempotentServerCreateDocumentSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            result, code = create_document_once(serializer, key)
-            return drf_response.Response(result, status=code, headers={"Cache-Control": "private, no-store"})
+            return self.create_for_owner_idempotent(request)
 
         # Deserialize and validate the data for legacy callers without a key.
         serializer = serializers.ServerCreateDocumentSerializer(data=request.data)
@@ -1029,6 +1025,19 @@ class DocumentViewSet(
         return drf_response.Response(
             {"id": str(document.id)}, status=status.HTTP_201_CREATED
         )
+
+    @drf.decorators.action(
+        authentication_classes=[authentication.ServerToServerAuthentication],
+        detail=False, methods=["post"], permission_classes=[],
+        url_path="create-for-owner-idempotent",
+    )
+    def create_for_owner_idempotent(self, request):
+        """Dedicated path fails closed on old replicas that ignore new headers."""
+        key = drf.serializers.UUIDField().run_validation(request.headers.get("Idempotency-Key"))
+        serializer = serializers.IdempotentServerCreateDocumentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result, code = create_document_once(serializer, key)
+        return drf_response.Response(result, status=code, headers={"Cache-Control": "private, no-store"})
 
     @drf.decorators.action(
         authentication_classes=[authentication.ServerToServerAuthentication],

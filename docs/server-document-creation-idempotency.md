@@ -4,7 +4,9 @@ Migration: `core.0037_server_document_creation`. Apply it before enabling the ne
 
 ## Create
 
-`POST /api/v1.0/documents/create-for-owner/` with the existing server-to-server Bearer token and a UUID `Idempotency-Key` header. The body uses the existing trusted `sub`, title and Markdown content fields; optional email/language/message/subject remain part of the frozen request hash. Unknown fields are rejected. Title is limited to 255 characters, content to one million characters and two million UTF-8 bytes.
+**New clients must use `POST /api/v1.0/documents/create-for-owner-idempotent/`**, with the existing server-to-server Bearer token and a mandatory UUID `Idempotency-Key` header. This dedicated route fails closed on older replicas. The original `create-for-owner/` also supports keyed requests on upgraded servers for compatibility, but clients must not rely on headers alone during a rolling deployment: old replicas would ignore the key and create an untracked document.
+
+The body uses the existing trusted `sub`, title and Markdown content fields; optional email/language/message/subject remain part of the frozen request hash. Unknown fields are rejected. Title is limited to 255 characters, content to one million characters and two million UTF-8 bytes.
 
 Keys are scoped to the trusted owner `sub`, not an email address or a rotating bearer token. Persist the exact key, owner and request body before sending. The keyed path suppresses creation email; the calling application's delivery/notification workflow owns notification policy.
 

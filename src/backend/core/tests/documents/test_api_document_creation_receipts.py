@@ -164,6 +164,21 @@ def test_legacy_call_without_key_retains_original_response_and_notification(isol
     assert not models.ServerDocumentCreation.objects.exists()
 
 
+def test_dedicated_endpoint_requires_a_key_and_shares_compatible_receipts():
+    path = "/api/v1.0/documents/create-for-owner-idempotent/"
+    assert APIClient().post(path, DATA, format="json", **AUTH).status_code == 400
+    assert APIClient().post(path, DATA, format="json").status_code == 401
+    assert not models.Document.objects.exists()
+    key = uuid.uuid4()
+    response = APIClient().post(
+        path, DATA, format="json", HTTP_IDEMPOTENCY_KEY=str(key), **AUTH
+    )
+    assert response.status_code == 201
+    assert create(key).data["id"] == response.data["id"]
+    assert lookup(key).data["id"] == response.data["id"]
+    assert models.Document.objects.count() == 1
+
+
 @pytest.mark.django_db(transaction=True)
 def test_two_workers_and_lookup_report_inflight_without_creating_a_duplicate(isolated):
     key = uuid.uuid4()
