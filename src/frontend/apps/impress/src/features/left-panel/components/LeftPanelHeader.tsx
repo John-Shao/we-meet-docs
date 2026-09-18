@@ -20,7 +20,7 @@ import { useEmbedPlatform } from '@/hooks/useEmbedShell';
 import HomeSVG from '@/icons/house-rounded.svg';
 import { useResponsiveStore } from '@/stores';
 
-import LeftPanelIcon from '../assets/left-panel.svg';
+import DoubleArrowLeftIcon from '../assets/double-arrow-left.svg';
 import { useLeftPanelStore } from '../stores';
 
 export const LeftPanelHeader = () => {
@@ -165,7 +165,9 @@ export const LeftPanelHeaderActions = ({
             size="small"
             color="neutral"
             variant="tertiary"
-            icon={<LeftPanelIcon width={20} height={20} aria-hidden="true" />}
+            icon={
+              <DoubleArrowLeftIcon width={20} height={20} aria-hidden="true" />
+            }
           />
         </Box>
       </Box>
