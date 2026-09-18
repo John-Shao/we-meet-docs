@@ -3,19 +3,31 @@
 /*
  * 二级导航栏栏头 —— 与 we-meet 六个模块的 SubNavHeader 同一档几何:
  * 内边距 16/8、栏高 56px(图标钮 28 + 上下各 8,min-height 兜底)、
- * 16px **bold** 标题、1px 底分割线。宿主侧这份定义在
- * we-meet/src/frontend/src/components/SubNav.tsx,改一边要同步另一边。
+ * 16px **bold** 标题、标题在左 / 图标动作在右、**没有底分割线**。
+ *
+ * 两条都是照 `we-meet/src/frontend/src/components/SubNav.tsx` 的 headerCls 抄的:
+ * 那条 1px 底分割线属于**内容标题栏**(TitleBar),二级导航栏栏头没有 ——
+ * 原先这里多描了一条,与宿主并排时栏头下面多出一道线。改一边要同步另一边。
+ *
+ * ⚠️ 选择器必须带 `.wm-ui`(0,2,0),而且要**显式写回 `flex-direction: row`**:
+ * 栏头是个 `Box`(styled-components 运行时注入,单类 0,1,0),而 Box 的基样式里写死
+ * `flex-direction: column`(见 components/Box.tsx)—— 平级选择器会被它按注入顺序压
+ * 过去,栏头就竖排成「标题居中在上、图标居中在下」,标题也不再靠左。线上截图里那条
+ * 竖排栏头就是这么来的。49e1e913 修标题字重时踩的是同一类坑(所以标题那条也带 .wm-ui)。
+ *
+ * 宿主侧的等价写法(无底分割线、`gap: sm`):SubNav.tsx 的 headerCls。
  */
-.wm-subnav-header {
+.wm-ui .wm-subnav-header {
   display: flex;
+  flex-direction: row;
   box-sizing: border-box;
   align-items: center;
 
   /* 标题在左、模块动作 + 收起按钮在右 —— 与宿主 SubNavHeader 同构。 */
   justify-content: space-between;
+  gap: var(--wm-space-sm);
   min-height: 3.5rem;
   padding: var(--wm-space-sm) var(--wm-space-lg);
-  border-bottom: 1px solid var(--wm-border-subtle);
 }
 
 /*
@@ -36,13 +48,26 @@
 
 /*
  * 栏头右侧的模块动作组 —— 与宿主 SubNavHeader 的 headerActions 同档:
- * 一行、gap 4px、不参与压缩(标题先被省略);收起按钮排在这个组的最后。
+ * **一行**(同样要显式 row,理由见上面栏头那条)、gap 2px(宿主那边是 `space.xxs`)、
+ * 不参与压缩(要挤先挤标题);收起按钮排在这个组的最后。
  */
-.wm-subnav-header__actions {
+.wm-ui .wm-subnav-header__actions {
   flex-shrink: 0;
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: var(--wm-space-xs);
+  gap: var(--wm-space-xxs);
+}
+
+/*
+ * 字形小一档:宿主的图标钮是 **28px 盒子 + 16px 字形**(SubNav.tsx 的
+ * `RiSettings3Line` / `RiArrowLeftDoubleLine` 都传 `size={16}`),盒子由
+ * `.wm-ui .c__button--icon-only` 对齐到 28px;字形若沿用那一档的 20px,
+ * 与宿主并排时会明显偏大。
+ */
+.wm-ui .wm-subnav-header__actions .c__button svg {
+  width: var(--wm-icon-small);
+  height: var(--wm-icon-small);
 }
 
 .wm-ui,

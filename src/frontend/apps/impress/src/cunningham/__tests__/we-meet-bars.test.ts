@@ -8,12 +8,11 @@ import { describe, expect, it } from 'vitest';
  *
  * 宿主那边的唯一定义:
  *   - 二级导航栏栏头 components/SubNav.tsx(SubNavHeader):内边距 16/8、高 56px、
- *     16px **bold** 标题、1px 底分割线;
- *   - 内容标题栏 components/TitleBar.tsx:同样 56 + 1px 线,标题 16px bold、
- *     备注 12px 次要色。
+ *     16px **bold** 标题在左、28px 图标钮(16px 字形)在右、**没有底分割线**;
+ *   - 内容标题栏 components/TitleBar.tsx:56 + 1px 线,标题 16px bold、备注 12px 次要色。
  *
  * 这里是跨仓库的**值**对齐(两个 App 各有各的设计系统,组件不能共用),所以用读取
- * CSS 的方式把它钉住:谁在文档侧把高度/字重改回去,这条会红。
+ * CSS 的方式把它钉住:谁在文档侧把高度/字重/摆放改回去,这条会红。
  */
 const cssDir = join(__dirname, '..');
 
@@ -21,7 +20,7 @@ const readCss = (file: string) =>
   readFileSync(join(cssDir, file), 'utf8').replace(/\s+/g, ' ');
 
 describe('we-meet bar styles in the docs app', () => {
-  it('subnav header: 56px tall, 16/8 padding, 1px bottom border', () => {
+  it('subnav header: a 56px row, 16/8 padding, with no divider', () => {
     const css = readCss('we-meet-ui.css');
     const block = css.slice(
       css.indexOf('.wm-subnav-header {'),
@@ -29,7 +28,26 @@ describe('we-meet bar styles in the docs app', () => {
     );
     expect(block).toContain('min-height: 3.5rem');
     expect(block).toContain('padding: var(--wm-space-sm) var(--wm-space-lg)');
-    expect(block).toContain('border-bottom: 1px solid var(--wm-border-subtle)');
+    // 栏头是 Box 渲染的,而 Box 的基样式写死了 `flex-direction: column`(单类,
+    // 运行时注入在后)—— 不显式写回 row,这条栏会在线上竖排成「标题居中在上、
+    // 图标居中在下」。选择器带 .wm-ui 才压得住那条基样式。
+    expect(css).toContain('.wm-ui .wm-subnav-header {');
+    expect(block).toContain('flex-direction: row');
+    // 宿主 SubNavHeader 没有底分割线(那是内容标题栏 TitleBar 的)。
+    expect(block).not.toContain('border-bottom');
+  });
+
+  it('subnav header actions: one row of 28px buttons with 16px glyphs', () => {
+    const css = readCss('we-meet-ui.css');
+    const block = css.slice(
+      css.indexOf('.wm-ui .wm-subnav-header__actions'),
+      css.indexOf('.wm-ui, .c__dropdown-menu'),
+    );
+    expect(block).toContain('flex-direction: row');
+    // 宿主 headerActions 的间距是 `space.xxs`(2px),盒子 28px / 字形 16px。
+    expect(block).toContain('gap: var(--wm-space-xxs)');
+    expect(block).toContain('.wm-ui .wm-subnav-header__actions .c__button svg');
+    expect(block).toContain('width: var(--wm-icon-small)');
   });
 
   it('subnav title: 16px titleMedium at weight 700', () => {
@@ -54,6 +72,17 @@ describe('we-meet bar styles in the docs app', () => {
     const title = css.slice(css.indexOf('& .wm-grid-titlebar h2'));
     expect(title).toContain('font: var(--wm-font-title-medium)');
     expect(title).toContain('font-weight: 700');
+  });
+
+  it('grid title bar spans the content column, not its own content width', () => {
+    // 标题栏挂在 `--docs--doc-grid`(align-items: center)下面:不给 width: 100%
+    // 它就会缩成内容宽并被水平居中,标题跑到内容区中间去 —— 线上截图里的
+    // 「[图标] 所有文档 [新建]」居中一条就是这么来的。
+    const src = readFileSync(
+      join(cssDir, '../features/docs/docs-grid/components/DocsGrid.tsx'),
+      'utf8',
+    );
+    expect(src).toContain('$width="100%"');
   });
 
   it('grid content is one surface: title bar over a frameless list', () => {

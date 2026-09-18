@@ -220,6 +220,9 @@ const DocGridTitleBar = ({ target }: { target: DocDefaultFilter }) => {
     <Box
       className="wm-grid-titlebar"
       $direction="row"
+      // 父容器(`--docs--doc-grid`)是 `align-items: center`:不显式给 100% 宽,
+      // 这一栏会缩成内容宽并被水平居中,标题跑到内容区中间 —— 与宿主内容标题栏
+      // (横贯内容列、标题贴左、主操作贴右)对不上。
       $width="100%"
       $padding={{
         vertical: 'sm',
