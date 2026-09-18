@@ -220,6 +220,7 @@ const DocGridTitleBar = ({ target }: { target: DocDefaultFilter }) => {
     <Box
       className="wm-grid-titlebar"
       $direction="row"
+      $width="100%"
       $padding={{
         vertical: 'sm',
         horizontal: isDesktop ? 'md' : 'xs',

@@ -13,7 +13,6 @@ import { useResponsiveStore } from '@/stores/useResponsiveStore';
 import { useLeftPanelStore } from '../stores';
 
 import { LeftPanel } from './LeftPanel';
-import { LeftPanelStrip } from './LeftPanelStrip';
 
 // Convert a target pixel width to a percentage of the current viewport width.
 const pxToPercent = (px: number) => {
@@ -147,8 +146,6 @@ export const ResizableLeftPanel = ({
 
   return (
     <Box $direction="row" $width="100%" $height="100dvh">
-      {/* 收起时窄条顶替整栏(36px + 展开按钮),与宿主其它模块一致;只在桌面渲染。 */}
-      {!isPanelOpen && isLargeScreen && <LeftPanelStrip />}
       <PanelGroup direction="horizontal" keyboardResizeBy={1}>
         <Panel
           ref={ref}

@@ -12,7 +12,7 @@ import { LeftPanelHeader } from './LeftPanelHeader';
 
 export const LeftPanel = ({ isResizable }: { isResizable?: boolean }) => {
   const { t } = useTranslation();
-  const { isMobile, isTablet } = useResponsiveStore();
+  const { isMobile } = useResponsiveStore();
   const { isPanelOpen, closePanel } = useLeftPanelStore();
 
   return (
@@ -58,11 +58,16 @@ export const LeftPanel = ({ isResizable }: { isResizable?: boolean }) => {
               `
             : ''}
 
-          ${isTablet && !isMobile
+          /*
+            收起态把整栏让出去(不再有 36px 窄条占宽):可拖宽那一档由 react-resizable-panels
+            自己收成 0,其余非手机档(列表页桌面 / 平板)在这里收成 0。
+            展开入口由浮动【导航栏】按钮担(见 HeaderFloatingBar / DocFloatingBar)。
+          */
+          ${!isMobile && !isResizable
             ? css`
                 ${!isPanelOpen
                   ? css`
-                      transform: translateX(${isPanelOpen ? '0' : '-100%'});
+                      transform: translateX(-100%);
                       width: 0;
                     `
                   : ''}

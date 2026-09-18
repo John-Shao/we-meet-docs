@@ -3,15 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { css } from 'styled-components';
 
 import { Box, BoxType } from '@/components';
-import {
-  LeftPanel,
-  LeftPanelStrip,
-  ResizableLeftPanel,
-  useLeftPanelStore,
-} from '@/features/left-panel';
+import { LeftPanel, ResizableLeftPanel } from '@/features/left-panel';
 import { RightPanel } from '@/features/right-panel/components/RightPanel';
 import { DocEditorSkeleton, Skeleton } from '@/features/skeletons';
-import { useResponsiveStore } from '@/stores';
 
 import { MAIN_LAYOUT_ID } from './conf';
 import { usePanelCoordination } from './usePanelCoordination';
@@ -61,27 +55,13 @@ export function MainLayoutContent({
 
   return (
     <>
-      {/* 桌面端收起左栏时,由 36px 窄条顶替它(平板/手机是抽屉 + 浮动条那一套,不在此列)。 */}
-      <LeftPanelOrStrip />
+      {/* 左栏收起后由**浮动按钮**担展开入口(FloatingBar,不占宽度);不再有 36px 窄条。 */}
+      <LeftPanel />
       <MainContent {...props}>{children}</MainContent>
       <RightPanel />
     </>
   );
 }
-
-/**
- * 桌面(large screen)且左栏已收起 → 只留窄条 + 展开按钮;其余情况维持原来的左栏。
- */
-const LeftPanelOrStrip = () => {
-  const { isPanelOpen } = useLeftPanelStore();
-  const { isLargeScreen } = useResponsiveStore();
-
-  if (!isPanelOpen && isLargeScreen) {
-    return <LeftPanelStrip />;
-  }
-
-  return <LeftPanel />;
-};
 
 const MainResizableLayout = ({
   children,

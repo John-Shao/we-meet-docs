@@ -19,23 +19,6 @@
 }
 
 /*
- * 桌面端左栏收起后的窄条 —— 与宿主 SubNavStrip 同一档:36px 宽、上内边距 12px、
- * 1px 右分割线,展开按钮就在里面(任何视图下都找得到展开入口)。
- */
-.wm-subnav-strip {
-  display: flex;
-  flex: 0 0 auto;
-  box-sizing: border-box;
-  width: 2.25rem;
-  height: 100dvh;
-  flex-direction: column;
-  align-items: center;
-  padding-top: var(--wm-space-md);
-  border-right: 1px solid var(--wm-border-subtle);
-  background: var(--wm-surface-default);
-}
-
-/*
  * 标题选择器要带 .wm-ui 这一层:标题是个 Text 组件(styled-components 运行时注入,
  * 单类 0,1,0),只写 .wm-subnav-header__title 会被它按注入顺序压过去。
  * 这里 0,2,0 才稳。

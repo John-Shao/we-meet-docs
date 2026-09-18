@@ -105,8 +105,9 @@ export const LeftPanelHeaderActions = ({
 }: {
   /**
    * 内嵌(we-meet)时这一栏走宿主 `SubNavHeader` 的形态:标题在左,模块图标动作在右,
-   * **收起按钮排在最后一个**——宿主六个模块的二级导航栏都是这个结构,收起后由 36px
-   * 窄条顶替(LeftPanelStrip)。独立访问 docs 时仍是原来的「新建 + 主页/搜索」一行。
+   * **收起按钮排在最后一个**。收起后由浮动【导航栏】按钮担展开入口
+   * (HeaderFloatingBar / DocFloatingBar,不占屏宽)。独立访问 docs 时仍是原来的
+   * 「新建 + 主页/搜索」一行。
    */
   withTitle?: boolean;
 }) => {

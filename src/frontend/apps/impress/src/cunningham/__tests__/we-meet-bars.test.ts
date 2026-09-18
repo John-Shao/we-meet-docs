@@ -42,17 +42,6 @@ describe('we-meet bar styles in the docs app', () => {
     expect(block).toContain('font-weight: 700');
   });
 
-  it('desktop collapsed strip: 36px wide, 12px top padding, 1px right border', () => {
-    const css = readCss('we-meet-ui.css');
-    const block = css.slice(
-      css.indexOf('.wm-subnav-strip {'),
-      css.indexOf('.wm-ui .wm-subnav-header__title'),
-    );
-    expect(block).toContain('width: 2.25rem');
-    expect(block).toContain('padding-top: var(--wm-space-md)');
-    expect(block).toContain('border-right: 1px solid var(--wm-border-subtle)');
-  });
-
   it('grid title bar: 56px tall, 1px bottom border, bold title', () => {
     const css = readCss('we-meet-pages.css');
     const bar = css.slice(

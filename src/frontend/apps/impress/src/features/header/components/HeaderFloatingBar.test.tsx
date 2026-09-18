@@ -8,7 +8,6 @@ import { HeaderFloatingBar } from './HeaderFloatingBar';
 type HeaderState = {
   isTablet: boolean;
   isMobile: boolean;
-  isLargeScreen: boolean;
   isPanelOpen: boolean;
   platform: string | null;
   globalSearch: boolean;
@@ -19,7 +18,6 @@ const state = vi.hoisted(
   (): HeaderState => ({
     isTablet: false,
     isMobile: false,
-    isLargeScreen: false,
     isPanelOpen: false,
     platform: 'web',
     globalSearch: true,
@@ -62,7 +60,6 @@ describe('document list header', () => {
     Object.assign(state, {
       isTablet: false,
       isMobile: false,
-      isLargeScreen: false,
       isPanelOpen: false,
       platform: 'web',
       globalSearch: true,
@@ -70,31 +67,27 @@ describe('document list header', () => {
     });
   });
 
-  it('leaves the large embedded screen a single left-panel toggle', () => {
-    // 769–1023 那档 isLargeScreen 与 isTablet 同时为真:左栏入口归二级导航栏栏头 +
-    // 36px 窄条,浮动条不能再放一颗,否则同屏出现两个「导航栏」按钮。
-    state.isTablet = true;
-    state.isLargeScreen = true;
-    state.platform = 'web';
+  it('desktop: the collapsed panel is reopened by the floating toggle', () => {
     const { rerender } = render(<HeaderFloatingBar />, { wrapper });
-    expect(
-      screen.queryByRole('button', { name: 'Toggle left panel' }),
-    ).not.toBeInTheDocument();
-
-    // 未内嵌(独立访问 docs)时保持原样。
-    state.platform = null;
-    rerender(<HeaderFloatingBar />);
+    // 桌面收起态:没有 36px 窄条占宽,唯一入口就是这颗浮动【导航栏】按钮。
     expect(
       screen.getByRole('button', { name: 'Toggle left panel' }),
     ).toBeVisible();
+    expect(screen.getByTestId('floating-bar')).toHaveAttribute(
+      'data-backdrop',
+      'false',
+    );
+    expect(screen.queryByText('Docs')).not.toBeInTheDocument();
+
+    // 展开态:收起按钮在二级导航栏栏头里,这条顶栏不必存在。
+    state.isPanelOpen = true;
+    rerender(<HeaderFloatingBar />);
+    expect(screen.queryByTestId('floating-bar')).not.toBeInTheDocument();
   });
 
-  it('removes the empty desktop header and retains narrow-screen navigation without blur', () => {
-    const { container, rerender } = render(<HeaderFloatingBar />, { wrapper });
-    expect(screen.queryByTestId('floating-bar')).not.toBeInTheDocument();
-
+  it('narrow layout retains navigation without blur', () => {
     state.isTablet = true;
-    rerender(<HeaderFloatingBar />);
+    const { container, rerender } = render(<HeaderFloatingBar />, { wrapper });
     expect(
       screen.getByRole('button', { name: 'Toggle left panel' }),
     ).toBeVisible();
@@ -105,9 +98,13 @@ describe('document list header', () => {
     expect(screen.queryByTestId('search-docs-button')).not.toBeInTheDocument();
     expect(container.querySelector('.--docs--card-floating-bar')).toBeNull();
 
+    // 抽屉那一档:抽屉开着时这颗按钮也是关抽屉的入口,一直在。
     state.isTablet = false;
+    state.isMobile = true;
     rerender(<HeaderFloatingBar />);
-    expect(screen.queryByTestId('floating-bar')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Toggle left panel' }),
+    ).toBeVisible();
   });
 
   it('removes the search card as soon as the web host takes over search', () => {
