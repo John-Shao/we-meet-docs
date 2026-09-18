@@ -16,6 +16,7 @@ import { useEmbedPlatform } from '@/hooks/useEmbedShell';
 import { useResponsiveStore } from '@/stores';
 
 import { useInfiniteDocsTrashbin } from '../api';
+import { canCreateDoc } from '../conf';
 import { useResponsiveDocGrid } from '../hooks/useResponsiveDocGrid';
 
 import { DocGridContentList } from './DocGridContentList';
@@ -40,11 +41,7 @@ export const DocsGrid = ({
     },
   });
 
-  const withUpload =
-    (!target ||
-      target === DocDefaultFilter.ALL_DOCS ||
-      target === DocDefaultFilter.MY_DOCS) &&
-    isImportEnabled;
+  const withUpload = canCreateDoc(target) && isImportEnabled;
 
   const { isDesktop } = useResponsiveStore();
   const { flexLeft, flexRight } = useResponsiveDocGrid();
@@ -195,7 +192,8 @@ export const DocsGrid = ({
   );
 };
 
-const DocGridTitleBar = ({ target }: { target: DocDefaultFilter }) => {
+/** 内容标题栏。导出仅为用例 (`__tests__/DocGridTitleBar.test.tsx`)。 */
+export const DocGridTitleBar = ({ target }: { target: DocDefaultFilter }) => {
   const { t } = useTranslation();
   const { isDesktop } = useResponsiveStore();
   const { authenticated } = useAuth();
@@ -240,7 +238,12 @@ const DocGridTitleBar = ({ target }: { target: DocDefaultFilter }) => {
           {title}
         </Text>
       </Box>
-      {isEmbedded && authenticated && <NewDocButton />}
+      {/*
+        新建只在**能落文档的两页**出现(所有文档 / 我的文档,见 conf.canCreateDoc):
+        与我分享那页装的是别人的文档,回收站里的文档只能恢复或彻底删除 ——
+        这两页给「新建」是个没有落点的入口。
+      */}
+      {isEmbedded && authenticated && canCreateDoc(target) && <NewDocButton />}
     </Box>
   );
 };
