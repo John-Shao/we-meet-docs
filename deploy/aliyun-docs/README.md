@@ -71,8 +71,13 @@
          password: <火山CR密码>     # 同 build-and-push.sh 的 REGISTRY_PASS
    YAML
    sudo systemctl restart k3s     # 重启使配置生效（不会杀掉运行中的容器）
-   sudo bash deploy/aliyun-docs/check-node-registry.sh   # 自检：mirror 通不通 + pause 镜像在不在本地
+   kubectl wait --for=condition=Ready node/$(hostname) --timeout=180s
+   sudo bash deploy/aliyun-docs/check-node-registry.sh   # 自检：mirror / CR 凭据 / pause 镜像 / 磁盘
+   # 端到端验证 mirror 真的生效：走 CRI 拉一个全新的 docker.io 小镜像，拉得下来才算通
+   sudo k3s crictl pull docker.io/library/hello-world:latest && \
+     sudo k3s crictl rmi docker.io/library/hello-world:latest
    ```
+   > ⚠️ 验证 mirror 只能用 `crictl`（或起个 Pod）：`k3s ctr images pull` 直连 containerd、**不读** k3s 由 `registries.yaml` 生成的 CRI 镜像源配置，会绕过 mirror 去连 docker.io 然后超时，看起来像 mirror 没生效。
    > ⚠️ `tee` 是**整文件覆盖**：`mirrors:` 和 `configs:` 两段必须一起写进去。只写 `configs:` 会把加速段抹掉——K3s 自带 containerd **不读** `/etc/docker/daemon.json`，别指望那份加速；改前先 `cp` 备份。
    > ⚠️ `registries.yaml` 含明文凭据、且是节点本地文件，**不入库**（换机器需重配）。若报 `ImagePullBackOff`，`kubectl -n docs describe pod <pod>` 看是 401（认证错）还是 manifest not found（tag 拼错）。
 7. **helm 部署 impress**：`deploy-impress.sh` 经 `envsubst` 注入 `secrets.env` 后部署：
