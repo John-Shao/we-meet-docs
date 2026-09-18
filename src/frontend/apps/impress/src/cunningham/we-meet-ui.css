@@ -15,7 +15,12 @@
   border-bottom: 1px solid var(--wm-border-subtle);
 }
 
-.wm-subnav-header__title {
+/*
+ * 选择器要带 .wm-ui 这一层:标题是个 Text 组件(styled-components 运行时注入,
+ * 单类 0,1,0),只写 .wm-subnav-header__title 会被它按注入顺序压过去。
+ * 这里 0,2,0 才稳。
+ */
+.wm-ui .wm-subnav-header__title {
   margin: 0;
   font: var(--wm-font-title-medium);
   font-weight: 700;

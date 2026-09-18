@@ -21,25 +21,28 @@ const readCss = (file: string) =>
   readFileSync(join(cssDir, file), 'utf8').replace(/\s+/g, ' ');
 
 describe('we-meet bar styles in the docs app', () => {
-  it('二级导航栏栏头:56px 高 + 16/8 内边距 + 1px 底分割线', () => {
+  it('subnav header: 56px tall, 16/8 padding, 1px bottom border', () => {
     const css = readCss('we-meet-ui.css');
     const block = css.slice(
       css.indexOf('.wm-subnav-header {'),
-      css.indexOf('.wm-subnav-header__title'),
+      css.indexOf('.wm-ui .wm-subnav-header__title'),
     );
     expect(block).toContain('min-height: 3.5rem');
     expect(block).toContain('padding: var(--wm-space-sm) var(--wm-space-lg)');
     expect(block).toContain('border-bottom: 1px solid var(--wm-border-subtle)');
   });
 
-  it('二级导航栏标题:16px titleMedium + bold', () => {
+  it('subnav title: 16px titleMedium at weight 700', () => {
     const css = readCss('we-meet-ui.css');
-    const block = css.slice(css.indexOf('.wm-subnav-header__title'));
+    // 必须带 .wm-ui 这一层:标题是个 Text 组件(styled-components 运行时注入的
+    // 单类样式),平级选择器会被它按注入顺序压过去。
+    expect(css).toContain('.wm-ui .wm-subnav-header__title');
+    const block = css.slice(css.indexOf('.wm-ui .wm-subnav-header__title'));
     expect(block).toContain('font: var(--wm-font-title-medium)');
     expect(block).toContain('font-weight: 700');
   });
 
-  it('内容标题栏:56px 内容 + 1px 线,标题 bold', () => {
+  it('grid title bar: 56px tall, 1px bottom border, bold title', () => {
     const css = readCss('we-meet-pages.css');
     const bar = css.slice(
       css.indexOf('& .wm-grid-titlebar {'),
