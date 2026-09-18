@@ -9,6 +9,7 @@ import {
   ButtonCloseModal,
   SeparatedSection,
   StyledLink,
+  Text,
 } from '@/components';
 import { Title } from '@/components/Title';
 import { useConfig } from '@/core';
@@ -28,7 +29,8 @@ export const LeftPanelHeader = () => {
   const icon = config?.theme_customization?.header?.icon;
   // 被 we-meet 内嵌时隐掉这行 logo/标题:宿主的一级 rail 顶部已经有 logo,
   // 且是另一套品牌 —— 两个 logo 上下叠着正是「像换了个 App」的直接来源。
-  // 隐掉后面板顶部直接是操作行,高度也与宿主的模块二级面板自然对齐。
+  // 内嵌时改成一栏「标题 + 模块动作」:形态与宿主其它模块的二级导航栏一致
+  // (16px bold 标题、56px 高、1px 底分割线,见 we-meet-ui.css 的 .wm-subnav-header)。
   const isEmbedded = useEmbedPlatform() !== null;
 
   return (
@@ -93,11 +95,19 @@ export const LeftPanelHeader = () => {
           )}
         </Box>
       )}
-      <LeftPanelHeaderActions />
+      <LeftPanelHeaderActions withTitle={isEmbedded && !isMobile} />
     </Box>
   );
 };
-export const LeftPanelHeaderActions = () => {
+export const LeftPanelHeaderActions = ({
+  withTitle = false,
+}: {
+  /**
+   * 内嵌(we-meet)时给这一栏加一个模块标题:宿主其它模块的二级导航栏都是
+   * 「标题 + 动作」一行,没有标题的文档面板在并排看时缺一档。
+   */
+  withTitle?: boolean;
+}) => {
   const router = useRouter();
   const { authenticated } = useAuth();
   const { togglePanel, closePanel } = useLeftPanelStore();
@@ -112,33 +122,43 @@ export const LeftPanelHeaderActions = () => {
     }
   };
 
-  return (
-    <SeparatedSection>
-      <Box
-        $padding={{ horizontal: 'sm' }}
-        $width="100%"
-        $direction="row"
-        $justify="space-between"
-        $align="center"
-      >
-        {authenticated && (
-          <NewDocButton onClose={() => isMobile && closePanel()} />
+  const actions = (
+    <Box
+      $padding={{ horizontal: withTitle ? 'lg' : 'sm' }}
+      $width="100%"
+      $direction="row"
+      $justify="space-between"
+      $align="center"
+      $gap={withTitle ? 'sm' : undefined}
+    >
+      {withTitle && (
+        <Text as="h2" className="wm-subnav-header__title">
+          {t('Docs')}
+        </Text>
+      )}
+      {authenticated && (
+        <NewDocButton onClose={() => isMobile && closePanel()} />
+      )}
+      <Box $direction="row" $gap="2px" $margin={{ left: 'auto' }}>
+        {router.pathname !== '/' && (
+          <Button
+            data-testid="home-button"
+            onClick={goToHome}
+            aria-label={t('Back to homepage')}
+            size="medium"
+            color="brand"
+            variant="tertiary"
+            icon={<HomeSVG aria-hidden="true" width={24} height={24} />}
+          />
         )}
-        <Box $direction="row" $gap="2px" $margin={{ left: 'auto' }}>
-          {router.pathname !== '/' && (
-            <Button
-              data-testid="home-button"
-              onClick={goToHome}
-              aria-label={t('Back to homepage')}
-              size="medium"
-              color="brand"
-              variant="tertiary"
-              icon={<HomeSVG aria-hidden="true" width={24} height={24} />}
-            />
-          )}
-          <DocSearchButtonModal />
-        </Box>
+        <DocSearchButtonModal />
       </Box>
-    </SeparatedSection>
+    </Box>
+  );
+
+  return withTitle ? (
+    <Box className="wm-subnav-header">{actions}</Box>
+  ) : (
+    <SeparatedSection>{actions}</SeparatedSection>
   );
 };

@@ -15,7 +15,12 @@ main:has(.wm-ui.--docs--doc-grid) {
   }
 
   & .wm-grid-titlebar {
-    padding: var(--wm-space-lg);
+    box-sizing: border-box;
+
+    /* 与宿主的内容标题栏(TitleBar)同档:56px 内容 + 1px 底分割线 = 57px;
+       min-height 兜底,免得以后加按钮时这一栏被顶高。 */
+    min-height: 3.5rem;
+    padding: var(--wm-space-sm) var(--wm-space-lg);
     gap: var(--wm-space-sm);
     border-bottom: 1px solid var(--wm-border-subtle);
   }
@@ -30,6 +35,9 @@ main:has(.wm-ui.--docs--doc-grid) {
 
   & .wm-grid-titlebar h2 {
     font: var(--wm-font-title-medium);
+
+    /* 与宿主内容标题栏同档的标题字重(那边是 titleMedium + bold)。 */
+    font-weight: 700;
     letter-spacing: var(--wm-tracking-title-medium);
   }
 

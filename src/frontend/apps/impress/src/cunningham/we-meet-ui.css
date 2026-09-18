@@ -1,4 +1,31 @@
 /* Shared chrome styles. Apply wm-ui to UI regions, never the editor content root. */
+
+/*
+ * 二级导航栏栏头 —— 与 we-meet 六个模块的 SubNavHeader 同一档几何:
+ * 内边距 16/8、栏高 56px(图标钮 28 + 上下各 8,min-height 兜底)、
+ * 16px **bold** 标题、1px 底分割线。宿主侧这份定义在
+ * we-meet/src/frontend/src/components/SubNav.tsx,改一边要同步另一边。
+ */
+.wm-subnav-header {
+  display: flex;
+  box-sizing: border-box;
+  align-items: center;
+  min-height: 3.5rem;
+  padding: var(--wm-space-sm) var(--wm-space-lg);
+  border-bottom: 1px solid var(--wm-border-subtle);
+}
+
+.wm-subnav-header__title {
+  margin: 0;
+  font: var(--wm-font-title-medium);
+  font-weight: 700;
+  letter-spacing: var(--wm-tracking-title-medium);
+  color: var(--wm-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .wm-ui,
 .c__dropdown-menu,
 .c__modal:has(.c__onboarding-modal),
