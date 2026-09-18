@@ -12,6 +12,18 @@ main:has(.wm-ui.--docs--doc-grid) {
   max-width: 1200px;
   background: var(--wm-surface-default);
 
+  /*
+   * 白面必须**铺满整份列表**。这一栏是 `main`(100dvh + overflow-y: auto)的 flex 项,
+   * 而组件上带着 `$minHeight="0"`(上游 c82ff199 把列表滚动从卡片挪给 main 时加的),
+   * flex 于是可以把它压到**一屏高**:白面到不了列表末尾,滚动到底时最后几行落回
+   * 页面底色(canvas 灰)上 —— 看着就像「最后一行换成了背景色」。
+   * 上游那边 main 也是白的,所以这个 shim 看不出来;是 3.28 把 main 改成 canvas
+   * (让列表立成一张白面)之后才暴露的。
+   * 这里写回 `auto`(flex 项的自动最小尺寸 = 内容高),而不是去改组件那一行:
+   * 理由与上面 max-width 那条一样 —— 上游 diff 越少越好,值都收在这份表里。
+   */
+  min-height: auto;
+
   & [data-testid='docs-grid'] {
     /* 卡片退成纯容器:边框/圆角撤掉,免得标题栏下面又起一个框;
        左栏收起/展开时的拖拽高亮在下面单独补回来。 */

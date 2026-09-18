@@ -96,4 +96,16 @@ describe('we-meet bar styles in the docs app', () => {
     expect(container).toContain('background: var(--wm-surface-default)');
     expect(container).toContain('border: 0');
   });
+
+  it('grid column is content-tall, so the white surface reaches the last row', () => {
+    const css = readCss('we-meet-pages.css');
+    const container = css.slice(
+      css.indexOf('.wm-ui.--docs--doc-grid {'),
+      css.indexOf('& .wm-grid-titlebar {'),
+    );
+    // 这一栏是 main(100dvh + overflow-y: auto)的 flex 项,组件上那个
+    // `$minHeight="0"` 会让 flex 把它压到一屏高 —— 白面到不了列表末尾,滚动到底时
+    // 最后几行落回页面底色(canvas 灰)。这里必须是 auto(内容高)。
+    expect(container).toContain('min-height: auto');
+  });
 });
