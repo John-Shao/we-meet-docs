@@ -25,7 +25,7 @@
 | `deploy-impress.sh` | 快进拉取代码 → 读 `secrets.env` → `envsubst` 渲染 values → Helm 部署并等待任务和滚动更新（密钥明文不落盘、不入库） |
 | `datastores.yaml` | Docs 专属 PG(`postgres:16-alpine`)+Redis(`redis:7-alpine`) manifest 模板，单节点 hostPath(`/data/docs/*`)。Service 名锁定 `docs.values.yaml` 的库地址；密码为 `${...}` 占位 |
 | `deploy-datastores.sh` | 读 `secrets.env` → `envsubst` 注入 DB/Redis 密码 → `kubectl apply -n docs` 建库。**须先于 `deploy-impress.sh` 跑** |
-| `check-node-registry.sh` | 节点镜像源**只读**自检：`registries.yaml` 的 `mirrors:`/CR 凭据、mirror 可达性、sandbox 基础镜像是否还在本地、磁盘余量。排查 `FailedCreatePodSandBox` 第一步 |
+| `check-node-registry.sh` | 节点镜像源**只读**自检：`registries.yaml` 的 `mirrors:`/CR 凭据、mirror 可达性（含候选镜像站探活）、含 sandbox 基础镜像是否还在 containerd（并列出本地已有 pause tag / 宿主 docker 库的兜底路径）、磁盘余量。排查 `FailedCreatePodSandBox` 第一步 |
 | `bootstrap-docs-client.sh` | 在 Keycloak realm `meet` 加 `docs` confidential client（独立版,凭据走 env） |
 
 ## 部署顺序
@@ -163,9 +163,13 @@ M=<可达mirror主机>     # 如 <ID>.mirror.aliyuncs.com / docker.xuanyuan.me
 sudo k3s ctr -n k8s.io images pull "$M/rancher/mirrored-pause:3.6"
 sudo k3s ctr -n k8s.io images tag "$M/rancher/mirrored-pause:3.6" docker.io/rancher/mirrored-pause:3.6
 
-# C. 完全离线：在能拉 docker.io 的机器上 docker save 后传过来
+# C. 宿主 docker 库里就有：⚠️ docker daemon 与 k3s containerd 是两个**完全独立**的镜像库，
+#    `docker pull` 成功不代表 k3s 拉得到；但可以本机直传 —— 不用出网、不用 scp
+docker save rancher/mirrored-pause:3.6 | sudo k3s ctr -n k8s.io images import -
+
+# D. 本机也没有：跨机搬运（在能拉 docker.io 的机器上打包）
 docker save rancher/mirrored-pause:3.6 | gzip > /tmp/pause.tgz
-gunzip -c /tmp/pause.tgz | sudo k3s ctr -n k8s.io images import -
+gunzip -c /tmp/pause.tgz | sudo k3s ctr -n k8s.io images import -   # 在 docs 节点上
 
 # 清掉卡住的 Pod（让 kubelet 用本地镜像重建），然后重跑部署
 kubectl -n docs delete pod -l app.kubernetes.io/instance=impress --field-selector=status.phase=Pending

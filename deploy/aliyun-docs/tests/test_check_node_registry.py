@@ -1,8 +1,8 @@
 """Run with python3 -m unittest discover -s deploy/aliyun-docs/tests -v.
 
-Node-side self-check: run the Bash script against a fake k3s binary, temporary
-registries.yaml fixtures, and a loopback registry stub. No cluster, registry
-credential, or root access is required.
+Node-side self-check: run the Bash script against fake k3s/docker binaries,
+temporary registries.yaml fixtures, and a loopback registry stub. No cluster,
+registry credential, root access, or outbound network is required.
 """
 
 import os
@@ -18,7 +18,7 @@ import unittest
 SCRIPT = Path(__file__).resolve().parents[1] / "check-node-registry.sh"
 BASH = shutil.which("bash")
 CR_HOST = "jusi-cn-guangzhou.cr.volces.com"
-CR_PAUSE = CR_HOST + "/docs/pause:3.6"
+CR_PAUSE = CR_HOST + "/we-meet/pause:3.6"
 
 FAKE_K3S = r'''#!/usr/bin/env bash
 if [ "${TEST_K3S_FAIL:-}" = "1" ]; then
@@ -28,15 +28,26 @@ fi
 cat "${TEST_IMAGES:?}"
 '''
 
+FAKE_DOCKER = r'''#!/usr/bin/env bash
+if [ -n "${TEST_DOCKER_IMAGES:-}" ]; then
+  printf '%s\n' "${TEST_DOCKER_IMAGES}"
+fi
+'''
+
 IMAGES_WITH_PAUSE = "\n".join([
     "sha256:0b1c2d3e4f5061728394a5b6c7d8e9f0",
     "docker.io/rancher/mirrored-pause:3.6",
     "docker.io/library/postgres:16-alpine",
-    CR_HOST + "/docs/backend:fc704e9d",
+    CR_HOST + "/we-meet/impress-backend:fc704e9d",
 ]) + "\n"
 
-IMAGES_WITHOUT_PAUSE = "\n".join([
+IMAGES_OLDER_PAUSE = "\n".join([
     "docker.io/rancher/mirrored-pause:3.5",
+    "docker.io/library/redis:7-alpine",
+]) + "\n"
+
+IMAGES_NO_PAUSE = "\n".join([
+    "docker.io/library/postgres:16-alpine",
     "docker.io/library/redis:7-alpine",
 ]) + "\n"
 
@@ -71,9 +82,10 @@ class CheckNodeRegistryTest(unittest.TestCase):
         self.images.write_text(IMAGES_WITH_PAUSE)
         self.bin = self.root / "bin"
         self.bin.mkdir()
-        k3s = self.bin / "k3s"
-        k3s.write_text(FAKE_K3S)
-        k3s.chmod(0o755)
+        for name, content in (("k3s", FAKE_K3S), ("docker", FAKE_DOCKER)):
+            tool = self.bin / name
+            tool.write_text(content)
+            tool.chmod(0o755)
         self.server = HTTPServer(("127.0.0.1", 0), _RegistryStub)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         self.addCleanup(self.server.server_close)
@@ -94,13 +106,15 @@ class CheckNodeRegistryTest(unittest.TestCase):
             lines.append('      password: "test-pass"')
         self.registries.write_text("\n".join(lines) + "\n")
 
-    def run_check(self, images=None, k3s_fail=False, extra_env=None):
+    def run_check(self, images=None, k3s_fail=False, docker_images=None,
+                  extra_env=None):
         if images is not None:
             self.images.write_text(images)
         environment = dict(os.environ)
-        for name in ("TEST_IMAGES", "TEST_K3S_FAIL", "PAUSE_IMAGE", "REGISTRIES_FILE",
-                     "CONTAINERD_CONFIG", "K3S_DATA_DIR", "ALIYUN_DOCKER_MIRROR",
-                     "DOCKER_MIRROR", "PROBE_TIMEOUT", "CR_HOST"):
+        for name in ("TEST_IMAGES", "TEST_K3S_FAIL", "TEST_DOCKER_IMAGES",
+                     "PAUSE_IMAGE", "REGISTRIES_FILE", "CONTAINERD_CONFIG",
+                     "K3S_DATA_DIR", "ALIYUN_DOCKER_MIRROR", "DOCKER_MIRROR",
+                     "MIRROR_CANDIDATES", "PROBE_TIMEOUT", "CR_HOST"):
             environment.pop(name, None)
         environment.update(
             PATH=self.posix(self.bin) + os.pathsep + environment["PATH"],
@@ -110,9 +124,12 @@ class CheckNodeRegistryTest(unittest.TestCase):
             CONTAINERD_CONFIG=self.posix(self.root / "no-containerd-config.toml"),
             K3S_DATA_DIR=self.posix(self.root / "no-data-dir"),
             PROBE_TIMEOUT="5",
+            MIRROR_CANDIDATES=self.mirror,
         )
         if k3s_fail:
             environment["TEST_K3S_FAIL"] = "1"
+        if docker_images:
+            environment["TEST_DOCKER_IMAGES"] = docker_images
         environment.update(extra_env or {})
         return subprocess.run(
             [BASH, self.posix(SCRIPT)], capture_output=True, text=True,
@@ -141,20 +158,44 @@ class CheckNodeRegistryTest(unittest.TestCase):
         self.assertIn("username", result.stdout)
 
     @unittest.skipUnless(shutil.which("curl"), "curl is required")
-    def test_unreachable_mirror_blocks_deploy(self):
+    def test_unreachable_mirror_blocks_deploy_and_probes_candidates(self):
         self.write_registries(mirror="http://127.0.0.1:9")
         result = self.run_check()
         self.assertEqual(result.returncode, 1)
         self.assertIn("127.0.0.1:9", result.stdout)
-        self.assertIn("mirror.aliyuncs.com", result.stdout)
+        self.assertIn("可用候选", result.stdout)
+        self.assertIn(self.mirror, result.stdout)
 
-    def test_missing_pause_image_reports_offline_remediation(self):
+    def test_local_pause_tag_is_offered_for_retag(self):
         self.write_registries()
-        result = self.run_check(images=IMAGES_WITHOUT_PAUSE)
+        result = self.run_check(images=IMAGES_OLDER_PAUSE)
         self.assertEqual(result.returncode, 1)
         self.assertIn("FailedCreatePodSandBox", result.stdout)
-        self.assertIn("k3s ctr -n k8s.io images tag", result.stdout)
-        self.assertIn("images import", result.stdout)
+        self.assertIn("docker.io/rancher/mirrored-pause:3.5", result.stdout)
+        self.assertIn(
+            "images tag docker.io/rancher/mirrored-pause:3.5 "
+            "docker.io/rancher/mirrored-pause:3.6", result.stdout)
+
+    def test_docker_store_is_offered_as_same_host_source(self):
+        self.write_registries()
+        result = self.run_check(images=IMAGES_NO_PAUSE,
+                                docker_images="rancher/mirrored-pause:3.6")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("一个 pause 镜像都没有", result.stdout)
+        self.assertIn(
+            "docker save rancher/mirrored-pause:3.6 | "
+            "sudo k3s ctr -n k8s.io images import -", result.stdout)
+
+    def test_reachable_mirror_gives_pull_and_tag_commands(self):
+        self.write_registries()
+        result = self.run_check(images=IMAGES_NO_PAUSE)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(
+            "images pull %s/rancher/mirrored-pause:3.6" % self.mirror,
+            result.stdout)
+        self.assertIn(
+            "images tag  %s/rancher/mirrored-pause:3.6 "
+            "docker.io/rancher/mirrored-pause:3.6" % self.mirror, result.stdout)
 
     def test_custom_pause_image_from_private_registry_is_accepted(self):
         self.write_registries()
