@@ -7,11 +7,13 @@ import {
   PanelResizeHandle,
 } from 'react-resizable-panels';
 
+import { Box } from '@/components';
 import { useResponsiveStore } from '@/stores/useResponsiveStore';
 
 import { useLeftPanelStore } from '../stores';
 
 import { LeftPanel } from './LeftPanel';
+import { LeftPanelStrip } from './LeftPanelStrip';
 
 // Convert a target pixel width to a percentage of the current viewport width.
 const pxToPercent = (px: number) => {
@@ -144,60 +146,65 @@ export const ResizableLeftPanel = ({
   };
 
   return (
-    <PanelGroup direction="horizontal" keyboardResizeBy={1}>
-      <Panel
-        ref={ref}
-        className="--docs--resizable-left-panel"
-        inert={!isPanelOpen}
-        collapsible={!isPanelOpen}
-        collapsedSize={0}
-        style={{
-          transition:
-            isDragging || !isMounting
-              ? 'none'
-              : 'flex var(--c--globals--transitions--duration) var(--c--globals--transitions--ease-out)',
-        }}
-        order={0}
-        defaultSize={
-          isLargeScreen
-            ? Math.max(
-                minPanelSizePercent,
-                Math.min(panelSizePercent, maxPanelSizePercent),
-              )
-            : 0
-        }
-        minSize={isLargeScreen ? minPanelSizePercent : 0}
-        maxSize={isLargeScreen ? maxPanelSizePercent : 0}
-        onResize={handleResize}
-      >
-        <LeftPanel isResizable={isLargeScreen} />
-      </Panel>
-      {isPanelOpen && (
-        <PanelResizeHandle
-          id={RESIZE_HANDLE_ID}
-          aria-label={t('Resize sidebar')}
-          aria-orientation="horizontal"
-          aria-valuemin={Math.round(minPanelSizePercent)}
-          aria-valuemax={Math.round(maxPanelSizePercent)}
-          aria-valuenow={Math.round(panelSizePercent)}
-          aria-valuetext={getValueLabel(
-            panelSizePercent,
-            minPanelSizePercent,
-            maxPanelSizePercent,
-            t,
-          )}
+    <Box $direction="row" $width="100%" $height="100dvh">
+      {/* 收起时窄条顶替整栏(36px + 展开按钮),与宿主其它模块一致;只在桌面渲染。 */}
+      {!isPanelOpen && isLargeScreen && <LeftPanelStrip />}
+      <PanelGroup direction="horizontal" keyboardResizeBy={1}>
+        <Panel
+          ref={ref}
+          className="--docs--resizable-left-panel"
+          inert={!isPanelOpen}
+          collapsible={!isPanelOpen}
+          collapsedSize={0}
           style={{
-            borderRightWidth: '1px',
-            borderRightStyle: 'solid',
-            borderRightColor: 'var(--c--contextuals--border--surface--primary)',
-            width: '1px',
-            cursor: 'col-resize',
+            transition:
+              isDragging || !isMounting
+                ? 'none'
+                : 'flex var(--c--globals--transitions--duration) var(--c--globals--transitions--ease-out)',
           }}
-          onDragging={setIsDragging}
-          disabled={!isLargeScreen}
-        />
-      )}
-      <Panel order={1}>{children}</Panel>
-    </PanelGroup>
+          order={0}
+          defaultSize={
+            isLargeScreen
+              ? Math.max(
+                  minPanelSizePercent,
+                  Math.min(panelSizePercent, maxPanelSizePercent),
+                )
+              : 0
+          }
+          minSize={isLargeScreen ? minPanelSizePercent : 0}
+          maxSize={isLargeScreen ? maxPanelSizePercent : 0}
+          onResize={handleResize}
+        >
+          <LeftPanel isResizable={isLargeScreen} />
+        </Panel>
+        {isPanelOpen && (
+          <PanelResizeHandle
+            id={RESIZE_HANDLE_ID}
+            aria-label={t('Resize sidebar')}
+            aria-orientation="horizontal"
+            aria-valuemin={Math.round(minPanelSizePercent)}
+            aria-valuemax={Math.round(maxPanelSizePercent)}
+            aria-valuenow={Math.round(panelSizePercent)}
+            aria-valuetext={getValueLabel(
+              panelSizePercent,
+              minPanelSizePercent,
+              maxPanelSizePercent,
+              t,
+            )}
+            style={{
+              borderRightWidth: '1px',
+              borderRightStyle: 'solid',
+              borderRightColor:
+                'var(--c--contextuals--border--surface--primary)',
+              width: '1px',
+              cursor: 'col-resize',
+            }}
+            onDragging={setIsDragging}
+            disabled={!isLargeScreen}
+          />
+        )}
+        <Panel order={1}>{children}</Panel>
+      </PanelGroup>
+    </Box>
   );
 };
