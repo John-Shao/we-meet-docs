@@ -25,6 +25,7 @@
 | `deploy-impress.sh` | 快进拉取代码 → 读 `secrets.env` → `envsubst` 渲染 values → Helm 部署并等待任务和滚动更新（密钥明文不落盘、不入库） |
 | `datastores.yaml` | Docs 专属 PG(`postgres:16-alpine`)+Redis(`redis:7-alpine`) manifest 模板，单节点 hostPath(`/data/docs/*`)。Service 名锁定 `docs.values.yaml` 的库地址；密码为 `${...}` 占位 |
 | `deploy-datastores.sh` | 读 `secrets.env` → `envsubst` 注入 DB/Redis 密码 → `kubectl apply -n docs` 建库。**须先于 `deploy-impress.sh` 跑** |
+| `check-node-registry.sh` | 节点镜像源**只读**自检：`registries.yaml` 的 `mirrors:`/CR 凭据、mirror 可达性、sandbox 基础镜像是否还在本地、磁盘余量。排查 `FailedCreatePodSandBox` 第一步 |
 | `bootstrap-docs-client.sh` | 在 Keycloak realm `meet` 加 `docs` confidential client（独立版,凭据走 env） |
 
 ## 部署顺序
@@ -43,6 +44,7 @@
      API_ORIGIN=https://docs.<域名> bash deploy/aliyun-docs/build-and-push.sh
    ```
 4. **装 k3s + cert-manager + ingress**（参照 we-meet 仓库 `deploy/aliyun/install-k3s.sh` 同款装法）。
+   注意该脚本写的 `/etc/rancher/k3s/registries.yaml` 里带 `mirrors:`（docker.io 加速）段——第 6 步补 CR 凭据时**必须把它一起保留**。
 5. **自建 PG + Redis**（本机 k3s，Docs 专属，与 meet 隔离）：先填密钥，再建库（**必须先于 helm 部署**）：
    ```bash
    cp deploy/aliyun-docs/secrets.env.example deploy/aliyun-docs/secrets.env
@@ -50,17 +52,28 @@
    # DOCS_REDIS_PASSWORD 进 redis:// URL，须纯 hex（openssl rand -hex 32）
    bash deploy/aliyun-docs/deploy-datastores.sh   # kubectl apply PG+Redis，数据落本机 /data/docs/*
    ```
-6. **给 k3s 配私有火山 CR 拉取凭据**（impress 三镜像在私有 CR，缺凭据 impress 各 Pod 会 `ImagePullBackOff`；PG/Redis 走 docker.io 公共镜像不受影响）。单节点 k3s 用节点级凭据最省事——不改 `values`、不用 imagePullSecret：
+6. **给 k3s 配镜像源**（`mirrors:` 段让节点能拉 docker.io——**pod sandbox 基础镜像 `rancher/mirrored-pause` 也来自 docker.io**，配不上时新 Pod 全部卡 `FailedCreatePodSandBox`，见「排障」；`configs:` 段放私有火山 CR 凭据，缺了 impress 各 Pod 会 `ImagePullBackOff`）。单节点 k3s 用节点级配置最省事——不改 `values`、不用 imagePullSecret：
    ```bash
+   # docker.io 加速：阿里云 ECS 用控制台「容器镜像服务 → 镜像工具 → 镜像加速器」给的
+   # 专属地址 https://<ID>.mirror.aliyuncs.com 最稳（同云内网）。腾讯云内网源
+   # mirror.ccs.tencentyun.com 只在腾讯云 CVM 可用，在阿里云上无效。
+   sudo cp /etc/rancher/k3s/registries.yaml /etc/rancher/k3s/registries.yaml.bak 2>/dev/null || true
    sudo tee /etc/rancher/k3s/registries.yaml >/dev/null <<'YAML'
+   mirrors:
+     docker.io:
+       endpoint:
+         - "https://<ID>.mirror.aliyuncs.com"
+         - "https://docker.xuanyuan.me"    # 兜底；第三方源可用性会变，只当 fallback
    configs:
      "jusi-cn-guangzhou.cr.volces.com":
        auth:
          username: <火山CR用户名>   # 同 build-and-push.sh 的 REGISTRY_USER
-         password: <火山CR密码>     # 同 REGISTRY_PASS
+         password: <火山CR密码>     # 同 build-and-push.sh 的 REGISTRY_PASS
    YAML
-   sudo systemctl restart k3s        # 重启使凭据生效
+   sudo systemctl restart k3s     # 重启使配置生效（不会杀掉运行中的容器）
+   sudo bash deploy/aliyun-docs/check-node-registry.sh   # 自检：mirror 通不通 + pause 镜像在不在本地
    ```
+   > ⚠️ `tee` 是**整文件覆盖**：`mirrors:` 和 `configs:` 两段必须一起写进去。只写 `configs:` 会把加速段抹掉——K3s 自带 containerd **不读** `/etc/docker/daemon.json`，别指望那份加速；改前先 `cp` 备份。
    > ⚠️ `registries.yaml` 含明文凭据、且是节点本地文件，**不入库**（换机器需重配）。若报 `ImagePullBackOff`，`kubectl -n docs describe pod <pod>` 看是 401（认证错）还是 manifest not found（tag 拼错）。
 7. **helm 部署 impress**：`deploy-impress.sh` 经 `envsubst` 注入 `secrets.env` 后部署：
    ```bash
@@ -92,6 +105,8 @@ bash deploy/aliyun-docs/deploy-impress.sh --skip-git-pull --dry-run
   `--skip-git-pull` 使用本地检出，不切分支、不拉取。
 - 镜像 tag 优先级：`--tag` → `TAG` → `DOCS_IMAGE_TAG` → 拉取后 HEAD 短 SHA。
   兼容原有 `TAG=xxx bash ...` 用法；禁止 `latest`。部署脚本不构建镜像。
+- 怀疑节点拉不到镜像时（刚重启过 k3s / 磁盘吃紧 / 换过机器），先跑只读自检：
+  `sudo bash deploy/aliyun-docs/check-node-registry.sh`——不通过会直接打印修复命令。
 - Helm 使用 `--wait --wait-for-jobs` 等待就绪和迁移任务完成，再逐个等待本次 release
   的 Deployment 完成滚动更新，最后打印就绪副本数和镜像。只有全部通过才显示“更新完成”。
 - 阿里云开启 `backend.migrate.useReleaseRevision`，迁移任务命名为
@@ -114,6 +129,54 @@ bash deploy/aliyun-docs/deploy-impress.sh --tag b5a4c2b3
 
 此处仅适用于已确认未启动迁移进程的失败 Job；正在运行数据库迁移时应先等待其完成。
 代码 SHA 不代表镜像已构建，指定的三个镜像 tag 必须已经推送到镜像仓库。
+
+## 排障：新 Pod 卡 ContainerCreating / `FailedCreatePodSandBox`
+
+`deploy-impress.sh` 报 `Error: UPGRADE FAILED: context deadline exceeded`，事件里刷的全是：
+
+```
+FailedCreatePodSandBox: ... failed to pull image "rancher/mirrored-pause:3.6":
+failed to resolve reference "docker.io/rancher/mirrored-pause:3.6": ... i/o timeout
+```
+
+此时**老 Pod 仍在跑**（Service 同时选中新旧 Pod，流量只落老 Pod）——站点没挂，只是没更新成新版本。
+原因与本次代码改动无关，是节点拉不到 pod sandbox 基础镜像：
+
+1. K3s 自带 containerd 只读 `/etc/rancher/k3s/registries.yaml`，**不读** `/etc/docker/daemon.json`；
+2. 该文件里缺 `mirrors.docker.io`（例如按旧版第 6 步「只写 `configs:`」把整文件覆盖过），或所有 mirror 都不可达；
+3. 同时本地那份 pause 镜像也没了：被 kubelet image GC 回收（磁盘 ≥85%）或 k3s 升级换了 pause tag（3.5 → 3.6）。
+
+于是**任何**新 Pod 都起不来，包括私有 CR 里的 impress——业务镜像根本轮不到拉。
+
+处置：先跑只读自检，再看结果修。
+
+```bash
+sudo bash deploy/aliyun-docs/check-node-registry.sh   # 一眼看清 mirror / 凭据 / pause 镜像 / 磁盘
+```
+
+```bash
+# A. 只是本地 tag 不对（有 3.5、缺 3.6）：不用出网、不用重启
+sudo k3s ctr -n k8s.io images tag docker.io/rancher/mirrored-pause:3.5 docker.io/rancher/mirrored-pause:3.6
+
+# B. 本地确实没有：借可达 mirror 拉下来，再改成 k8s 期望的引用
+M=<可达mirror主机>     # 如 <ID>.mirror.aliyuncs.com / docker.xuanyuan.me
+sudo k3s ctr -n k8s.io images pull "$M/rancher/mirrored-pause:3.6"
+sudo k3s ctr -n k8s.io images tag "$M/rancher/mirrored-pause:3.6" docker.io/rancher/mirrored-pause:3.6
+
+# C. 完全离线：在能拉 docker.io 的机器上 docker save 后传过来
+docker save rancher/mirrored-pause:3.6 | gzip > /tmp/pause.tgz
+gunzip -c /tmp/pause.tgz | sudo k3s ctr -n k8s.io images import -
+
+# 清掉卡住的 Pod（让 kubelet 用本地镜像重建），然后重跑部署
+kubectl -n docs delete pod -l app.kubernetes.io/instance=impress --field-selector=status.phase=Pending
+bash deploy/aliyun-docs/deploy-impress.sh
+```
+
+- 镜像到手前**别** `kubectl rollout restart`，只会多生成一批同样卡住的 Pod。
+- 根治按「部署顺序」第 6 步补齐 `mirrors:` 段（`configs:` 段必须一起保留）。
+- 可选加固：把 pause 镜像推到火山 CR，节点 `/etc/rancher/k3s/config.yaml` 加
+  `pause-image: jusi-cn-guangzhou.cr.volces.com/<ns>/pause:3.6` 后重启 k3s，pod sandbox 从此不依赖 docker.io。
+- 超时的那次发布处于 `failed` 状态，直接重跑 `deploy-impress.sh` 即可（会产生新 revision 和新 migrate Job），无需手工清理。
 
 ## Django 管理员账号
 
@@ -151,5 +214,6 @@ NEXT_CACHE_REVISION=reset-20260907-1 bash deploy/aliyun-docs/build-and-push.sh
 - 域名：默认 `we-meet.online`；换 `jusiai.com` 全局替换。
 - 镜像 tag：默认=**当前 commit 短 sha**（build/deploy 同 commit 自动一致，不用带 `TAG`）；`deploy-impress.sh` 注入 values 的 3 处 `${DOCS_IMAGE_TAG}`。显式 `TAG=xxx` 可覆盖，别用 latest。
 - 私有火山 CR：k3s 节点须配 `/etc/rancher/k3s/registries.yaml` 凭据（部署第 6 步），否则 impress 各 Pod `ImagePullBackOff`。
+- ⚠️ **docker.io mirror**：同文件还必须有 `mirrors.docker.io`（部署第 6 步）。缺了它，一旦 pause 基础镜像被 image GC 回收（或 k3s 升级换了 tag），**所有**新 Pod 都会卡 `FailedCreatePodSandBox`——`configs:` 覆盖写时最容易连带丢掉这一段。
 - ⚠️ **OSS media ingress**：`ingressMedia`/`serviceMedia` 的 vhost/path-style + TLS SNI 需实测（见 `docs.values.yaml` 注释）；`AWS_S3_REGION_NAME` 用 `oss-cn-shenzhen`，403 SignatureDoesNotMatch 时试 `cn-shenzhen`。
 - `DJANGO_SERVER_TO_SERVER_API_TOKENS`（docs 侧）== `DOCS_SERVER_TO_SERVER_TOKEN`（meet 侧），逐字符一致。
