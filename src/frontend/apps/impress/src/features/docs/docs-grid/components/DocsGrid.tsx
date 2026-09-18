@@ -7,9 +7,12 @@ import { css } from 'styled-components';
 import AllDocs from '@/assets/icons/doc-all.svg';
 import { Box, Card, Icon, Text } from '@/components';
 import { useInfiniteDocs } from '@/docs/doc-management/api/useDocs';
+import { NewDocButton } from '@/docs/doc-management/components/NewDocButton';
 import { useImport } from '@/docs/doc-management/hooks/useImport';
 import { DocDefaultFilter } from '@/docs/doc-management/types';
 import { DocShareModalHost } from '@/docs/doc-share';
+import { useAuth } from '@/features/auth';
+import { useEmbedPlatform } from '@/hooks/useEmbedShell';
 import { useResponsiveStore } from '@/stores';
 
 import { useInfiniteDocsTrashbin } from '../api';
@@ -99,6 +102,12 @@ export const DocsGrid = ({
       {/* 分享弹窗挂在列表**之上**:下面的列表会因查询失效整体卸载(hasDocs
           转 false),挂在行里的弹窗会被一起带走。见 useDocShareModalStore。 */}
       <DocShareModalHost />
+      {/*
+        内容标题栏在**卡片之外**:宿主的每个模块都是「内容标题栏(TitleBar) + 内容」
+        两条,标题栏横贯内容区、下面直接是内容,不套一层卡片。原先它长在卡片里,
+        看起来仍是「一张卡自带标题」而不是内容标题栏。
+      */}
+      <DocGridTitleBar target={target} />
       <Card
         data-testid="docs-grid"
         data-dragging={isDragOver || undefined}
@@ -120,7 +129,6 @@ export const DocsGrid = ({
           ? getRootProps({ className: 'dropzone', tabIndex: -1 })
           : {})}
       >
-        <DocGridTitleBar target={target} />
         {!hasDocs && !showOverlay && (
           <Box className="wm-grid-state" $align="center" $justify="center">
             <Text $size="sm" $variation="secondary">
@@ -190,6 +198,10 @@ export const DocsGrid = ({
 const DocGridTitleBar = ({ target }: { target: DocDefaultFilter }) => {
   const { t } = useTranslation();
   const { isDesktop } = useResponsiveStore();
+  const { authenticated } = useAuth();
+  // 内嵌进 we-meet 时,模块主操作跟宿主其它模块一样放在**内容标题栏**右侧
+  // (二级导航栏栏头只留图标动作 + 收起按钮);独立访问时新建仍在左栏栏头。
+  const isEmbedded = useEmbedPlatform() !== null;
 
   let title = t('All docs');
   let icon = <Icon icon={<AllDocs width={24} height={24} />} />;
@@ -224,6 +236,7 @@ const DocGridTitleBar = ({ target }: { target: DocDefaultFilter }) => {
           {title}
         </Text>
       </Box>
+      {isEmbedded && authenticated && <NewDocButton />}
     </Box>
   );
 };

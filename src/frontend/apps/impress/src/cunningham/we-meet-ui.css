@@ -10,6 +10,9 @@
   display: flex;
   box-sizing: border-box;
   align-items: center;
+
+  /* 标题在左、模块动作 + 收起按钮在右 —— 与宿主 SubNavHeader 同构。 */
+  justify-content: space-between;
   min-height: 3.5rem;
   padding: var(--wm-space-sm) var(--wm-space-lg);
   border-bottom: 1px solid var(--wm-border-subtle);
@@ -46,6 +49,17 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/*
+ * 栏头右侧的模块动作组 —— 与宿主 SubNavHeader 的 headerActions 同档:
+ * 一行、gap 4px、不参与压缩(标题先被省略);收起按钮排在这个组的最后。
+ */
+.wm-subnav-header__actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--wm-space-xs);
 }
 
 .wm-ui,

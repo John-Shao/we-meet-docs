@@ -5,14 +5,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HeaderFloatingBar } from './HeaderFloatingBar';
 
-const state = vi.hoisted(() => ({
-  isTablet: false,
-  isMobile: false,
-  isPanelOpen: false,
-  platform: 'web',
-  globalSearch: true,
-  authenticated: true,
-}));
+type HeaderState = {
+  isTablet: boolean;
+  isMobile: boolean;
+  isLargeScreen: boolean;
+  isPanelOpen: boolean;
+  platform: string | null;
+  globalSearch: boolean;
+  authenticated: boolean;
+};
+
+const state = vi.hoisted(
+  (): HeaderState => ({
+    isTablet: false,
+    isMobile: false,
+    isLargeScreen: false,
+    isPanelOpen: false,
+    platform: 'web',
+    globalSearch: true,
+    authenticated: true,
+  }),
+);
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (s: string) => s }),
@@ -49,11 +62,31 @@ describe('document list header', () => {
     Object.assign(state, {
       isTablet: false,
       isMobile: false,
+      isLargeScreen: false,
       isPanelOpen: false,
       platform: 'web',
       globalSearch: true,
       authenticated: true,
     });
+  });
+
+  it('leaves the large embedded screen a single left-panel toggle', () => {
+    // 769–1023 那档 isLargeScreen 与 isTablet 同时为真:左栏入口归二级导航栏栏头 +
+    // 36px 窄条,浮动条不能再放一颗,否则同屏出现两个「导航栏」按钮。
+    state.isTablet = true;
+    state.isLargeScreen = true;
+    state.platform = 'web';
+    const { rerender } = render(<HeaderFloatingBar />, { wrapper });
+    expect(
+      screen.queryByRole('button', { name: 'Toggle left panel' }),
+    ).not.toBeInTheDocument();
+
+    // 未内嵌(独立访问 docs)时保持原样。
+    state.platform = null;
+    rerender(<HeaderFloatingBar />);
+    expect(
+      screen.getByRole('button', { name: 'Toggle left panel' }),
+    ).toBeVisible();
   });
 
   it('removes the empty desktop header and retains narrow-screen navigation without blur', () => {

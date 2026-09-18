@@ -20,6 +20,7 @@ import { useEmbedPlatform } from '@/hooks/useEmbedShell';
 import HomeSVG from '@/icons/house-rounded.svg';
 import { useResponsiveStore } from '@/stores';
 
+import LeftPanelIcon from '../assets/left-panel.svg';
 import { useLeftPanelStore } from '../stores';
 
 export const LeftPanelHeader = () => {
@@ -103,8 +104,9 @@ export const LeftPanelHeaderActions = ({
   withTitle = false,
 }: {
   /**
-   * 内嵌(we-meet)时给这一栏加一个模块标题:宿主其它模块的二级导航栏都是
-   * 「标题 + 动作」一行,没有标题的文档面板在并排看时缺一档。
+   * 内嵌(we-meet)时这一栏走宿主 `SubNavHeader` 的形态:标题在左,模块图标动作在右,
+   * **收起按钮排在最后一个**——宿主六个模块的二级导航栏都是这个结构,收起后由 36px
+   * 窄条顶替(LeftPanelStrip)。独立访问 docs 时仍是原来的「新建 + 主页/搜索」一行。
    */
   withTitle?: boolean;
 }) => {
@@ -122,43 +124,70 @@ export const LeftPanelHeaderActions = ({
     }
   };
 
-  const actions = (
-    <Box
-      $padding={{ horizontal: withTitle ? 'lg' : 'sm' }}
-      $width="100%"
-      $direction="row"
-      $justify="space-between"
-      $align="center"
-      $gap={withTitle ? 'sm' : undefined}
-    >
-      {withTitle && (
+  // 内嵌栏头的动作按宿主的图标钮尺寸(28px 按钮 + 20px 图标);独立形态维持原样。
+  const homeButton = router.pathname !== '/' && (
+    <Button
+      data-testid="home-button"
+      onClick={goToHome}
+      aria-label={t('Back to homepage')}
+      size={withTitle ? 'small' : 'medium'}
+      color={withTitle ? 'neutral' : 'brand'}
+      variant="tertiary"
+      icon={
+        <HomeSVG
+          aria-hidden="true"
+          width={withTitle ? 20 : 24}
+          height={withTitle ? 20 : 24}
+        />
+      }
+    />
+  );
+
+  if (withTitle) {
+    return (
+      <Box className="wm-subnav-header">
         <Text as="h2" className="wm-subnav-header__title">
           {t('Docs')}
         </Text>
-      )}
-      {authenticated && (
-        <NewDocButton onClose={() => isMobile && closePanel()} />
-      )}
-      <Box $direction="row" $gap="2px" $margin={{ left: 'auto' }}>
-        {router.pathname !== '/' && (
+        {/*
+          新建不再挂在二级导航栏:宿主把模块主操作放在**内容标题栏**右侧(见
+          DocGridTitleBar),二级导航栏栏头只留图标动作 + 收起按钮。
+        */}
+        <Box className="wm-subnav-header__actions">
+          {homeButton}
+          <DocSearchButtonModal size="small" color="neutral" />
           <Button
-            data-testid="home-button"
-            onClick={goToHome}
-            aria-label={t('Back to homepage')}
-            size="medium"
-            color="brand"
+            data-testid="left-panel-collapse"
+            onClick={() => closePanel()}
+            aria-label={t('Toggle left panel')}
+            title={t('Toggle left panel')}
+            size="small"
+            color="neutral"
             variant="tertiary"
-            icon={<HomeSVG aria-hidden="true" width={24} height={24} />}
+            icon={<LeftPanelIcon width={20} height={20} aria-hidden="true" />}
           />
-        )}
-        <DocSearchButtonModal />
+        </Box>
       </Box>
-    </Box>
-  );
+    );
+  }
 
-  return withTitle ? (
-    <Box className="wm-subnav-header">{actions}</Box>
-  ) : (
-    <SeparatedSection>{actions}</SeparatedSection>
+  return (
+    <SeparatedSection>
+      <Box
+        $padding={{ horizontal: 'sm' }}
+        $width="100%"
+        $direction="row"
+        $justify="space-between"
+        $align="center"
+      >
+        {authenticated && (
+          <NewDocButton onClose={() => isMobile && closePanel()} />
+        )}
+        <Box $direction="row" $gap="2px" $margin={{ left: 'auto' }}>
+          {homeButton}
+          <DocSearchButtonModal />
+        </Box>
+      </Box>
+    </SeparatedSection>
   );
 };

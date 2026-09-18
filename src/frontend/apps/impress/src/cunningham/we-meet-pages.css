@@ -5,12 +5,19 @@ main:has(.wm-ui.--docs--doc-grid) {
 
 .wm-ui.--docs--doc-grid {
   box-sizing: border-box;
-  padding: var(--wm-space-lg);
+
+  /* 内容标题栏与列表同处一张白面:内容区自己就是那张面,不再套一层卡片 ——
+     宿主每个模块都是「内容标题栏(TitleBar) + 内容」两条。 */
+  padding: 0;
   max-width: 1200px;
+  background: var(--wm-surface-default);
 
   & [data-testid='docs-grid'] {
-    border-radius: var(--wm-radius-panel);
-    background: var(--wm-surface-default);
+    /* 卡片退成纯容器:边框/圆角撤掉,免得标题栏下面又起一个框;
+       左栏收起/展开时的拖拽高亮在下面单独补回来。 */
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     padding-bottom: var(--wm-space-sm);
   }
 
@@ -30,6 +37,8 @@ main:has(.wm-ui.--docs--doc-grid) {
   }
 
   & [data-testid='docs-grid'][data-dragging] {
+    border: 2px dashed var(--wm-border-focus);
+    border-radius: var(--wm-radius-panel);
     background: var(--wm-action-selected-container);
   }
 

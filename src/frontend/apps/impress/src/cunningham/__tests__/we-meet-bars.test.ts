@@ -66,4 +66,16 @@ describe('we-meet bar styles in the docs app', () => {
     expect(title).toContain('font: var(--wm-font-title-medium)');
     expect(title).toContain('font-weight: 700');
   });
+
+  it('grid content is one surface: title bar over a frameless list', () => {
+    const css = readCss('we-meet-pages.css');
+    const container = css.slice(
+      css.indexOf('.wm-ui.--docs--doc-grid {'),
+      css.indexOf('& .wm-grid-titlebar {'),
+    );
+    // 内容标题栏与列表同处一张白面:内容区自己就是那张面,卡片退成纯容器 ——
+    // 宿主每个模块都是「内容标题栏 + 内容」两条,不是「一张卡自带标题」。
+    expect(container).toContain('background: var(--wm-surface-default)');
+    expect(container).toContain('border: 0');
+  });
 });
