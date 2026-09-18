@@ -134,6 +134,13 @@ backend:
         python manage.py migrate --no-input
     restartPolicy: Never
 
+  # 迁移任务容器的存活时间（chart 默认 30s 太短）：Job 一完成就被 TTL 控制器回收，而
+  # `helm --wait-for-jobs` 还在观察它 → 报 `jobs.batch "impress-docs-backend-migrate-<rev>"
+  # not found` 并把发布标成 failed，尽管四个 Deployment 都已经滚完（假失败，见 README「排障」）。
+  # 1h 仍会自动回收，但远大于任何一次部署的等待窗口。
+  jobs:
+    ttlSecondsAfterFinished: 3600
+
 # ============ frontend 镜像 → 火山 CR（自建，API_ORIGIN 已烘焙为 docs.we-meet.online）============
 # ⚠️ 前端是静态导出，NEXT_PUBLIC_API_ORIGIN 在 build 期定死；换域名必须重 build（见 build-and-push.sh）
 frontend:

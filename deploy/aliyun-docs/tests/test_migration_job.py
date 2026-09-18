@@ -58,6 +58,21 @@ class MigrationJobTest(unittest.TestCase):
         name, _ = self.render(60, "existing-tag", aliyun=False)
         self.assertEqual(name, "impress-docs-backend-migrate")
 
+    def test_migrate_pod_is_not_selected_by_the_backend_service_or_pdb(self):
+        _, manifest = self.render(60, "b5a4c2b3")
+        # 任务 pod 的 labels 必须与 backend Service / PDB 的选择器
+        # (`app.kubernetes.io/component: backend`)错开:否则迁移那一二十秒里它会被
+        # 当成后端端点(没有 HTTP 进程、也没有 readiness 探针 —— 一启动就 Ready),
+        # 请求被轮询到它就会失败;PDB 还会因为它算不出期望副本数而报
+        # CalculateExpectedPodCountFailed(Job 不实现 scale 子资源)。
+        pod_labels = re.search(
+            r"^      labels:\n((?:        .*\n)+)", manifest, re.MULTILINE
+        ).group(1)
+        self.assertIn("app.kubernetes.io/component: backend-job", pod_labels)
+        self.assertNotIn("app.kubernetes.io/component: backend\n", pod_labels)
+        # Job 自身仍带 component: backend,按组件筛任务的习惯不受影响。
+        self.assertIn("app.kubernetes.io/component: backend\n", manifest)
+
 
 if __name__ == "__main__":
     unittest.main()

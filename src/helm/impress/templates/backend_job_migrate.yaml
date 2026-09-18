@@ -22,8 +22,13 @@ spec:
         {{- with .Values.backend.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+      {{- /* 迁移 pod 不能带 `component: backend`:那是 backend Service 与 PDB 的选择器 ——
+             带上就会被当成后端端点(它没有 HTTP 进程、也没有 readiness 探针),迁移期间
+             后端会间歇性连不上;PDB 还会因 Job 没有 scale 子资源报
+             CalculateExpectedPodCountFailed。Job 自身的 metadata.labels 照旧。 */}}
       labels:
-        {{- include "impress.common.selectorLabels" (list . $component) | nindent 8 }}
+        {{- include "impress.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ $component }}-job
     spec:
       {{- if $.Values.image.credentials }}
       imagePullSecrets:

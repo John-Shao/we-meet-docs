@@ -135,6 +135,33 @@ bash deploy/aliyun-docs/deploy-impress.sh --tag b5a4c2b3
 此处仅适用于已确认未启动迁移进程的失败 Job；正在运行数据库迁移时应先等待其完成。
 代码 SHA 不代表镜像已构建，指定的三个镜像 tag 必须已经推送到镜像仓库。
 
+### 部署报 `jobs.batch "impress-docs-backend-migrate-N" not found`（假失败）
+
+`helm upgrade` 返回：
+
+```
+Error: UPGRADE FAILED: jobs.batch "impress-docs-backend-migrate-N" not found
+```
+
+但 `kubectl -n docs get pods` 里四个 Deployment 都是新镜像、`1/1 Running`，迁移 Job 也在
+几秒前 `Completed` —— **这次发布其实成功了**，站点已经更新。
+
+成因是 chart 默认的 `backend.jobs.ttlSecondsAfterFinished: 30`（30 秒）太短：迁移 Job 一完成就被
+TTL 控制器回收，而 `helm --wait-for-jobs` 还在观察这个 Job，对象消失就报 not found、并把发布
+标成 `failed`（下一次 `helm upgrade` 不受影响，会正常建 revision N+1）。
+
+`docs.values.yaml` 已把 TTL 覆盖成 `3600`（1h）—— 仍会自动回收，但远大于任何一次部署的等待窗口。
+遇到这个报错时的判定顺序：
+
+```bash
+kubectl -n docs get pods -l app.kubernetes.io/instance=impress       # 新镜像 1/1 Running?
+kubectl -n docs get deploy -l app.kubernetes.io/instance=impress \
+  -o custom-columns=DEPLOYMENT:.metadata.name,READY:.status.readyReplicas,IMAGES:.spec.template.spec.containers[*].image
+kubectl -n docs logs job/impress-docs-backend-migrate-N --tail=20    # 迁移是否跑完(未设 TTL 时还能看到)
+```
+
+三者都正常就是假失败，不必重跑；`helm history impress -n docs` 里那次是 `failed` 也只影响回滚点记录。
+
 ## 排障：新 Pod 卡 ContainerCreating / `FailedCreatePodSandBox`
 
 `deploy-impress.sh` 报 `Error: UPGRADE FAILED: context deadline exceeded`，事件里刷的全是：

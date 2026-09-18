@@ -23,8 +23,11 @@ spec:
         {{- with .Values.backend.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+      {{- /* 同 backend_job_migrate.yaml:任务 pod 不用 `component: backend`,
+             免得被 backend Service / PDB 选中。 */}}
       labels:
-        {{- include "impress.common.selectorLabels" (list . $component) | nindent 8 }}
+        {{- include "impress.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ $component }}-job
     spec:
       {{- if $.Values.image.credentials }}
       imagePullSecrets:
